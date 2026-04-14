@@ -3,6 +3,17 @@
 from lib import lichess
 
 
+def test_lichess_init__disables_system_proxy_inheritance(monkeypatch) -> None:
+    """Lichess sessions should not inherit flaky system proxy settings."""
+    monkeypatch.setattr(lichess.Lichess, "get_token_info",
+                        lambda self, token: {"scopes": "bot:play", "userId": "ilovecatgirl"})
+
+    li = lichess.Lichess("token", "https://lichess.org/", "0.0.0", 20, 1)
+
+    assert li.session.trust_env is False
+    assert li.other_session.trust_env is False
+
+
 def test_get_token_info__returns_direct_token_info(monkeypatch) -> None:
     """A normal token-test response should be returned directly."""
     li = lichess.Lichess.__new__(lichess.Lichess)

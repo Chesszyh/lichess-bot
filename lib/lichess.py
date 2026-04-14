@@ -140,8 +140,10 @@ class Lichess:
         }
         self.baseUrl = url
         self.session = requests.Session()
+        self.session.trust_env = False
         self.session.headers.update(self.header)
         self.other_session = requests.Session()
+        self.other_session.trust_env = False
         self.set_user_agent("?")
         self.logging_level = logging_level
         self.max_retries = max_retries

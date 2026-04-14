@@ -126,6 +126,12 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                         control_queue.put_nowait(event)
                     else:
                         control_queue.put_nowait({"type": "ping"})
+        except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError):
+            if stop.terminated:
+                break
+            logger.warning("Control stream disconnected. Reconnecting.")
+            time.sleep(1)
+            continue
         except Exception:
             error = traceback.format_exc()
             break
