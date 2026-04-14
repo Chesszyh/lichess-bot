@@ -10,11 +10,12 @@ import traceback
 from collections import defaultdict
 import datetime
 import contextlib
+import time
 from lib.timer import Timer, seconds, sec_str
 from typing import cast
 import chess.engine
 from lib.lichess_types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
-                       ChallengeType, TOKEN_TESTS_TYPE, BackoffDetails)
+                       ChallengeType, TOKEN_TESTS_TYPE, TokenTestType, BackoffDetails)
 
 
 ENDPOINTS = {
@@ -147,8 +148,7 @@ class Lichess:
         self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
 
         # Confirm that the OAuth token has the proper permission to play on lichess
-        token_response = cast(TOKEN_TESTS_TYPE, self.api_post("token_test", data=token))
-        token_info = token_response.get(token)
+        token_info = self.get_token_info(token)
 
         if not token_info:
             raise RuntimeError("There was an error in retrieving information about the bot's token. "
@@ -160,6 +160,31 @@ class Lichess:
             raise RuntimeError("Please use an API access token for your bot that "
                                'has the scope "Play games with the bot API (bot:play)". '
                                f"The current token has: {scopes}.")
+
+    def get_token_info(self, token: str) -> TokenTestType | None:
+        """Validate the OAuth token, tolerating transient empty token-test responses."""
+        for attempt in range(1, 4):
+            token_response = cast(TOKEN_TESTS_TYPE, self.api_post("token_test", data=token))
+            token_info = token_response.get(token) if isinstance(token_response, dict) else None
+            if token_info:
+                return token_info
+
+            logger.warning("Token test response did not include the submitted token. Retrying validation "
+                           f"({attempt}/3).")
+            time.sleep(1)
+
+        try:
+            profile = cast(UserProfileType, self.api_get_json("profile"))
+        except Exception:
+            logger.exception("Fallback token validation using /api/account failed.")
+            return None
+
+        if profile.get("title") == "BOT":
+            logger.warning("Token test response still did not include the submitted token, but /api/account "
+                           "validated a BOT account. Continuing startup.")
+            return {"scopes": "bot:play", "userId": profile.get("id", "")}
+
+        return None
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
@@ -268,7 +293,8 @@ class Lichess:
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
-        response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
+        timeout = 10 if endpoint_name == "token_test" else 2
+        response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=timeout)
 
         if endpoint_name == "challenge":
             return self.handle_challenge(response)

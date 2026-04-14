@@ -17,7 +17,7 @@ from collections import Counter
 from collections.abc import Callable
 from lib import model, lichess
 from lib.config import Configuration, change_value_to_list
-from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
+from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds, to_msec
 from lib.lichess_types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
                        ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
@@ -182,6 +182,7 @@ class EngineWrapper:
             time_limit, can_ponder = move_time(board, game, can_ponder,
                                                setup_timer, move_overhead,
                                                is_correspondence, correspondence_move_time)
+            time_limit = apply_bullet_time_management(board, game, time_limit, engine_cfg)
 
             try:
                 best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
@@ -731,6 +732,40 @@ def game_clock_time(board: chess.Board,
                               clock_id="real time")
 
 
+def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limit: chess.engine.Limit,
+                                 engine_cfg: Configuration) -> chess.engine.Limit:
+    """Use a lower reported clock in bullet so Stockfish does not spend blitz-like chunks of time."""
+    bullet_time_management = engine_cfg.lookup("bullet_time_management")
+    if game.speed != "bullet" or not bullet_time_management or not bullet_time_management.enabled:
+        return time_limit
+
+    side = wbtime(board)
+    clock = time_limit.white_clock if side == "wtime" else time_limit.black_clock
+    if clock is None:
+        return time_limit
+
+    clock_ms = round(clock * 1000)
+    clock_cap_ms = bullet_time_management.max_clock_ms
+    if clock_ms <= bullet_time_management.emergency_clock_threshold_ms:
+        clock_cap_ms = bullet_time_management.emergency_clock_ms
+    elif clock_ms <= bullet_time_management.critical_clock_threshold_ms:
+        clock_cap_ms = bullet_time_management.critical_clock_ms
+    elif clock_ms <= bullet_time_management.low_clock_threshold_ms:
+        clock_cap_ms = bullet_time_management.low_clock_ms
+    elif clock_ms <= bullet_time_management.high_clock_threshold_ms:
+        clock_cap_ms = bullet_time_management.high_clock_ms
+
+    capped_clock = max(msec(1), min(msec(clock_ms), msec(clock_cap_ms)))
+    if side == "wtime":
+        time_limit.white_clock = to_seconds(capped_clock)
+    else:
+        time_limit.black_clock = to_seconds(capped_clock)
+
+    if to_msec(capped_clock) < clock_ms:
+        logger.info(f"Capping bullet {side} from {clock_ms} ms to {msec_str(capped_clock)} ms for game {game.id}")
+    return time_limit
+
+
 def check_for_draw_offer(game: model.Game) -> bool:
     """Check if the bot was offered a draw."""
     return bool(game.state.get(f"{game.opponent_color[0]}draw"))
@@ -751,7 +786,8 @@ def get_book_move(board: chess.Board, game: model.Game,
         variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     change_value_to_list(polyglot_cfg.config, "book", key=variant)
-    books = polyglot_cfg.book.lookup(variant)
+    books = list(polyglot_cfg.book.lookup(variant))
+    random.shuffle(books)
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:

@@ -24,6 +24,7 @@ import glob
 import platform
 import importlib.metadata
 import contextlib
+import random
 from lib.blocklist import OnlineBlocklist
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
@@ -810,7 +811,9 @@ def takeback_record_file_name(game_id: str) -> str:
 
 def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
     """Get the greeting to send to the chat."""
-    greeting_text: str = greeting_cfg.lookup(greeting)
+    greeting_text = greeting_cfg.lookup(greeting)
+    if isinstance(greeting_text, list):
+        greeting_text = random.choice(greeting_text) if greeting_text else ""
     return greeting_text.format_map(keyword_map)
 
 
