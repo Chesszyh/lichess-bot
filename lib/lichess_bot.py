@@ -43,6 +43,7 @@ from multiprocessing.pool import Pool
 from collections import Counter
 from typing import TypedDict, cast, TypeAlias
 from types import FrameType
+from dataclasses import dataclass
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
 POOL_TYPE: TypeAlias = Pool
 
@@ -71,6 +72,16 @@ class VersioningType(TypedDict):
 
 
 logger = logging.getLogger(__name__)
+CONTROL_STREAM_WATCHDOG_PERIOD = seconds(5)
+CONTROL_STREAM_STALL_TIMEOUT = seconds(45)
+
+
+@dataclass
+class ControlStreamState:
+    """Track the control-stream worker and its most recent activity."""
+
+    process: multiprocessing.Process
+    last_activity: Timer
 
 with open(os.path.join(os.path.dirname(__file__), "versioning.yml")) as version_file:
     versioning_info: VersioningType = yaml.safe_load(version_file)
@@ -137,6 +148,46 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
             break
 
     control_queue.put_nowait({"type": "terminated", "error": error})
+
+
+def spawn_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess) -> multiprocessing.Process:
+    """Start a process that watches the account-level event stream."""
+    control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
+    control_stream.start()
+    return control_stream
+
+
+def restart_control_stream(control_stream_state: ControlStreamState, control_queue: CONTROL_QUEUE_TYPE,
+                           li: lichess.Lichess) -> None:
+    """Replace the control-stream worker process."""
+    if control_stream_state.process.is_alive():
+        control_stream_state.process.terminate()
+    control_stream_state.process.join()
+    control_stream_state.process = spawn_control_stream(control_queue, li)
+    control_stream_state.last_activity.reset()
+
+
+def ensure_control_stream_live(control_stream_state: ControlStreamState, control_queue: CONTROL_QUEUE_TYPE,
+                               li: lichess.Lichess) -> None:
+    """Restart the control stream if it has gone quiet for too long."""
+    if not control_stream_state.last_activity.is_expired():
+        return
+
+    idle_for = round(to_seconds(control_stream_state.last_activity.time_since_reset()))
+    logger.warning(f"Control stream idle for {idle_for} seconds. Restarting watcher.")
+    restart_control_stream(control_stream_state, control_queue, li)
+
+
+def do_control_stream_watchdog_tick(control_queue: CONTROL_QUEUE_TYPE, period: datetime.timedelta) -> None:
+    """Wake the main loop so it can detect a stale control stream."""
+    while not stop.terminated:
+        time.sleep(to_seconds(period))
+        control_queue.put_nowait({"type": "watchdog_tick"})
+
+
+def is_control_stream_event(event_type: str) -> bool:
+    """Whether an event originated from the account-level Lichess control stream."""
+    return event_type not in {"local_game_done", "correspondence_ping", "watchdog_tick"}
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.timedelta) -> None:
@@ -267,8 +318,11 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
     manager = multiprocessing.Manager()
     challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()
     control_queue: CONTROL_QUEUE_TYPE = manager.Queue()
-    control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
-    control_stream.start()
+    control_stream_state = ControlStreamState(spawn_control_stream(control_queue, li),
+                                              Timer(CONTROL_STREAM_STALL_TIMEOUT))
+    control_stream_watchdog = multiprocessing.Process(target=do_control_stream_watchdog_tick,
+                                                      args=(control_queue, CONTROL_STREAM_WATCHDOG_PERIOD))
+    control_stream_watchdog.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=(control_queue,
                                                           seconds(config.correspondence.checkin_period)))
@@ -298,13 +352,16 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
                          config,
                          challenge_queue,
                          control_queue,
+                         control_stream_state,
                          correspondence_queue,
                          logging_queue,
                          pgn_queue,
                          one_game)
     finally:
-        control_stream.terminate()
-        control_stream.join()
+        control_stream_state.process.terminate()
+        control_stream_state.process.join()
+        control_stream_watchdog.terminate()
+        control_stream_watchdog.join()
         correspondence_pinger.terminate()
         correspondence_pinger.join()
         time.sleep(1.0)  # Allow final messages in logging_queue to be handled.
@@ -331,6 +388,7 @@ def lichess_bot_main(li: lichess.Lichess,
                      config: Configuration,
                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      control_queue: CONTROL_QUEUE_TYPE,
+                     control_stream_state: ControlStreamState,
                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                      logging_queue: LOGGING_QUEUE_TYPE,
                      pgn_queue: PGN_QUEUE_TYPE,
@@ -343,6 +401,7 @@ def lichess_bot_main(li: lichess.Lichess,
     :param config: The config that the bot will use.
     :param challenge_queue: The queue containing the challenges.
     :param control_queue: The queue containing all the events.
+    :param control_stream_state: The account-level control stream worker and last-activity timer.
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
     :param pgn_queue: The queue containing the PGN games.
@@ -391,6 +450,9 @@ def lichess_bot_main(li: lichess.Lichess,
                 control_queue.task_done()
                 break
 
+            if is_control_stream_event(event["type"]):
+                control_stream_state.last_activity.reset()
+
             if event["type"] == "local_game_done":
                 active_games.discard(event["game"]["id"])
                 matchmaker.game_done()
@@ -431,6 +493,7 @@ def lichess_bot_main(li: lichess.Lichess,
             accept_challenges(li, challenge_queue, active_games, max_games)
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
+            ensure_control_stream_live(control_stream_state, control_queue, li)
 
             control_queue.task_done()
 
