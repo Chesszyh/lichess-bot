@@ -173,8 +173,8 @@ class Matchmaking:
         rating_diff = match_config.opponent_rating_difference
         bot_rating = self.perf().get(game_type, {}).get("rating", 0)
         if rating_diff is not None and bot_rating > 0:
-            min_rating = bot_rating - rating_diff
-            max_rating = bot_rating + rating_diff
+            min_rating = max(min_rating, bot_rating - rating_diff)
+            max_rating = min(max_rating, bot_rating + rating_diff)
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
 
         def is_suitable_opponent(bot: UserProfileType) -> bool:
@@ -330,6 +330,11 @@ class Matchmaking:
         reason_key = event["challenge"]["declineReasonKey"].lower()
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
+        if reason_key == "nobot":
+            self.add_to_block_list(opponent.name)
+            logger.info(f"Added {opponent} to the matchmaking block list.")
+            self.show_earliest_challenge_time()
+            return
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")

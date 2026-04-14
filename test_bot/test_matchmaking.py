@@ -3,6 +3,8 @@ from unittest.mock import Mock
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
+from lib.timer import years
+import random
 
 
 def test_game_category_standard_bullet() -> None:
@@ -224,3 +226,82 @@ def test_get_random_config_value__returns_from_choices_when_random() -> None:
     result = matchmaking.get_random_config_value(test_config, "challenge_mode", choices)
 
     assert result in choices, f"Expected result to be in {choices} but got '{result}'"
+
+
+def test_choose_opponent__respects_absolute_min_rating_with_rating_difference(monkeypatch) -> None:
+    """Absolute matchmaking floors should still apply when rating difference is configured."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "lowbot", "perfs": {"bullet": {"rating": 2400, "games": 50}}},
+        {"username": "highbot", "perfs": {"bullet": {"rating": 2550, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2500,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 700,
+            "rating_preference": "none",
+            "challenge_filter": "none",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+
+    opponent, base_time, increment, days, variant, mode = matchmaking.choose_opponent()
+
+    assert opponent == "highbot"
+    assert (base_time, increment, days, variant, mode) == (60, 0, 0, "standard", "rated")
+
+
+def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:
+    """Bots refusing bot challenges should be treated as permanently blocked for matchmaking."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 2874},
+            "destUser": {"name": "NoBotGuy", "title": "BOT", "rating": 2600},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "I do not accept challenges from bots.",
+            "declineReasonKey": "nobot",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.in_block_list("NoBotGuy")
+    assert not matchmaking.should_accept_challenge("NoBotGuy", "")
+    assert matchmaking.challenge_type_acceptable[("NoBotGuy", "")].duration == years(10)
