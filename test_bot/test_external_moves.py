@@ -9,6 +9,7 @@ import logging
 import chess.engine
 from datetime import timedelta
 from copy import deepcopy
+from types import SimpleNamespace
 from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.lichess_types import OnlineType, GameEventType
@@ -89,6 +90,39 @@ def get_game() -> Game:
                                            "name": "bo",
                                            "title": "BOT",
                                            "rating": 3000},
+                                 "black": {"id": "b",
+                                           "name": "b",
+                                           "title": "BOT",
+                                           "rating": 3000,
+                                           "provisional": True},
+                                 "initialFen": "startpos",
+                                 "type": "gameFull",
+                                 "state": {"type": "gameState",
+                                           "moves": "",
+                                           "wtime": 1000000,
+                                           "btime": 1000000,
+                                           "winc": 2000,
+                                           "binc": 2000,
+                                           "status": "started"}}
+    return Game(game_event, "b", "https://lichess.org", timedelta(seconds=60))
+
+
+def get_human_game() -> Game:
+    """Create a model.Game with a human opponent."""
+    game_event: GameEventType = {"id": "yyyyyyyy",
+                                 "variant": {"key": "standard",
+                                             "name": "Standard",
+                                             "short": "Std"},
+                                 "clock": {"initial": 60000,
+                                           "increment": 2000},
+                                 "speed": "bullet",
+                                 "perf": {"name": "Bullet"},
+                                 "rated": True,
+                                 "createdAt": 1600000000000,
+                                 "white": {"id": "alice",
+                                           "name": "Alice",
+                                           "title": None,
+                                           "rating": 2600},
                                  "black": {"id": "b",
                                            "name": "b",
                                            "title": "BOT",
@@ -292,3 +326,62 @@ class TestExternalMoveHelpers:
             assert is_op1_position(chess.Board(fen))
         for fen in fens_not_op1:
             assert not is_op1_position(chess.Board(fen))
+
+
+def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> None:
+    """Human and bot opponents should use different polyglot settings."""
+    human_game = get_human_game()
+    bot_game = get_game()
+    board = chess.Board()
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["human.bin"]},
+        "min_weight": 10,
+        "selection": "uniform_random",
+        "max_depth": 10,
+        "normalization": "max",
+        "opponent_selection": {
+            "human": {
+                "selection": "uniform_random",
+                "min_weight": 25,
+            },
+            "bot": {
+                "book": {"standard": ["bot.bin"]},
+                "selection": "best_move",
+                "min_weight": 40,
+            },
+        },
+    })
+
+    calls: list[tuple[str, str, float]] = []
+
+    class FakeReader:
+        def __init__(self, book_name: str) -> None:
+            self.book_name = book_name
+
+        def __enter__(self) -> "FakeReader":
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+        def find_all(self, board: chess.Board):
+            return [SimpleNamespace(weight=100), SimpleNamespace(weight=60)]
+
+        def choice(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            calls.append((self.book_name, "choice", minimum_weight))
+            return SimpleNamespace(move=chess.Move.from_uci("g1f3"))
+
+        def find(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            calls.append((self.book_name, "find", minimum_weight))
+            return SimpleNamespace(move=chess.Move.from_uci("e2e4"))
+
+    monkeypatch.setattr("chess.polyglot.open_reader", lambda book: FakeReader(book))
+    monkeypatch.setattr("random.shuffle", lambda books: None)
+
+    human_move = get_book_move(board, human_game, polyglot_cfg)
+    bot_move = get_book_move(board, bot_game, polyglot_cfg)
+
+    assert human_move.move == chess.Move.from_uci("g1f3")
+    assert bot_move.move == chess.Move.from_uci("e2e4")
+    assert calls == [("human.bin", "choice", 25.0), ("bot.bin", "find", 40.0)]

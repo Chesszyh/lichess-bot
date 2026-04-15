@@ -771,10 +771,19 @@ def check_for_draw_offer(game: model.Game) -> bool:
     return bool(game.state.get(f"{game.opponent_color[0]}draw"))
 
 
+def get_game_specific_polyglot_cfg(polyglot_cfg: Configuration, game: model.Game) -> Configuration:
+    """Overlay opponent-specific polyglot settings on top of the base configuration."""
+    opponent_selection_cfg = polyglot_cfg.lookup("opponent_selection") or Configuration({})
+    opponent_key = "bot" if game.opponent.is_bot else "human"
+    opponent_cfg = opponent_selection_cfg.lookup(opponent_key) or Configuration({})
+    return polyglot_cfg | opponent_cfg
+
+
 def get_book_move(board: chess.Board, game: model.Game,
                   polyglot_cfg: Configuration) -> chess.engine.PlayResult:
     """Get a move from an opening book."""
     no_book_move = chess.engine.PlayResult(None, None)
+    polyglot_cfg = get_game_specific_polyglot_cfg(polyglot_cfg, game)
     use_book = polyglot_cfg.enabled
     max_game_length = polyglot_cfg.max_depth * 2 - 1
     if not use_book or len(board.move_stack) > max_game_length:

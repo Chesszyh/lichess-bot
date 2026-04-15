@@ -204,6 +204,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
+    set_config_default(CONFIG, "engine", "polyglot", key="opponent_selection", default={}, force_empty_values=True)
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
     set_config_default(CONFIG, "challenge", key="preference", default="none")
@@ -391,16 +392,39 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
         db_config = db_section.get(db_name) or {}
         select_key = "selection" if db_name == "polyglot" else "move_quality"
-        selection = db_config.get(select_key)
+
+        def validate_selection(section: CONFIG_DICT_TYPE, select: str) -> None:
+            selection = section.get(select_key)
+            config_assert(selection in valid_selections,
+                          f"`{selection}` is not a valid `engine:{select}` value. "
+                          f"Please choose from {valid_selections}.")
+
         select = f"{'online_moves:' if is_online else ''}{db_name}:{select_key}"
-        config_assert(selection in valid_selections,
-                      f"`{selection}` is not a valid `engine:{select}` value. "
-                      f"Please choose from {valid_selections}.")
+        validate_selection(db_config, select)
 
     polyglot_section = CONFIG["engine"].get("polyglot") or {}
     config_assert(polyglot_section.get("normalization") in ["none", "max", "sum"],
                   f"`{polyglot_section.get('normalization')}` is not a valid choice for "
                   f"`engine:polyglot:normalization`. Please choose from ['none', 'max', 'sum'].")
+    opponent_selection = polyglot_section.get("opponent_selection") or {}
+    config_assert(isinstance(opponent_selection, dict),
+                  "`engine:polyglot:opponent_selection` must be a dictionary.")
+    for opponent_key, opponent_cfg in opponent_selection.items():
+        config_assert(opponent_key in ["human", "bot"],
+                      f"`{opponent_key}` is not a valid `engine:polyglot:opponent_selection` key. "
+                      "Please choose from ['human', 'bot'].")
+        config_assert(isinstance(opponent_cfg, dict),
+                      f"`engine:polyglot:opponent_selection:{opponent_key}` must be a dictionary.")
+        selection = opponent_cfg.get("selection", polyglot_section.get("selection"))
+        config_assert(selection in selection_choices["polyglot"],
+                      f"`{selection}` is not a valid "
+                      f"`engine:polyglot:opponent_selection:{opponent_key}:selection` value. "
+                      f"Please choose from {selection_choices['polyglot']}.")
+        normalization = opponent_cfg.get("normalization", polyglot_section.get("normalization"))
+        config_assert(normalization in ["none", "max", "sum"],
+                      f"`{normalization}` is not a valid choice for "
+                      f"`engine:polyglot:opponent_selection:{opponent_key}:normalization`. "
+                      "Please choose from ['none', 'max', 'sum'].")
 
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
     quality_selections = ["best", "suggest"]

@@ -31,3 +31,33 @@ def test_config_warn__false(caplog: pytest.LogCaptureFixture) -> None:
         assert "test warning message" in caplog.text
         assert len(caplog.records) == 1
         assert caplog.records[0].levelname == "WARNING"
+
+
+def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypatch) -> None:
+    """Opponent-specific polyglot overrides should validate their selection values."""
+    raw_config = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {
+            "dir": ".",
+            "name": "engine",
+            "protocol": "uci",
+            "polyglot": {
+                "enabled": True,
+                "book": {"standard": ["book.bin"]},
+                "selection": "uniform_random",
+                "opponent_selection": {
+                    "human": {"selection": "not-a-choice"},
+                },
+            },
+        },
+        "challenge": {},
+        "matchmaking": {},
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(config.os, "access", lambda *_: True)
+
+    with pytest.raises(Exception, match="not-a-choice"):
+        config.validate_config(raw_config)
