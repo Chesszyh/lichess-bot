@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
-from lib.timer import years
+from lib.timer import minutes, years
 import random
 
 
@@ -305,3 +305,24 @@ def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> Non
     assert matchmaking.in_block_list("NoBotGuy")
     assert not matchmaking.should_accept_challenge("NoBotGuy", "")
     assert matchmaking.challenge_type_acceptable[("NoBotGuy", "")].duration == years(10)
+
+
+def test_handle_challenge_error_response__backs_off_on_plain_too_many_requests() -> None:
+    """Plain lichess rate-limit errors should delay future outgoing challenges."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
+
+    assert matchmaking.rate_limit_timer.duration == minutes(5)

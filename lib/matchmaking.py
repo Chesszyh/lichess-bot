@@ -15,6 +15,7 @@ from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, 
 MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
+PLAIN_RATE_LIMIT_DELAY = minutes(5)
 
 
 class Matchmaking:
@@ -103,9 +104,16 @@ class Matchmaking:
             self.rate_limit_timer = Timer(timeout)
         elif response.get("opponent_is_rate_limited"):
             self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
+        elif self.is_plain_rate_limit_response(response):
+            self.rate_limit_timer = Timer(PLAIN_RATE_LIMIT_DELAY)
+            logger.info("Challenge endpoint is rate limited; backing off for 5 minutes.")
         else:
             self.add_challenge_filter(username, "")
         self.show_earliest_challenge_time()
+
+    def is_plain_rate_limit_response(self, response: ChallengeType) -> bool:
+        """Detect older challenge rate-limit responses without structured timeout data."""
+        return "too many requests" in str(response.get("error", "")).lower()
 
     def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""

@@ -3,7 +3,7 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-from lib import engine_wrapper, model, lichess, matchmaking
+from lib import engine_wrapper, model, lichess, matchmaking, resource_monitor
 import json
 import logging
 import logging.handlers
@@ -45,6 +45,7 @@ from typing import TypedDict, cast, TypeAlias
 from types import FrameType
 from dataclasses import dataclass
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
+RESOURCE_ACTIVE_GAMES_TYPE: TypeAlias = MutableSequence[str]
 POOL_TYPE: TypeAlias = Pool
 
 
@@ -344,6 +345,11 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
                                                  user_profile["username"]))
     pgn_listener.start()
 
+    resource_active_games: RESOURCE_ACTIVE_GAMES_TYPE = manager.list()
+    resource_monitor_process = resource_monitor.start_resource_monitor(os.getpid(),
+                                                                       resource_active_games,
+                                                                       config.resource_monitor)
+
     thread_logging_configurer(logging_queue)
 
     try:
@@ -353,6 +359,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
                          challenge_queue,
                          control_queue,
                          control_stream_state,
+                         resource_active_games,
                          correspondence_queue,
                          logging_queue,
                          pgn_queue,
@@ -370,6 +377,9 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
         logging_listener.join()
         pgn_listener.terminate()
         pgn_listener.join()
+        if resource_monitor_process:
+            resource_monitor_process.terminate()
+            resource_monitor_process.join()
 
 
 def log_proc_count(change: str, active_games: set[str]) -> None:
@@ -389,6 +399,7 @@ def lichess_bot_main(li: lichess.Lichess,
                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      control_queue: CONTROL_QUEUE_TYPE,
                      control_stream_state: ControlStreamState,
+                     resource_active_games: RESOURCE_ACTIVE_GAMES_TYPE,
                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                      logging_queue: LOGGING_QUEUE_TYPE,
                      pgn_queue: PGN_QUEUE_TYPE,
@@ -402,6 +413,7 @@ def lichess_bot_main(li: lichess.Lichess,
     :param challenge_queue: The queue containing the challenges.
     :param control_queue: The queue containing all the events.
     :param control_stream_state: The account-level control stream worker and last-activity timer.
+    :param resource_active_games: Shared list of active games for resource monitoring.
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
     :param pgn_queue: The queue containing the PGN games.
@@ -419,6 +431,7 @@ def lichess_bot_main(li: lichess.Lichess,
     active_games = {game["gameId"]
                     for game in all_games
                     if game["gameId"] not in startup_correspondence_games}
+    sync_resource_active_games(resource_active_games, active_games)
     low_time_games: list[GameType] = []
 
     last_check_online_time = Timer(hours(1))
@@ -494,10 +507,16 @@ def lichess_bot_main(li: lichess.Lichess,
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
             ensure_control_stream_live(control_stream_state, control_queue, li)
+            sync_resource_active_games(resource_active_games, active_games)
 
             control_queue.task_done()
 
         close_pool(pool, active_games, config)
+
+
+def sync_resource_active_games(resource_active_games: RESOURCE_ACTIVE_GAMES_TYPE, active_games: set[str]) -> None:
+    """Sync active game IDs to the resource monitor process."""
+    resource_active_games[:] = sorted(active_games)
 
 
 def close_pool(pool: POOL_TYPE, active_games: set[str], config: Configuration) -> None:

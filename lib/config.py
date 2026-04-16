@@ -149,6 +149,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
     set_config_default(CONFIG, key="pgn_directory", default=None)
     set_config_default(CONFIG, key="pgn_file_grouping", default="game", force_empty_values=True)
+    set_config_default(CONFIG, "resource_monitor", key="enabled", default=False)
+    set_config_default(CONFIG, "resource_monitor", key="directory", default="resource_records", force_empty_values=True)
+    set_config_default(CONFIG, "resource_monitor", key="sample_period", default=5)
     set_config_default(CONFIG, key="max_takebacks_accepted", default=0, force_empty_values=True)
     set_config_default(CONFIG, "engine", key="interpreter", default=None)
     set_config_default(CONFIG, "engine", key="interpreter_options", default=[], force_empty_values=True)
@@ -374,6 +377,9 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(config_pgn_choice in valid_pgn_grouping_options,
                   f"The `pgn_file_grouping` choice of `{config_pgn_choice}` is not valid. "
                   f"Please choose from {valid_pgn_grouping_options}.")
+
+    resource_monitor = CONFIG["resource_monitor"]
+    config_assert(resource_monitor["sample_period"] > 0, "`resource_monitor:sample_period` must be greater than 0.")
 
     def has_valid_list(name: str) -> bool:
         entries = matchmaking.get(name)
