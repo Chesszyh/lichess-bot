@@ -99,6 +99,7 @@ class EngineWrapper:
         self.go_commands = Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
+        self.strength_limit_elo: int | None = None
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
         """
@@ -185,7 +186,10 @@ class EngineWrapper:
             time_limit = apply_bullet_time_management(board, game, time_limit, engine_cfg)
 
             try:
-                best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+                if type(self).search is EngineWrapper.search:
+                    best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move, game, engine_cfg)
+                else:
+                    best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
             except chess.engine.EngineError as error:
                 BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
                 if not any(isinstance(e, BadMove) for e in error.args):
@@ -250,8 +254,24 @@ class EngineWrapper:
                 result.resigned = True
         return result
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: MOVE) -> chess.engine.PlayResult:
+    def set_strength_limit(self, elo: int) -> None:
+        """Limit UCI engine strength at runtime."""
+        self.engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo})
+        self.strength_limit_elo = elo
+
+    def clear_strength_limit(self) -> None:
+        """Restore full UCI engine strength at runtime."""
+        self.engine.configure({"UCI_LimitStrength": False})
+        self.strength_limit_elo = None
+
+    def search(self,
+               board: chess.Board,
+               time_limit: chess.engine.Limit,
+               ponder: bool,
+               draw_offered: bool,
+               root_moves: MOVE,
+               game: model.Game | None = None,
+               engine_cfg: Configuration | None = None) -> chess.engine.PlayResult:
         """
         Tell the engine to search.
 
@@ -260,6 +280,8 @@ class EngineWrapper:
         :param ponder: Whether the engine can ponder.
         :param draw_offered: Whether the bot was offered a draw.
         :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
+        :param game: The game that the bot is playing.
+        :param engine_cfg: The engine configuration.
         :return: The move to play.
         """
         time_limit = self.add_go_commands(time_limit)
@@ -269,10 +291,63 @@ class EngineWrapper:
                                   ponder=ponder,
                                   draw_offered=draw_offered,
                                   root_moves=root_moves if isinstance(root_moves, list) else None)
+        if game and engine_cfg:
+            result = self.extend_shallow_search(board, game, result, draw_offered, root_moves, engine_cfg)
+        self.record_search_result(result, board)
+        return self.offer_draw_or_resign(result, board)
+
+    def extend_shallow_search(self,
+                              board: chess.Board,
+                              game: model.Game,
+                              result: chess.engine.PlayResult,
+                              draw_offered: bool,
+                              root_moves: MOVE,
+                              engine_cfg: Configuration) -> chess.engine.PlayResult:
+        """Run one short follow-up search if the clock is safe and the first search was too shallow."""
+        shallow_search_guard = engine_cfg.lookup("shallow_search_guard")
+        if not self.should_extend_shallow_search(board, game, result, shallow_search_guard):
+            return result
+
+        extra_movetime = msec(shallow_search_guard.extra_movetime_ms)
+        logger.info(f"Extending shallow search at depth {result.info.get('depth')} "
+                    f"for {msec_str(extra_movetime)} in game {game.id}")
+        return self.engine.play(board,
+                                chess.engine.Limit(time=to_seconds(extra_movetime),
+                                                   clock_id="shallow search guard"),
+                                info=chess.engine.INFO_ALL,
+                                ponder=False,
+                                draw_offered=draw_offered,
+                                root_moves=root_moves if isinstance(root_moves, list) else None)
+
+    def should_extend_shallow_search(self,
+                                     board: chess.Board,
+                                     game: model.Game,
+                                     result: chess.engine.PlayResult,
+                                     shallow_search_guard: Configuration | None) -> bool:
+        """Whether a search result is shallow enough to justify one short follow-up search."""
+        if not shallow_search_guard or not shallow_search_guard.enabled:
+            return False
+
+        if game.speed not in shallow_search_guard.speeds:
+            return False
+
+        if len(board.move_stack) < shallow_search_guard.min_ply:
+            return False
+
+        depth = result.info.get("depth") if result.info else None
+        if not isinstance(depth, int) or depth >= shallow_search_guard.min_depth:
+            return False
+
+        if to_msec(game.my_remaining_time()) < shallow_search_guard.min_clock_ms:
+            return False
+
+        return result.move is not None
+
+    def record_search_result(self, result: chess.engine.PlayResult, board: chess.Board) -> None:
+        """Record final search score for draw/resign decisions."""
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
-        return self.offer_draw_or_resign(result, board)
 
     def comment_index(self, move_stack_index: int) -> int:
         """

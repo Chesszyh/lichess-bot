@@ -205,6 +205,18 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
     set_config_default(CONFIG, "engine", "polyglot", key="opponent_selection", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="speeds", default=["bullet"], force_empty_values=True)
+    change_value_to_list(CONFIG, "engine", "shallow_search_guard", key="speeds")
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_depth", default=10)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="extra_movetime_ms", default=500)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_clock_ms", default=15000)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_ply", default=8)
+    set_config_default(CONFIG, "engine", "rating_control", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "rating_control", key="admins", default=[], force_empty_values=True)
+    change_value_to_list(CONFIG, "engine", "rating_control", key="admins")
+    set_config_default(CONFIG, "engine", "rating_control", key="min_elo", default=1320)
+    set_config_default(CONFIG, "engine", "rating_control", key="max_elo", default=3190)
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
     set_config_default(CONFIG, "challenge", key="preference", default="none")
@@ -425,6 +437,19 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"`{normalization}` is not a valid choice for "
                       f"`engine:polyglot:opponent_selection:{opponent_key}:normalization`. "
                       "Please choose from ['none', 'max', 'sum'].")
+
+    shallow_search_guard = CONFIG["engine"].get("shallow_search_guard") or {}
+    valid_speeds = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
+    config_assert(all(speed in valid_speeds for speed in shallow_search_guard.get("speeds", [])),
+                  f"`engine:shallow_search_guard:speeds` must only contain {valid_speeds}.")
+    for key in ["min_depth", "extra_movetime_ms", "min_clock_ms", "min_ply"]:
+        config_assert(shallow_search_guard.get(key, 0) >= 0,
+                      f"`engine:shallow_search_guard:{key}` must be non-negative.")
+
+    rating_control = CONFIG["engine"].get("rating_control") or {}
+    config_assert(rating_control.get("min_elo", 0) <= rating_control.get("max_elo", 0),
+                  "`engine:rating_control:min_elo` must be less than or equal to "
+                  "`engine:rating_control:max_elo`.")
 
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
     quality_selections = ["best", "suggest"]

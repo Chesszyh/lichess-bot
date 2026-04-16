@@ -1,6 +1,8 @@
 """Allows lichess-bot to send messages to the chat."""
 import logging
+import chess.engine
 from lib import model
+from lib.config import Configuration
 from lib.engine_wrapper import EngineWrapper
 from lib.lichess import Lichess
 from lib.lichess_types import GameEventType
@@ -29,7 +31,8 @@ class Conversation:
     """Enables the bot to communicate with its opponent and the spectators."""
 
     def __init__(self, game: model.Game, engine: EngineWrapper, li: Lichess, version: str,
-                 challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+                 challenge_queue: MULTIPROCESSING_LIST_TYPE,
+                 rating_control: Configuration | None = None) -> None:
         """
         Communication between lichess-bot and the game chats.
 
@@ -38,6 +41,7 @@ class Conversation:
         :param li: A class that is used for communication with lichess.
         :param version: The lichess-bot version.
         :param challenge_queue: The active challenges the bot has.
+        :param rating_control: Admin-only runtime engine strength controls.
         """
         self.game = game
         self.engine = engine
@@ -45,6 +49,7 @@ class Conversation:
         self.version = version
         self.challengers = challenge_queue
         self.messages: list[ChatLine] = []
+        self.rating_control = rating_control or Configuration({})
 
     command_prefix = "!"
 
@@ -68,10 +73,11 @@ class Conversation:
         """
         from_self = line.username == self.game.username
         is_eval = cmd.startswith("eval")
+        is_rating = cmd == "rating" or cmd.startswith("rating ")
         if cmd in ("commands", "help"):
             self.send_reply(line,
                             "Supported commands: !wait (wait a minute for my first move), !name, "
-                            "!eval (or any text starting with !eval), !queue")
+                            "!eval (or any text starting with !eval), !queue, !rating <elo|full>")
         elif cmd == "wait" and self.game.is_abortable():
             self.game.ping(seconds(60), seconds(120), seconds(120))
             self.send_reply(line, "Waiting 60 seconds...")
@@ -83,12 +89,61 @@ class Conversation:
             self.send_reply(line, ", ".join(stats))
         elif is_eval:
             self.send_reply(line, "I don't tell that to my opponent, sorry.")
+        elif is_rating:
+            self.rating_command(line, cmd.split())
         elif cmd == "queue":
             if self.challengers:
                 challengers = ", ".join([f"@{challenger.challenger.name}" for challenger in reversed(self.challengers)])
                 self.send_reply(line, f"Challenge queue: {challengers}")
             else:
                 self.send_reply(line, "No challenges queued.")
+
+    def rating_command(self, line: ChatLine, args: list[str]) -> None:
+        """Apply an admin-only UCI_Elo strength limit."""
+        if not self.rating_control or not self.rating_control.enabled:
+            self.send_reply(line, "Rating control is disabled.")
+            return
+
+        if not self.is_rating_admin(line):
+            self.send_reply(line, "Only admins can use !rating.")
+            return
+
+        if len(args) == 1:
+            elo = getattr(self.engine, "strength_limit_elo", None)
+            reply = f"Current UCI_Elo is {elo}." if elo else "Playing at full strength."
+            self.send_reply(line, reply)
+            return
+
+        requested = args[1]
+        if requested in ["full", "max", "off"]:
+            self.engine.clear_strength_limit()
+            self.send_reply(line, "Playing at full strength.")
+            return
+
+        try:
+            elo = int(requested)
+        except ValueError:
+            self.send_reply(line, "Usage: !rating <elo|full>.")
+            return
+
+        min_elo = self.rating_control.min_elo
+        max_elo = self.rating_control.max_elo
+        if elo < min_elo or elo > max_elo:
+            self.send_reply(line, f"Rating must be between {min_elo} and {max_elo}.")
+            return
+
+        try:
+            self.engine.set_strength_limit(elo)
+        except chess.engine.EngineError:
+            self.send_reply(line, "This engine does not support runtime UCI_Elo.")
+            return
+
+        self.send_reply(line, f"Playing at UCI_Elo {elo}.")
+
+    def is_rating_admin(self, line: ChatLine) -> bool:
+        """Whether this chat line can control engine strength."""
+        admins = [str(admin).lower() for admin in self.rating_control.admins]
+        return line.room == "player" and line.username.lower() in admins
 
     def send_reply(self, line: ChatLine, reply: str) -> None:
         """

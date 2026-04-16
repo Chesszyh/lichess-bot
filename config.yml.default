@@ -41,6 +41,21 @@ engine:                            # Engine settings.
 #       min_weight: 20
 #       max_depth: 12
 
+  shallow_search_guard:
+    enabled: false                 # If a realtime search returns below min_depth while enough clock remains, run one short extra search.
+    speeds:
+      - bullet
+    min_depth: 10
+    extra_movetime_ms: 500
+    min_clock_ms: 15000
+    min_ply: 8
+
+  rating_control:
+    enabled: false                 # Allow trusted users to change UCI_LimitStrength/UCI_Elo during a game with !rating.
+    admins: []
+    min_elo: 1320
+    max_elo: 3190
+
   draw_or_resign:
     resign_enabled: false          # Whether or not the bot should resign.
     resign_score: -1000            # If the score is less than or equal to this value, the bot resigns (in cp).
