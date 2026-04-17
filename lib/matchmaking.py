@@ -15,7 +15,8 @@ from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, 
 MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
-PLAIN_RATE_LIMIT_DELAY = minutes(5)
+PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 5
+PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 60
 
 
 class Matchmaking:
@@ -32,6 +33,7 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.rate_limit_timer = Timer()
+        self.plain_rate_limit_failures = 0
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
@@ -83,6 +85,8 @@ class Matchmaking:
             self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
             challenge_id = response.get("id", "")
+            if challenge_id:
+                self.plain_rate_limit_failures = 0
             if not challenge_id:
                 self.handle_challenge_error_response(response, username)
             return challenge_id
@@ -105,8 +109,9 @@ class Matchmaking:
         elif response.get("opponent_is_rate_limited"):
             self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
         elif self.is_plain_rate_limit_response(response):
-            self.rate_limit_timer = Timer(PLAIN_RATE_LIMIT_DELAY)
-            logger.info("Challenge endpoint is rate limited; backing off for 5 minutes.")
+            delay = self.next_plain_rate_limit_delay()
+            self.rate_limit_timer = Timer(delay)
+            logger.info(f"Challenge endpoint is rate limited; backing off for {delay.total_seconds() / 60:.0f} minutes.")
         else:
             self.add_challenge_filter(username, "")
         self.show_earliest_challenge_time()
@@ -114,6 +119,13 @@ class Matchmaking:
     def is_plain_rate_limit_response(self, response: ChallengeType) -> bool:
         """Detect older challenge rate-limit responses without structured timeout data."""
         return "too many requests" in str(response.get("error", "")).lower()
+
+    def next_plain_rate_limit_delay(self) -> datetime.timedelta:
+        """Return exponential cooldown for challenge rate limits without server-provided retry time."""
+        self.plain_rate_limit_failures += 1
+        delay_minutes = min(PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES * 2 ** (self.plain_rate_limit_failures - 1),
+                            PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES)
+        return minutes(delay_minutes)
 
     def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""

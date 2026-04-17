@@ -326,3 +326,25 @@ def test_handle_challenge_error_response__backs_off_on_plain_too_many_requests()
     matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
 
     assert matchmaking.rate_limit_timer.duration == minutes(5)
+
+
+def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -> None:
+    """Repeated plain challenge rate limits should cool down instead of retrying every 5 minutes forever."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    for _ in range(4):
+        matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
+
+    assert matchmaking.rate_limit_timer.duration == minutes(40)
