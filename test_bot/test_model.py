@@ -138,6 +138,38 @@ def test_challenge_rating_filters() -> None:
     assert ai_challenge_model.is_supported_rating(configuration, user_profile) is True
 
 
+def test_challenge_always_allow_users__bypass_rating_filters() -> None:
+    """Trusted challengers should bypass the normal incoming challenge filters."""
+    challenge: ChallengeType = {"id": "zzzzzzzz", "url": "https://lichess.org/zzzzzzzz", "status": "created",
+                                "challenger": {"id": "c", "name": "Chesszyh", "rating": 2500, "title": None, "online": True},
+                                "destUser": {"id": "b", "name": "b", "rating": 3000, "title": "BOT", "online": True},
+                                "variant": {"key": "standard", "name": "Standard", "short": "Std"}, "rated": False,
+                                "speed": "bullet",
+                                "timeControl": {"type": "clock", "limit": 90, "increment": 1, "show": "1.5+1"},
+                                "color": "random", "finalColor": "white", "perf": {"icon": "\ue032", "name": "Bullet"}}
+    user_profile: UserProfileType = {"id": "b", "username": "b",
+                                     "perfs": {"bullet": {"games": 100, "rating": 3000, "rd": 150, "prog": -10}},
+                                     "title": "BOT"}
+
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+    CONFIG["token"] = ""
+    CONFIG["challenge"]["allow_list"] = []
+    CONFIG["challenge"]["block_list"] = []
+    CONFIG["challenge"]["min_rating"] = 2700
+    CONFIG["challenge"]["max_rating"] = 4000
+    CONFIG["challenge"]["always_allow_users"] = ["Chesszyh"]
+    configuration = config.Configuration(CONFIG).challenge
+    recent_challenges: defaultdict[str, list[Timer]] = defaultdict()
+    recent_challenges["Chesszyh"] = []
+    online_block_list = OnlineBlocklist([])
+
+    challenge_model = model.Challenge(challenge, user_profile)
+    supported = challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile)
+
+    assert supported == (True, "")
+
+
 def test_game() -> None:
     """Test the game model."""
     game: GameEventType = {"id": "zzzzzzzz", "variant": {"key": "standard", "name": "Standard", "short": "Std"},

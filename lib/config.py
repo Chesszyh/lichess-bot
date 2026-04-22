@@ -234,6 +234,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "challenge", key="block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "challenge", key="online_block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "challenge", key="allow_list", default=[], force_empty_values=True)
+    set_config_default(CONFIG, "challenge", key="always_allow_users", default=[], force_empty_values=True)
+    change_value_to_list(CONFIG, "challenge", key="always_allow_users")
     set_config_default(CONFIG, "challenge", key="min_rating", default=0, force_empty_values=True)
     set_config_default(CONFIG, "challenge", key="max_rating", default=4000, force_empty_values=True)
     set_config_default(CONFIG, "challenge", key="rating_difference", default=None)

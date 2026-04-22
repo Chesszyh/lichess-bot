@@ -682,6 +682,10 @@ def start_game(event: EventType,
     :param low_time_games: A list of games, in which we don't have much time remaining.
     """
     game_id = event["game"]["id"]
+    if game_id in active_games:
+        logger.info(f"--- Ignoring duplicate gameStart for {config.url + game_id}")
+        return
+
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f"--- Enqueue {config.url + game_id}")

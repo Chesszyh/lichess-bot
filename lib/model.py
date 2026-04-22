@@ -133,6 +133,11 @@ class Challenge:
             if self.from_self:
                 return True, ""
 
+            challenger_name = self.challenger.name or ""
+            always_allow_users = {(name or "").casefold() for name in (config.always_allow_users or [])}
+            if challenger_name.casefold() in always_allow_users:
+                return True, ""
+
             from extra_game_handlers import is_supported_extra
 
             allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
