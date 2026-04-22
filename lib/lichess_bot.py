@@ -28,7 +28,7 @@ import random
 from lib.blocklist import OnlineBlocklist
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
-from lib.timer import Timer, seconds, msec, hours, to_seconds
+from lib.timer import Timer, seconds, minutes, msec, hours, to_seconds
 from lib.lichess import stop
 from lib.lichess_types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE,
                                CORRESPONDENCE_QUEUE_TYPE, LOGGING_QUEUE_TYPE, PGN_QUEUE_TYPE)
@@ -74,7 +74,7 @@ class VersioningType(TypedDict):
 
 logger = logging.getLogger(__name__)
 CONTROL_STREAM_WATCHDOG_PERIOD = seconds(5)
-CONTROL_STREAM_STALL_TIMEOUT = seconds(45)
+CONTROL_STREAM_STALL_TIMEOUT = minutes(5)
 
 
 @dataclass
@@ -758,12 +758,36 @@ def play_game(li: lichess.Lichess,
     thread_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
 
-    with li.get_game_stream(game_id) as response:
-        lines = response.iter_lines()
+    def close_game_stream(response: object | None) -> None:
+        """Close an open game stream response."""
+        if response is None:
+            return
+        close = getattr(response, "close", None)
+        if callable(close):
+            with contextlib.suppress(Exception):
+                close()
 
-        # Initial response of stream will be the full game info. Store it.
-        initial_state = json.loads(next(lines).decode("utf-8"))
-        logger.debug(f"Initial state: {initial_state}")
+    def open_game_stream() -> tuple[object, Iterator[bytes], GameEventType]:
+        """Open the game stream and return its first full-state payload."""
+        response = li.get_game_stream(game_id)
+        try:
+            lines = response.iter_lines()
+            initial_state = cast(GameEventType, json.loads(next(lines).decode("utf-8")))
+            logger.debug(f"Initial state: {initial_state}")
+            return response, lines, initial_state
+        except Exception:
+            close_game_stream(response)
+            raise
+
+    def stream_state(update: GameEventType) -> GameEventType:
+        """Extract the current gameState from a streamed update."""
+        if update.get("type") == "gameFull":
+            return cast(GameEventType, update["state"])
+        return update
+
+    response: object | None = None
+    try:
+        response, lines, initial_state = open_game_stream()
         abort_time = seconds(config.abort_time)
         game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
@@ -797,12 +821,17 @@ def play_game(li: lichess.Lichess,
             disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
             prior_game = None
             board = chess.Board()
-            game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
+            game_stream = itertools.chain([json.dumps(stream_state(initial_state)).encode("utf-8")], lines)
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
             while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
                 move_attempted = False
                 try:
+                    if game_stream is None:
+                        response, lines, reconnected_state = open_game_stream()
+                        game.state = stream_state(reconnected_state)
+                        game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
+
                     upd = next_update(game_stream)
                     u_type = upd["type"] if upd else "ping"
                     if u_type == "chatLine":
@@ -850,12 +879,22 @@ def play_game(li: lichess.Lichess,
                         stay_in_game = False
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         StopIteration) as e:
-                    stopped = isinstance(e, StopIteration)
-                    stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
+                    stream_still_needed = move_attempted or game_is_active(li, game.id)
+                    stay_in_game = stream_still_needed
+                    close_game_stream(response)
+                    response = None
+                    game_stream = None
+                    if stream_still_needed:
+                        if isinstance(e, StopIteration):
+                            logger.warning(f"Game stream for {game.url()} ended unexpectedly. Reconnecting.")
+                        else:
+                            logger.warning(f"Game stream for {game.url()} failed with {type(e).__name__}. Reconnecting.")
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
         final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)
         delete_takeback_record(game)
+    finally:
+        close_game_stream(response)
 
 
 def read_takeback_record(game: model.Game) -> int:

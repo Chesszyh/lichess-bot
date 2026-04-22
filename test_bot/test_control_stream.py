@@ -61,6 +61,20 @@ class _FakeProcess:
         self.joined = True
 
 
+class _ElapsedTimer:
+    def __init__(self, elapsed) -> None:
+        self._elapsed = elapsed
+
+    def is_expired(self) -> bool:
+        return self._elapsed >= lichess_bot.CONTROL_STREAM_STALL_TIMEOUT
+
+    def time_since_reset(self):
+        return self._elapsed
+
+    def reset(self) -> None:
+        self._elapsed = seconds(0)
+
+
 def test_watch_control_stream__reconnects_after_transient_error(monkeypatch) -> None:
     """Transient stream errors should reconnect instead of forcing a bot restart."""
     queue = _FakeQueue()
@@ -105,6 +119,27 @@ def test_ensure_control_stream_live__leaves_recent_process_running(monkeypatch) 
     """A recently active control stream should not be restarted."""
     process = _FakeProcess()
     state = lichess_bot.ControlStreamState(process, Timer(hours(1)))
+    spawn_called = False
+
+    def fake_spawn(control_queue, li):
+        nonlocal spawn_called
+        spawn_called = True
+        return _FakeProcess()
+
+    monkeypatch.setattr(lichess_bot, "spawn_control_stream", fake_spawn)
+
+    lichess_bot.ensure_control_stream_live(state, object(), object())
+
+    assert process.terminated is False
+    assert process.joined is False
+    assert spawn_called is False
+    assert state.process is process
+
+
+def test_ensure_control_stream_live__does_not_restart_after_one_quiet_minute(monkeypatch) -> None:
+    """A quiet minute with no events should not be treated as a dead stream."""
+    process = _FakeProcess()
+    state = lichess_bot.ControlStreamState(process, _ElapsedTimer(seconds(60)))
     spawn_called = False
 
     def fake_spawn(control_queue, li):
