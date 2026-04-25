@@ -6,7 +6,7 @@ import chess
 import chess.engine
 
 from lib.config import Configuration
-from lib.engine_wrapper import EngineWrapper
+from lib.engine_wrapper import EngineWrapper, apply_bullet_time_management
 from lib.lichess_types import GameEventType
 from lib.model import Game
 
@@ -32,6 +32,33 @@ def bullet_game(clock_ms: int = 60000) -> Game:
         "clock": {"initial": 60000, "increment": 0},
         "speed": "bullet",
         "perf": {"name": "Bullet"},
+        "rated": True,
+        "createdAt": 1600000000000,
+        "white": {"id": "bo", "name": "bo", "title": "BOT", "rating": 3000},
+        "black": {"id": "alice", "name": "Alice", "title": None, "rating": 2500},
+        "initialFen": "startpos",
+        "type": "gameFull",
+        "state": {
+            "type": "gameState",
+            "moves": "",
+            "wtime": clock_ms,
+            "btime": clock_ms,
+            "winc": 0,
+            "binc": 0,
+            "status": "started",
+        },
+    }
+    return Game(game_event, "bo", "https://lichess.org", timedelta(seconds=60))
+
+
+def fast_game(speed: str, initial_ms: int, clock_ms: int) -> Game:
+    """Create a realtime game with the bot as white."""
+    game_event: GameEventType = {
+        "id": f"{speed}001",
+        "variant": {"key": "standard", "name": "Standard", "short": "Std"},
+        "clock": {"initial": initial_ms, "increment": 0},
+        "speed": speed,
+        "perf": {"name": speed.title()},
         "rated": True,
         "createdAt": 1600000000000,
         "white": {"id": "bo", "name": "bo", "title": "BOT", "rating": 3000},
@@ -109,3 +136,29 @@ def test_search__extends_shallow_bullet_result_once() -> None:
     assert fake_engine.calls[1].time == 0.7
     assert len(wrapper.scores) == 1
     assert wrapper.scores[0].relative.score() == 25
+
+
+def test_apply_bullet_time_management__caps_blitz_when_enabled_for_blitz() -> None:
+    """Configured fast-time caps should also apply to blitz."""
+    game = fast_game("blitz", 240000, 240000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "max_clock_ms": 12000,
+            "high_clock_threshold_ms": 60000,
+            "high_clock_ms": 8000,
+            "low_clock_threshold_ms": 20000,
+            "low_clock_ms": 3500,
+            "critical_clock_threshold_ms": 8000,
+            "critical_clock_ms": 900,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 180,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=240.0, black_clock=240.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
+
+    assert capped.white_clock == 12.0
+    assert capped.black_clock == 240.0

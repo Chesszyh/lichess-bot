@@ -809,9 +809,13 @@ def game_clock_time(board: chess.Board,
 
 def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limit: chess.engine.Limit,
                                  engine_cfg: Configuration) -> chess.engine.Limit:
-    """Use a lower reported clock in bullet so Stockfish does not spend blitz-like chunks of time."""
+    """Use a lower reported clock in fast games so Stockfish does not spend long chunks of time."""
     bullet_time_management = engine_cfg.lookup("bullet_time_management")
-    if game.speed != "bullet" or not bullet_time_management or not bullet_time_management.enabled:
+    if not bullet_time_management or not bullet_time_management.enabled:
+        return time_limit
+
+    configured_speeds = bullet_time_management.lookup("speeds") or ["bullet"]
+    if game.speed not in configured_speeds:
         return time_limit
 
     side = wbtime(board)
@@ -837,7 +841,7 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
         time_limit.black_clock = to_seconds(capped_clock)
 
     if to_msec(capped_clock) < clock_ms:
-        logger.info(f"Capping bullet {side} from {clock_ms} ms to {msec_str(capped_clock)} ms for game {game.id}")
+        logger.info(f"Capping {game.speed} {side} from {clock_ms} ms to {msec_str(capped_clock)} ms for game {game.id}")
     return time_limit
 
 
