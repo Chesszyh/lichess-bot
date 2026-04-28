@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
-from lib.timer import minutes, years
+from lib.timer import hours, minutes, years
 import random
 
 
@@ -348,3 +348,95 @@ def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -
         matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
 
     assert matchmaking.rate_limit_timer.duration == minutes(40)
+
+
+def test_handle_challenge_error_response__caps_plain_rate_limit_backoff_at_six_hours() -> None:
+    """Repeated plain rate limits should eventually stop retrying hourly."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    for _ in range(8):
+        matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
+
+    assert matchmaking.rate_limit_timer.duration == hours(6)
+
+
+def test_cancelled_challenge__blocks_opponent_after_outgoing_challenge_cancellation() -> None:
+    """An unanswered outgoing challenge should temporarily block re-challenging the same opponent."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.challenge_id = "abc123"
+    matchmaking.challenge_targets["abc123"] = "BusyBot"
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 2874},
+            "destUser": {"name": "BusyBot", "title": "BOT", "rating": 3100},
+            "color": "random",
+            "finalColor": "white",
+        }
+    }
+
+    matchmaking.cancelled_challenge(event)
+
+    assert matchmaking.challenge_id == ""
+    assert not matchmaking.should_accept_challenge("BusyBot", "")
+    assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+
+
+def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expires(monkeypatch) -> None:
+    """An expired outgoing challenge should cool down that opponent before creating another one."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.challenge_id = "abc123"
+    matchmaking.challenge_targets["abc123"] = "BusyBot"
+    monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    assert matchmaking.should_create_challenge()
+    mock_li.cancel.assert_called_once_with("abc123")
+    assert matchmaking.challenge_id == ""
+    assert not matchmaking.should_accept_challenge("BusyBot", "")
+    assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)

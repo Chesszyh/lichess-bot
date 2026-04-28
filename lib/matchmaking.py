@@ -4,7 +4,7 @@ import logging
 import datetime
 import contextlib
 from lib import model
-from lib.timer import Timer, days, seconds, minutes, years
+from lib.timer import Timer, days, seconds, minutes, hours, years
 from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
@@ -16,7 +16,8 @@ MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 5
-PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 60
+PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 360
+OUTGOING_CHALLENGE_COOLDOWN = hours(12)
 
 
 class Matchmaking:
@@ -38,6 +39,7 @@ class Matchmaking:
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
         self.challenge_id = ""
+        self.challenge_targets: dict[str, str] = {}
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
         # game aspect is the one the challenged bot objects to and is one of:
@@ -60,6 +62,7 @@ class Matchmaking:
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
+            self.cool_down_challenge_target(self.challenge_id)
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.discard_challenge(self.challenge_id)
@@ -87,6 +90,7 @@ class Matchmaking:
             challenge_id = response.get("id", "")
             if challenge_id:
                 self.plain_rate_limit_failures = 0
+                self.challenge_targets[challenge_id] = username
             if not challenge_id:
                 self.handle_challenge_error_response(response, username)
             return challenge_id
@@ -268,6 +272,7 @@ class Matchmaking:
         """
         if self.challenge_id == challenge_id:
             self.challenge_id = ""
+        self.challenge_targets.pop(challenge_id, None)
 
     def game_done(self) -> None:
         """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
@@ -313,6 +318,18 @@ class Matchmaking:
         """
         return self.challenge_type_acceptable[(username, game_aspect)].is_expired()
 
+    def cool_down_challenge_target(self, challenge_id: str, fallback_username: str | None = None) -> None:
+        """Avoid immediately re-challenging an opponent after an unanswered outgoing challenge."""
+        if not challenge_id:
+            return
+
+        opponent = self.challenge_targets.get(challenge_id) or fallback_username
+        if not opponent:
+            return
+
+        self.add_challenge_filter(opponent, "", OUTGOING_CHALLENGE_COOLDOWN)
+        logger.info(f"Will not challenge {opponent} again for 12 hours after an unanswered outgoing challenge.")
+
     def accepted_challenge(self, event: EventType) -> None:
         """
         Set the challenge id to an empty string, if the challenge was accepted.
@@ -320,6 +337,14 @@ class Matchmaking:
         Otherwise, we would attempt to cancel the challenge later.
         """
         self.discard_challenge(event["game"]["id"])
+
+    def cancelled_challenge(self, event: EventType) -> None:
+        """Handle an outgoing challenge that was cancelled or expired without being accepted."""
+        challenge = model.Challenge(event["challenge"], self.user_profile)
+        if challenge.from_self:
+            self.cool_down_challenge_target(challenge.id, challenge.challenge_target.name)
+            self.show_earliest_challenge_time()
+        self.discard_challenge(challenge.id)
 
     def declined_challenge(self, event: EventType) -> None:
         """
