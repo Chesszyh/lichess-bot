@@ -142,7 +142,7 @@ Verification:
 
 ## P2 - Store Effective Outgoing Challenge Metadata
 
-Status: open
+Status: fixed in current working tree
 
 Files:
 
@@ -162,6 +162,17 @@ Fix plan:
 - Store outgoing challenge metadata by challenge ID: target, mode, variant, speed, base time, increment, effective filter.
 - Use that metadata when handling declines and cancellations.
 - Test default plus override cases.
+
+Resolution:
+
+- Stored the effective outgoing `challenge_mode` per challenge ID.
+- Used that stored mode when deciding whether rated/casual declines should block only that mode or the opponent entirely.
+- Removed stored mode metadata when a challenge is accepted, declined, cancelled, or expired.
+
+Verification:
+
+- Unit test that a random-mode override avoids broad opponent blocking after a rated/casual decline.
+- Unit test that challenge creation stores the effective mode used by decline handling.
 
 ## P2 - Expand Runtime Sequence Tests
 

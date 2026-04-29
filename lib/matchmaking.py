@@ -44,6 +44,8 @@ class Matchmaking:
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
         self.challenge_id = ""
         self.challenge_targets: dict[str, str] = {}
+        self.challenge_modes: dict[str, str] = {}
+        self.pending_challenge_mode = self.matchmaking_cfg.challenge_mode
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
         # game aspect is the one the challenged bot objects to and is one of:
@@ -100,6 +102,7 @@ class Matchmaking:
             if challenge_id:
                 self.plain_rate_limit_failures = 0
                 self.challenge_targets[challenge_id] = username
+                self.challenge_modes[challenge_id] = self.pending_challenge_mode
             if not challenge_id:
                 self.handle_challenge_error_response(response, username)
             return challenge_id
@@ -188,6 +191,7 @@ class Matchmaking:
 
         variant = self.get_random_config_value(match_config, "challenge_variant", self.variants)
         mode = self.get_random_config_value(match_config, "challenge_mode", ["casual", "rated"])
+        self.pending_challenge_mode = match_config.challenge_mode
         rating_preference = match_config.rating_preference
 
         base_time = random.choice(match_config.challenge_initial_time)
@@ -290,6 +294,7 @@ class Matchmaking:
         if self.challenge_id == challenge_id:
             self.challenge_id = ""
         self.challenge_targets.pop(challenge_id, None)
+        self.challenge_modes.pop(challenge_id, None)
 
     def game_done(self) -> None:
         """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
@@ -443,6 +448,7 @@ class Matchmaking:
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = challenge.challenge_target
         reason = event["challenge"]["declineReason"]
+        challenge_mode = self.challenge_modes.get(challenge.id, self.matchmaking_cfg.challenge_mode)
         logger.info(f"{opponent} declined {challenge}: {reason}")
         self.discard_challenge(challenge.id)
         if not challenge.from_self or self.challenge_filter == FilterType.NONE:
@@ -471,10 +477,10 @@ class Matchmaking:
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
-        if reason_key in {"rated", "casual"} and self.matchmaking_cfg.challenge_mode != "random":
+        if reason_key in {"rated", "casual"} and challenge_mode != "random":
             self.add_challenge_filter(opponent.name, "")
             logger.info(f"Will not challenge {opponent} again today because only "
-                        f"{self.matchmaking_cfg.challenge_mode} matchmaking is configured.")
+                        f"{challenge_mode} matchmaking is configured.")
 
         self.show_earliest_challenge_time()
 

@@ -364,6 +364,80 @@ def test_declined_challenge__rated_decline_blocks_opponent_when_only_rated_is_co
     assert not matchmaking.should_accept_challenge("ResoluteBot", "")
 
 
+def test_declined_challenge__uses_effective_random_mode_from_override() -> None:
+    """A rated decline from a random-mode override should not block all future challenges."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.challenge_modes = {"abc123": "random"}
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 3058},
+            "destUser": {"name": "FlexibleBot", "title": "BOT", "rating": 3019},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "Please challenge me to a casual game",
+            "declineReasonKey": "casual",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.should_accept_challenge("FlexibleBot", "")
+    assert not matchmaking.should_accept_challenge("FlexibleBot", "rated")
+
+
+def test_create_challenge__stores_effective_mode_for_decline_handling() -> None:
+    """Decline handling should be able to distinguish random overrides from fixed base mode."""
+    mock_li = Mock()
+    mock_li.challenge.return_value = {"id": "abc123"}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_mode": "rated",
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.pending_challenge_mode = "random"
+
+    matchmaking.create_challenge("FlexibleBot", 60, 0, 0, "standard", "rated")
+
+    assert matchmaking.challenge_targets["abc123"] == "FlexibleBot"
+    assert matchmaking.challenge_modes["abc123"] == "random"
+
+
 def test_choose_opponent__does_not_fall_back_to_filtered_decliners(monkeypatch) -> None:
     """When every suitable bot is filtered, matchmaking should wait instead of spamming decliners."""
     mock_li = Mock()
