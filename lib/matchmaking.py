@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 5
 PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 360
 OUTGOING_CHALLENGE_COOLDOWN = hours(12)
+NO_CANDIDATE_DELAY = minutes(15)
 
 
 class Matchmaking:
@@ -36,6 +37,7 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.rate_limit_timer = Timer()
+        self.no_candidate_timer = Timer()
         self.plain_rate_limit_failures = 0
 
         # Maximum time between challenges, even if there are active games
@@ -63,7 +65,9 @@ class Matchmaking:
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
-        time_has_passed = self.last_game_ended_delay.is_expired() and self.rate_limit_timer.is_expired()
+        time_has_passed = (self.last_game_ended_delay.is_expired()
+                           and self.rate_limit_timer.is_expired()
+                           and self.no_candidate_timer.is_expired())
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
@@ -226,6 +230,8 @@ class Matchmaking:
         ready_bots = list(filter(ready_for_challenge, online_bots))
         if online_bots and not ready_bots:
             logger.error("No suitable bots are ready for challenge after applying decline filters.")
+            self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
+            self.show_earliest_challenge_time()
             online_bots = []
         else:
             online_bots = ready_bots
@@ -296,7 +302,8 @@ class Matchmaking:
             postgame_timeout = self.last_game_ended_delay.time_until_expiration()
             time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
             rate_limit_delay = self.rate_limit_timer.time_until_expiration()
-            time_left = max(postgame_timeout, time_to_next_challenge, rate_limit_delay)
+            no_candidate_delay = self.no_candidate_timer.time_until_expiration()
+            time_left = max(postgame_timeout, time_to_next_challenge, rate_limit_delay, no_candidate_delay)
             earliest_challenge_time = datetime.datetime.now() + time_left
             logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%c')}")
 
@@ -419,11 +426,13 @@ class Matchmaking:
 
     def cancelled_challenge(self, event: EventType) -> None:
         """Handle an outgoing challenge that was cancelled or expired without being accepted."""
-        challenge = model.Challenge(event["challenge"], self.user_profile)
-        if challenge.from_self:
-            self.cool_down_challenge_target(challenge.id, challenge.challenge_target.name)
+        challenge_info = event["challenge"]
+        challenge_id = challenge_info["id"]
+        fallback_target = (challenge_info.get("destUser") or {}).get("name")
+        if challenge_id == self.challenge_id or challenge_id in self.challenge_targets:
+            self.cool_down_challenge_target(challenge_id, fallback_target)
             self.show_earliest_challenge_time()
-        self.discard_challenge(challenge.id)
+        self.discard_challenge(challenge_id)
 
     def declined_challenge(self, event: EventType) -> None:
         """

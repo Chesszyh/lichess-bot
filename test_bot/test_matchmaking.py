@@ -401,6 +401,44 @@ def test_choose_opponent__does_not_fall_back_to_filtered_decliners(monkeypatch) 
     mock_li.get_public_data.assert_not_called()
 
 
+def test_choose_opponent__backs_off_when_all_candidates_are_filtered(monkeypatch) -> None:
+    """A fully filtered candidate pool should not be polled again immediately."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "ResoluteBot", "perfs": {"bullet": {"rating": 3019, "games": 100}}},
+    ]
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.add_challenge_filter("ResoluteBot", "rated")
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent is None
+    assert matchmaking.no_candidate_timer.duration == minutes(15)
+    assert not matchmaking.no_candidate_timer.is_expired()
+
+
 def test_handle_challenge_error_response__backs_off_on_plain_too_many_requests() -> None:
     """Plain lichess rate-limit errors should delay future outgoing challenges."""
     mock_li = Mock()
@@ -504,6 +542,30 @@ def test_cancelled_challenge__blocks_opponent_after_outgoing_challenge_cancellat
     assert matchmaking.challenge_id == ""
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+
+
+def test_cancelled_challenge__handles_minimal_cancel_event() -> None:
+    """Challenge cancellation should not require a full challenge payload."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.challenge_id = "abc123"
+    matchmaking.challenge_targets["abc123"] = "BusyBot"
+    matchmaking.cancelled_challenge({"challenge": {"id": "abc123"}})
+
+    assert matchmaking.challenge_id == ""
+    assert not matchmaking.should_accept_challenge("BusyBot", "")
 
 
 def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expires(monkeypatch) -> None:

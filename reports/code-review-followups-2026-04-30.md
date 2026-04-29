@@ -48,7 +48,7 @@ Verification:
 
 ## P1 - Avoid Busy Polling When All Candidates Are Filtered
 
-Status: open
+Status: fixed in current working tree
 
 Files:
 
@@ -69,9 +69,15 @@ Fix plan:
 - Log a clear reason distinct from Lichess rate limiting.
 - Test that filtered-empty candidate pools delay the next matchmaking attempt.
 
+Resolution:
+
+- Added a separate 15-minute `no_candidate_timer`.
+- Included it in next-challenge scheduling.
+- Added a regression test for fully filtered candidate pools.
+
 ## P1 - Make `challengeCanceled` Handling Tolerant of Partial Events
 
-Status: open
+Status: fixed in current working tree
 
 Files:
 
@@ -92,6 +98,11 @@ Fix plan:
 - Avoid constructing `model.Challenge` in the cancel path.
 - Use `challenge_targets` first, then lightweight fallback parsing from `destUser`.
 - Test with a minimal `{"challenge": {"id": "..."}}` cancel event.
+
+Resolution:
+
+- `cancelled_challenge()` now uses only the challenge ID plus tracked/fallback target username.
+- Added a minimal cancel-event regression test.
 
 ## P1 - Track Queued Correspondence Games to Avoid Duplicate Workers
 
