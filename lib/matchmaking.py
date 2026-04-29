@@ -217,7 +217,11 @@ class Matchmaking:
             return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
-        online_bots = ready_bots or online_bots
+        if online_bots and not ready_bots:
+            logger.error("No suitable bots are ready for challenge after applying decline filters.")
+            online_bots = []
+        else:
+            online_bots = ready_bots
         bot_username = None
         weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 
@@ -383,6 +387,10 @@ class Matchmaking:
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
+        if reason_key in {"rated", "casual"} and self.matchmaking_cfg.challenge_mode != "random":
+            self.add_challenge_filter(opponent.name, "")
+            logger.info(f"Will not challenge {opponent} again today because only "
+                        f"{self.matchmaking_cfg.challenge_mode} matchmaking is configured.")
 
         self.show_earliest_challenge_time()
 

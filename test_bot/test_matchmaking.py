@@ -307,6 +307,100 @@ def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> Non
     assert matchmaking.challenge_type_acceptable[("NoBotGuy", "")].duration == years(10)
 
 
+def test_declined_challenge__rated_decline_blocks_opponent_when_only_rated_is_configured(monkeypatch) -> None:
+    """Rated-only matchmaking should not keep challenging an opponent that asks for casual games."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "ResoluteBot", "perfs": {"bullet": {"rating": 3019, "games": 100}}},
+        {"username": "OtherBot", "perfs": {"bullet": {"rating": 3000, "games": 100}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 3058},
+            "destUser": {"name": "ResoluteBot", "title": "BOT", "rating": 3019},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "Please challenge me to a casual game",
+            "declineReasonKey": "casual",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent == "OtherBot"
+    assert not matchmaking.should_accept_challenge("ResoluteBot", "")
+
+
+def test_choose_opponent__does_not_fall_back_to_filtered_decliners(monkeypatch) -> None:
+    """When every suitable bot is filtered, matchmaking should wait instead of spamming decliners."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "ResoluteBot", "perfs": {"bullet": {"rating": 3019, "games": 100}}},
+    ]
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.add_challenge_filter("ResoluteBot", "rated")
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent is None
+    mock_li.get_public_data.assert_not_called()
+
+
 def test_handle_challenge_error_response__backs_off_on_plain_too_many_requests() -> None:
     """Plain lichess rate-limit errors should delay future outgoing challenges."""
     mock_li = Mock()
