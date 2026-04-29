@@ -3,8 +3,10 @@ import random
 import logging
 import datetime
 import contextlib
+import json
 from lib import model
 from lib.timer import Timer, days, seconds, minutes, hours, years
+from pathlib import Path
 from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
@@ -49,6 +51,9 @@ class Matchmaking:
         #   - empty string (if no other reason is given or self.filter_type is COARSE)
         self.challenge_type_acceptable: defaultdict[tuple[str, str], Timer] = defaultdict(Timer)
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
+        state_file = self.matchmaking_cfg.lookup("state_file")
+        self.state_file = Path(state_file) if state_file else None
+        self.load_state()
 
         for name in self.matchmaking_cfg.block_list:
             self.add_to_block_list(name)
@@ -97,6 +102,7 @@ class Matchmaking:
         except RateLimitedError as e:
             logger.warning(e)
             self.rate_limit_timer = Timer(e.timeout)
+            self.save_state()
         except Exception as e:
             logger.debug(e, exc_info=e)
 
@@ -118,6 +124,7 @@ class Matchmaking:
             logger.info(f"Challenge endpoint is rate limited; backing off for {delay.total_seconds() / 60:.0f} minutes.")
         else:
             self.add_challenge_filter(username, "")
+        self.save_state()
         self.show_earliest_challenge_time()
 
     def is_plain_rate_limit_response(self, response: ChallengeType) -> bool:
@@ -311,6 +318,7 @@ class Matchmaking:
         :param timeout: The amount of time to not challenge an opponent. If None, the default is a day.
         """
         self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or days(1))
+        self.save_state()
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
         """
@@ -321,6 +329,73 @@ class Matchmaking:
         If game_aspect is empty, this is equivalent to checking if the opponent is in the block list.
         """
         return self.challenge_type_acceptable[(username, game_aspect)].is_expired()
+
+    def timer_expires_at(self, timer: Timer) -> str | None:
+        """Return a wall-clock expiry timestamp for a non-expired timer."""
+        remaining = timer.time_until_expiration()
+        if remaining <= seconds(0):
+            return None
+        return (datetime.datetime.now(datetime.timezone.utc) + remaining).isoformat()
+
+    def timer_from_expires_at(self, expires_at: str | None) -> Timer | None:
+        """Create a timer from a persisted wall-clock expiry timestamp."""
+        if not expires_at:
+            return None
+        try:
+            expiry_time = datetime.datetime.fromisoformat(expires_at)
+        except ValueError:
+            return None
+        if expiry_time.tzinfo is None:
+            expiry_time = expiry_time.replace(tzinfo=datetime.timezone.utc)
+        remaining = expiry_time - datetime.datetime.now(datetime.timezone.utc)
+        if remaining <= seconds(0):
+            return None
+        return Timer(remaining)
+
+    def save_state(self) -> None:
+        """Persist matchmaking cooldowns and rate-limit backoff across process restarts."""
+        cooldowns = []
+        for (username, aspect), timer in self.challenge_type_acceptable.items():
+            expires_at = self.timer_expires_at(timer)
+            if expires_at:
+                cooldowns.append({"username": username, "aspect": aspect, "expires_at": expires_at})
+
+        state: dict[str, int | str | list[dict[str, str]] | None] = {
+            "cooldowns": cooldowns,
+            "plain_rate_limit_failures": self.plain_rate_limit_failures,
+            "rate_limit_expires_at": self.timer_expires_at(self.rate_limit_timer),
+        }
+
+        with contextlib.suppress(OSError):
+            if not self.state_file:
+                return
+            self.state_file.parent.mkdir(parents=True, exist_ok=True)
+            self.state_file.write_text(json.dumps(state, sort_keys=True), encoding="utf-8")
+
+    def load_state(self) -> None:
+        """Load persisted matchmaking cooldowns and rate-limit backoff."""
+        if not self.state_file:
+            return
+        try:
+            state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+
+        for cooldown in state.get("cooldowns", []):
+            username = cooldown.get("username")
+            aspect = cooldown.get("aspect", "")
+            expires_at = cooldown.get("expires_at")
+            if not username or not expires_at:
+                continue
+            timer = self.timer_from_expires_at(expires_at)
+            if timer:
+                self.challenge_type_acceptable[(username, aspect)] = timer
+
+        rate_limit_timer = self.timer_from_expires_at(state.get("rate_limit_expires_at", ""))
+        if rate_limit_timer:
+            self.rate_limit_timer = rate_limit_timer
+            self.plain_rate_limit_failures = int(state.get("plain_rate_limit_failures") or 0)
+        self.save_state()
 
     def cool_down_challenge_target(self, challenge_id: str, fallback_username: str | None = None) -> None:
         """Avoid immediately re-challenging an opponent after an unanswered outgoing challenge."""

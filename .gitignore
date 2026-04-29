@@ -4,6 +4,7 @@
 !/engines/README.md
 lichess_bot_auto_logs/*
 resource_records/*
+runtime_state/*
 .vscode/*
 .vs/*
 *.pgn

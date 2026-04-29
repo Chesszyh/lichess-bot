@@ -534,3 +534,52 @@ def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expire
     assert matchmaking.challenge_id == ""
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+
+
+def test_matchmaking_state__persists_decline_filters_across_restart(tmp_path) -> None:
+    """Opponent cooldowns should survive process restarts."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.add_challenge_filter("ResoluteBot", "", hours(12))
+
+    restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not restarted.should_accept_challenge("ResoluteBot", "")
+
+
+def test_matchmaking_state__persists_plain_rate_limit_backoff_across_restart(tmp_path) -> None:
+    """Challenge endpoint cooldown should survive process restarts."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
+
+    restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not restarted.rate_limit_timer.is_expired()
+    assert restarted.plain_rate_limit_failures == 1
