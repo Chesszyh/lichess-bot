@@ -432,6 +432,7 @@ def lichess_bot_main(li: lichess.Lichess,
                     for game in all_games
                     if game["gameId"] not in startup_correspondence_games}
     started_games: set[str] = set()
+    pending_games: set[str] = set()
     sync_resource_active_games(resource_active_games, active_games)
     low_time_games: list[GameType] = []
 
@@ -470,6 +471,7 @@ def lichess_bot_main(li: lichess.Lichess,
             if event["type"] == "local_game_done":
                 active_games.discard(event["game"]["id"])
                 started_games.discard(event["game"]["id"])
+                pending_games.discard(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
@@ -487,6 +489,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 matchmaker.cancelled_challenge(event)
                 active_games.discard(event["challenge"]["id"])
                 started_games.discard(event["challenge"]["id"])
+                pending_games.discard(event["challenge"]["id"])
                 log_proc_count("Freed", active_games)
             elif event["type"] == "gameStart":
                 matchmaker.accepted_challenge(event)
@@ -498,9 +501,10 @@ def lichess_bot_main(li: lichess.Lichess,
                            correspondence_queue,
                            active_games,
                            started_games,
-                           low_time_games)
+                           low_time_games,
+                           pending_games)
 
-            start_low_time_games(low_time_games, active_games, started_games, max_games, pool, play_game_args)
+            start_low_time_games(low_time_games, active_games, started_games, max_games, pool, play_game_args, pending_games)
             check_in_on_correspondence_games(pool,
                                              event,
                                              correspondence_queue,
@@ -508,7 +512,8 @@ def lichess_bot_main(li: lichess.Lichess,
                                              play_game_args,
                                              active_games,
                                              started_games,
-                                             max_games)
+                                             max_games,
+                                             pending_games)
             accept_challenges(li, challenge_queue, active_games, max_games)
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
@@ -565,7 +570,8 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      play_game_args: PlayGameArgsType,
                                      active_games: set[str],
                                      started_games: set[str],
-                                     max_games: int) -> None:
+                                     max_games: int,
+                                     pending_games: set[str]) -> None:
     """Start correspondence games."""
     global correspondence_games_to_start
 
@@ -581,15 +587,17 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         game_id = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
+        pending_games.discard(game_id)
         start_game_thread(active_games, started_games, game_id, play_game_args, pool)
 
 
 def start_low_time_games(low_time_games: list[GameType], active_games: set[str], started_games: set[str], max_games: int,
-                         pool: POOL_TYPE, play_game_args: PlayGameArgsType) -> None:
+                         pool: POOL_TYPE, play_game_args: PlayGameArgsType, pending_games: set[str]) -> None:
     """Start the games based on how much time we have left."""
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
+        pending_games.discard(game_id)
         start_game_thread(active_games, started_games, game_id, play_game_args, pool)
 
 
@@ -678,7 +686,8 @@ def start_game(event: EventType,
                correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                active_games: set[str],
                started_games: set[str],
-               low_time_games: list[GameType]) -> None:
+               low_time_games: list[GameType],
+               pending_games: set[str]) -> None:
     """
     Start a game.
 
@@ -693,11 +702,12 @@ def start_game(event: EventType,
     :param low_time_games: A list of games, in which we don't have much time remaining.
     """
     game_id = event["game"]["id"]
-    if game_id in started_games:
+    if game_id in started_games or game_id in pending_games:
         logger.info(f"--- Ignoring duplicate gameStart for {config.url + game_id}")
         return
 
     if game_id in startup_correspondence_games:
+        pending_games.add(game_id)
         if enough_time_to_queue(event, config):
             logger.info(f"--- Enqueue {config.url + game_id}")
             correspondence_queue.put_nowait(game_id)

@@ -106,7 +106,7 @@ Resolution:
 
 ## P1 - Track Queued Correspondence Games to Avoid Duplicate Workers
 
-Status: open
+Status: fixed in current working tree
 
 Files:
 
@@ -127,6 +127,18 @@ Fix plan:
 - Mark a game pending when it is queued or added to low-time list.
 - Ignore duplicate `gameStart` if the ID is pending or started.
 - Remove pending state when the worker starts or the game ends.
+
+Resolution:
+
+- Added `pending_games` in the main control loop.
+- Marked startup correspondence games pending before adding them to the normal correspondence queue or low-time queue.
+- Ignored duplicate `gameStart` events for pending games.
+- Cleared pending state when a worker starts, a game completes locally, or a challenge is cancelled.
+
+Verification:
+
+- Unit test that a duplicate queued correspondence `gameStart` does not start a worker.
+- Unit tests that both low-time and queued correspondence worker starts clear pending state.
 
 ## P2 - Store Effective Outgoing Challenge Metadata
 
