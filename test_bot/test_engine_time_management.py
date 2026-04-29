@@ -138,8 +138,8 @@ def test_search__extends_shallow_bullet_result_once() -> None:
     assert wrapper.scores[0].relative.score() == 25
 
 
-def test_apply_bullet_time_management__caps_blitz_when_enabled_for_blitz() -> None:
-    """Configured fast-time caps should also apply to blitz."""
+def test_apply_bullet_time_management__keeps_high_clock_blitz_uncapped() -> None:
+    """Blitz with plenty of time should let Stockfish use normal clock management."""
     game = fast_game("blitz", 240000, 240000)
     engine_cfg = Configuration({
         "bullet_time_management": {
@@ -160,5 +160,31 @@ def test_apply_bullet_time_management__caps_blitz_when_enabled_for_blitz() -> No
     limit = chess.engine.Limit(white_clock=240.0, black_clock=240.0)
     capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
 
-    assert capped.white_clock == 12.0
+    assert capped.white_clock == 240.0
+    assert capped.black_clock == 240.0
+
+
+def test_apply_bullet_time_management__caps_low_clock_blitz_when_enabled() -> None:
+    """Blitz caps should still protect the bot once its own clock is low."""
+    game = fast_game("blitz", 240000, 59000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "max_clock_ms": 12000,
+            "high_clock_threshold_ms": 60000,
+            "high_clock_ms": 8000,
+            "low_clock_threshold_ms": 20000,
+            "low_clock_ms": 3500,
+            "critical_clock_threshold_ms": 8000,
+            "critical_clock_ms": 900,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 180,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=59.0, black_clock=240.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
+
+    assert capped.white_clock == 8.0
     assert capped.black_clock == 240.0

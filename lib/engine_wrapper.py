@@ -824,6 +824,9 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
         return time_limit
 
     clock_ms = round(clock * 1000)
+    if game.speed != "bullet" and clock_ms > bullet_time_management.high_clock_threshold_ms:
+        return time_limit
+
     clock_cap_ms = bullet_time_management.max_clock_ms
     if clock_ms <= bullet_time_management.emergency_clock_threshold_ms:
         clock_cap_ms = bullet_time_management.emergency_clock_ms
