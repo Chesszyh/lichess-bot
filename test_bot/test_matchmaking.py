@@ -438,6 +438,113 @@ def test_create_challenge__stores_effective_mode_for_decline_handling() -> None:
     assert matchmaking.challenge_modes["abc123"] == "random"
 
 
+def test_challenge_sequence__creation_then_decline_clears_metadata_and_blocks_decliner(monkeypatch) -> None:
+    """A created outgoing challenge should carry enough state for later decline handling."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "ResoluteBot", "perfs": {"bullet": {"rating": 3019, "games": 100}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_li.challenge.return_value = {"id": "abc123"}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "allow_during_games": False,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+    monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 3058},
+            "destUser": {"name": "ResoluteBot", "title": "BOT", "rating": 3019},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "Please challenge me to a casual game",
+            "declineReasonKey": "casual",
+        }
+    }
+
+    matchmaking.challenge(set(), [], 1)
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.challenge_id == ""
+    assert "abc123" not in matchmaking.challenge_targets
+    assert "abc123" not in matchmaking.challenge_modes
+    assert not matchmaking.should_accept_challenge("ResoluteBot", "")
+
+
+def test_challenge_sequence__creation_then_cancellation_clears_metadata_and_cools_down(monkeypatch) -> None:
+    """A cancelled outgoing challenge should clean up transient state and cool down its target."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "BusyBot", "perfs": {"bullet": {"rating": 3019, "games": 100}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_li.challenge.return_value = {"id": "abc123"}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "allow_during_games": False,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [0],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+    monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    matchmaking.challenge(set(), [], 1)
+    matchmaking.cancelled_challenge({"challenge": {"id": "abc123"}})
+
+    assert matchmaking.challenge_id == ""
+    assert "abc123" not in matchmaking.challenge_targets
+    assert "abc123" not in matchmaking.challenge_modes
+    assert not matchmaking.should_accept_challenge("BusyBot", "")
+    assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+
+
 def test_choose_opponent__does_not_fall_back_to_filtered_decliners(monkeypatch) -> None:
     """When every suitable bot is filtered, matchmaking should wait instead of spamming decliners."""
     mock_li = Mock()

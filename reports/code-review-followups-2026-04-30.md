@@ -176,7 +176,7 @@ Verification:
 
 ## P2 - Expand Runtime Sequence Tests
 
-Status: open
+Status: fixed in current working tree
 
 Files:
 
@@ -198,3 +198,10 @@ Fix plan:
 - Add tests for restart persistence.
 - Add tests for override-specific decline behavior.
 - Add tests for queued correspondence duplicate `gameStart`.
+
+Resolution:
+
+- Added runtime-style sequence tests for outgoing challenge creation followed by decline.
+- Added runtime-style sequence tests for outgoing challenge creation followed by cancellation.
+- Covered queued correspondence duplicate `gameStart` in `test_bot/test_main_loop.py`.
+- Restart persistence and override-specific decline behavior are now covered by targeted matchmaking tests.
