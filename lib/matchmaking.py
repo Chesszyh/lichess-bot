@@ -17,8 +17,9 @@ from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, 
 MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
-PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 5
-PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 360
+PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 30
+PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 1440
+PLAIN_RATE_LIMIT_TARGET_COOLDOWN = days(1)
 OUTGOING_CHALLENGE_COOLDOWN = hours(12)
 NO_CANDIDATE_DELAY = minutes(15)
 
@@ -128,6 +129,8 @@ class Matchmaking:
         elif self.is_plain_rate_limit_response(response):
             delay = self.next_plain_rate_limit_delay()
             self.rate_limit_timer = Timer(delay)
+            self.add_challenge_filter(username, "", PLAIN_RATE_LIMIT_TARGET_COOLDOWN)
+            logger.info(f"Will not challenge {username} again today after challenge endpoint rate limiting.")
             logger.info(f"Challenge endpoint is rate limited; backing off for {delay.total_seconds() / 60:.0f} minutes.")
         else:
             self.add_challenge_filter(username, "")

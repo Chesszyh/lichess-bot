@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
-from lib.timer import hours, minutes, years
+from lib.timer import days, hours, minutes, years
 import random
 
 
@@ -638,11 +638,33 @@ def test_handle_challenge_error_response__backs_off_on_plain_too_many_requests()
 
     matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
 
-    assert matchmaking.rate_limit_timer.duration == minutes(5)
+    assert matchmaking.rate_limit_timer.duration == minutes(30)
+
+
+def test_handle_challenge_error_response__cools_down_target_on_plain_too_many_requests() -> None:
+    """A target involved in a plain rate limit should not be retried after the global backoff."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
+
+    assert not matchmaking.should_accept_challenge("BusyBot", "")
+    assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == days(1)
 
 
 def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -> None:
-    """Repeated plain challenge rate limits should cool down instead of retrying every 5 minutes forever."""
+    """Repeated plain challenge rate limits should cool down instead of retrying frequently."""
     mock_li = Mock()
     mock_config = Configuration({
         "challenge": {"variants": ["standard"]},
@@ -660,11 +682,11 @@ def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -
     for _ in range(4):
         matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
 
-    assert matchmaking.rate_limit_timer.duration == minutes(40)
+    assert matchmaking.rate_limit_timer.duration == hours(4)
 
 
-def test_handle_challenge_error_response__caps_plain_rate_limit_backoff_at_six_hours() -> None:
-    """Repeated plain rate limits should eventually stop retrying hourly."""
+def test_handle_challenge_error_response__caps_plain_rate_limit_backoff_at_one_day() -> None:
+    """Repeated plain rate limits should eventually stop retrying several times per day."""
     mock_li = Mock()
     mock_config = Configuration({
         "challenge": {"variants": ["standard"]},
@@ -682,7 +704,7 @@ def test_handle_challenge_error_response__caps_plain_rate_limit_backoff_at_six_h
     for _ in range(8):
         matchmaking.handle_challenge_error_response({"error": "Too many requests. Try again later."}, "BusyBot")
 
-    assert matchmaking.rate_limit_timer.duration == hours(6)
+    assert matchmaking.rate_limit_timer.duration == days(1)
 
 
 def test_cancelled_challenge__blocks_opponent_after_outgoing_challenge_cancellation() -> None:
