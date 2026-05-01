@@ -242,6 +242,9 @@ class Matchmaking:
             online_bots = []
         else:
             online_bots = ready_bots
+        if not online_bots:
+            self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
+            self.show_earliest_challenge_time()
         bot_username = None
         weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 
