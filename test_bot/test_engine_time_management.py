@@ -188,3 +188,61 @@ def test_apply_bullet_time_management__caps_low_clock_blitz_when_enabled() -> No
 
     assert capped.white_clock == 8.0
     assert capped.black_clock == 240.0
+
+
+def test_apply_bullet_time_management__can_force_movetime_caps() -> None:
+    """Engines with loose clock management can receive an exact movetime cap."""
+    game = fast_game("blitz", 240000, 59000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "force_movetime_caps": True,
+            "max_clock_ms": 12000,
+            "high_clock_threshold_ms": 60000,
+            "high_clock_ms": 8000,
+            "low_clock_threshold_ms": 20000,
+            "low_clock_ms": 3500,
+            "critical_clock_threshold_ms": 8000,
+            "critical_clock_ms": 900,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 180,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=59.0, black_clock=240.0, white_inc=0.0, black_inc=0.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
+
+    assert capped.time == 8.0
+    assert capped.white_clock is None
+    assert capped.black_clock is None
+    assert capped.white_inc is None
+    assert capped.black_inc is None
+
+
+def test_apply_bullet_time_management__can_force_movetime_caps_on_high_clock() -> None:
+    """A large threshold lets Lc0-style configs cap every fast-game move."""
+    game = fast_game("blitz", 300000, 260000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "force_movetime_caps": True,
+            "max_clock_ms": 8000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 5000,
+            "low_clock_threshold_ms": 20000,
+            "low_clock_ms": 2200,
+            "critical_clock_threshold_ms": 8000,
+            "critical_clock_ms": 700,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 100,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=260.0, black_clock=260.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
+
+    assert capped.time == 5.0
+    assert capped.white_clock is None
+    assert capped.black_clock is None
