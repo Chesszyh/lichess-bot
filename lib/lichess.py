@@ -37,7 +37,11 @@ ENDPOINTS = {
     "cancel": "/api/challenge/{}/cancel",
     "status": "/api/users/status",
     "public_data": "/api/user/{}",
-    "token_test": "/api/token/test"
+    "token_test": "/api/token/test",
+    "team_arenas": "/api/team/{}/arena",
+    "user_teams": "/api/team/of/{}",
+    "join_team": "/team/{}/join",
+    "join_arena": "/api/tournament/{}/join"
 }
 
 
@@ -224,7 +228,7 @@ class Lichess:
 
     def api_get_json(self, endpoint_name: str, *template_args: str,
                      params: dict[str, str] | None = None
-                     ) -> PublicDataType | UserProfileType | dict[str, list[GameType]]:
+                     ) -> PublicDataType | UserProfileType | dict[str, list[GameType]] | list[dict[str, str]]:
         """
         Send a GET to the lichess.org endpoints that return a JSON.
 
@@ -234,7 +238,7 @@ class Lichess:
         :return: lichess.org's response in a dict.
         """
         response = self.api_get(endpoint_name, *template_args, params=params)
-        json_response: PublicDataType | UserProfileType | dict[str, list[GameType]] = response.json()
+        json_response: PublicDataType | UserProfileType | dict[str, list[GameType]] | list[dict[str, str]] = response.json()
         return json_response
 
     def api_get_list(self, endpoint_name: str, *template_args: str,
@@ -464,6 +468,55 @@ class Lichess:
             return list(map(json.loads, online_bots))
         except Exception:
             return []
+
+    def get_user_teams(self, username: str) -> list[dict[str, str]]:
+        """Get teams a user belongs to."""
+        return cast(list[dict[str, str]], self.api_get_json("user_teams", username))
+
+    def join_team(self, team_id: str, message: str = "", password: str | None = None) -> None:
+        """Request to join a team."""
+        data = {}
+        if message:
+            data["message"] = message
+        if password:
+            data["password"] = password
+        response = self.api_post("join_team",
+                                 team_id,
+                                 data=data,
+                                 headers={"Content-Type": "application/x-www-form-urlencoded"},
+                                 raise_for_status=False)
+        if isinstance(response, dict) and response.get("error"):
+            raise RuntimeError(response["error"])
+
+    def get_team_arenas(self, team_id: str, status: str = "started", max_tournaments: int = 20) -> list[dict[str, object]]:
+        """Get team arena tournaments."""
+        params = {"status": status, "max": str(max_tournaments)}
+        try:
+            arenas_str = self.api_get_raw("team_arenas", team_id, params=params)
+            arenas = list(filter(bool, arenas_str.split("\n")))
+            return list(map(json.loads, arenas))
+        except Exception:
+            return []
+
+    def join_arena(self,
+                   tournament_id: str,
+                   *,
+                   team: str | None = None,
+                   password: str | None = None,
+                   pair_me_asap: bool = True) -> None:
+        """Join or refresh pairing in an arena tournament."""
+        data: dict[str, str] = {"pairMeAsap": str(pair_me_asap).lower()}
+        if team:
+            data["team"] = team
+        if password:
+            data["password"] = password
+        response = self.api_post("join_arena",
+                                 tournament_id,
+                                 data=data,
+                                 headers={"Content-Type": "application/x-www-form-urlencoded"},
+                                 raise_for_status=False)
+        if isinstance(response, dict) and response.get("error"):
+            raise RuntimeError(response["error"])
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Create a challenge."""

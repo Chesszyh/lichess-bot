@@ -152,6 +152,30 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "resource_monitor", key="enabled", default=False)
     set_config_default(CONFIG, "resource_monitor", key="directory", default="resource_records", force_empty_values=True)
     set_config_default(CONFIG, "resource_monitor", key="sample_period", default=5)
+    set_config_default(CONFIG, "arena", key="enabled", default=False)
+    set_config_default(CONFIG, "arena", key="teams", default=[], force_empty_values=True)
+    change_value_to_list(CONFIG, "arena", key="teams")
+    set_config_default(CONFIG, "arena", key="join_teams", default=False)
+    set_config_default(CONFIG, "arena", key="team_join_message", default="", force_empty_values=True)
+    set_config_default(CONFIG, "arena", key="team_passwords", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "arena", key="arena_passwords", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "arena", key="max_tournaments", default=20)
+    set_config_default(CONFIG, "arena", key="scan_period", default=300)
+    set_config_default(CONFIG, "arena", key="pair_period", default=60)
+    set_config_default(CONFIG, "arena", key="error_period", default=600)
+    set_config_default(CONFIG, "arena", key="team_check_period", default=3600)
+    set_config_default(CONFIG, "arena", key="join_created_before_start", default=600)
+    set_config_default(CONFIG, "arena", key="min_base", default=0)
+    set_config_default(CONFIG, "arena", key="max_base", default=300)
+    set_config_default(CONFIG, "arena", key="min_increment", default=0)
+    set_config_default(CONFIG, "arena", key="max_increment", default=3)
+    set_config_default(CONFIG, "arena", key="variants", default=["standard"], force_empty_values=True)
+    change_value_to_list(CONFIG, "arena", key="variants")
+    set_config_default(CONFIG, "arena", key="rated_modes", default=["rated", "casual"], force_empty_values=True)
+    change_value_to_list(CONFIG, "arena", key="rated_modes")
+    set_config_default(CONFIG, "arena", key="statuses", default=["started"], force_empty_values=True)
+    change_value_to_list(CONFIG, "arena", key="statuses")
+    set_config_default(CONFIG, "arena", key="require_bots_allowed", default=True)
     set_config_default(CONFIG, key="max_takebacks_accepted", default=0, force_empty_values=True)
     set_config_default(CONFIG, "engine", key="interpreter", default=None)
     set_config_default(CONFIG, "engine", key="interpreter_options", default=[], force_empty_values=True)
@@ -384,6 +408,22 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     resource_monitor = CONFIG["resource_monitor"]
     config_assert(resource_monitor["sample_period"] > 0, "`resource_monitor:sample_period` must be greater than 0.")
+
+    arena = CONFIG["arena"]
+    config_assert(arena["scan_period"] > 0, "`arena:scan_period` must be greater than 0.")
+    config_assert(arena["pair_period"] > 0, "`arena:pair_period` must be greater than 0.")
+    config_assert(arena["error_period"] > 0, "`arena:error_period` must be greater than 0.")
+    config_assert(arena["team_check_period"] > 0, "`arena:team_check_period` must be greater than 0.")
+    config_assert(arena["max_tournaments"] > 0, "`arena:max_tournaments` must be greater than 0.")
+    config_warn(arena["min_base"] <= arena["max_base"],
+                "arena.max_base < arena.min_base will result in no arenas being joined.")
+    config_warn(arena["min_increment"] <= arena["max_increment"],
+                "arena.max_increment < arena.min_increment will result in no arenas being joined.")
+    valid_arena_statuses = ["created", "started", "finished"]
+    config_assert(all(status in valid_arena_statuses for status in arena["statuses"]),
+                  f"`arena:statuses` must only contain {valid_arena_statuses}.")
+    config_assert(all(mode in ["rated", "casual"] for mode in arena["rated_modes"]),
+                  "`arena:rated_modes` must only contain ['rated', 'casual'].")
 
     def has_valid_list(name: str) -> bool:
         entries = matchmaking.get(name)

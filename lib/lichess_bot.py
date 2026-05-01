@@ -3,7 +3,7 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-from lib import engine_wrapper, model, lichess, matchmaking, resource_monitor
+from lib import arena, engine_wrapper, model, lichess, matchmaking, resource_monitor
 import json
 import logging
 import logging.handlers
@@ -438,6 +438,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
     last_check_online_time = Timer(hours(1))
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
+    arena_manager = arena.ArenaManager(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
     play_game_args = PlayGameArgsType(li=li, control_queue=control_queue, user_profile=user_profile,
@@ -515,6 +516,7 @@ def lichess_bot_main(li: lichess.Lichess,
                                              max_games,
                                              pending_games)
             accept_challenges(li, challenge_queue, active_games, max_games)
+            arena_manager.tick(active_games, challenge_queue, max_games)
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
             ensure_control_stream_live(control_stream_state, control_queue, li)

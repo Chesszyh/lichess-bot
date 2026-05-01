@@ -232,6 +232,32 @@ resource_monitor:
   directory: "resource_records"    # Directory containing resource_usage.csv.
   sample_period: 5                 # Seconds between samples.
 
+arena:
+  enabled: false                   # Set it to 'true' to join configured team Arena tournaments.
+  teams: []                        # Team IDs whose Arena tournaments should be scanned, e.g. ["lichess-bots"].
+  join_teams: false                # Request to join configured teams if the bot is not already a member.
+  team_join_message: ""            # Required by teams that manually review admission requests.
+  team_passwords: {}               # Optional map of team ID to password.
+  arena_passwords: {}              # Optional map of tournament ID to password.
+  max_tournaments: 20              # Maximum tournaments to fetch per team and status.
+  scan_period: 300                 # Seconds between Arena scans.
+  pair_period: 60                  # Seconds between pairMeAsap refreshes for the same Arena.
+  error_period: 600                # Seconds to wait after a failed Arena join attempt.
+  team_check_period: 3600          # Seconds between team membership checks.
+  join_created_before_start: 600   # Join created Arenas only when they start within this many seconds.
+  min_base: 0                      # Minimum Arena initial clock in seconds.
+  max_base: 300                    # Maximum Arena initial clock in seconds.
+  min_increment: 0                 # Minimum Arena increment in seconds.
+  max_increment: 3                 # Maximum Arena increment in seconds.
+  variants:
+    - standard
+  rated_modes:
+    - rated
+    - casual
+  statuses:
+    - started
+  require_bots_allowed: true       # Skip Arenas unless the API says bots are allowed.
+
 matchmaking:
   allow_matchmaking: false         # Set it to 'true' to challenge other bots.
   allow_during_games: false        # Set it to 'true' to create challenges during long games.
