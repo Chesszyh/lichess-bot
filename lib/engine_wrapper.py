@@ -845,7 +845,9 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
 
     if to_msec(capped_clock) < clock_ms:
         logger.info(f"Capping {game.speed} {side} from {clock_ms} ms to {msec_str(capped_clock)} ms for game {game.id}")
-        if bullet_time_management.lookup("force_movetime_caps"):
+        force_movetime_threshold_ms = bullet_time_management.lookup("force_movetime_threshold_ms")
+        force_movetime = bullet_time_management.lookup("force_movetime_caps")
+        if force_movetime and (force_movetime_threshold_ms is None or clock_ms <= force_movetime_threshold_ms):
             time_limit.time = to_seconds(capped_clock)
             time_limit.white_clock = None
             time_limit.black_clock = None
