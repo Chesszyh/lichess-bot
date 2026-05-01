@@ -49,6 +49,8 @@ Can run on:
 5. [Upgrade to a BOT account](https://github.com/lichess-bot-devs/lichess-bot/wiki/Upgrade-to-a-BOT-account)
 6. [Run lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Run-lichess%E2%80%90bot)
 
+For this fork's production setup, multi-bot deployment notes, macOS LaunchAgent setup, arena integration, and agent-driven research workflow, see [Deployment Guide](docs/DEPLOYMENT.md).
+
 ## Advanced options
 - [Create a homemade engine](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-homemade-engine)
 - [Add extra customizations](https://github.com/lichess-bot-devs/lichess-bot/wiki/Extra-customizations)
