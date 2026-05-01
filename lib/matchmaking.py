@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 30
 PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 1440
 PLAIN_RATE_LIMIT_TARGET_COOLDOWN = days(1)
+DEFAULT_DECLINE_COOLDOWN = hours(6)
 OUTGOING_CHALLENGE_COOLDOWN = hours(12)
 NO_CANDIDATE_DELAY = minutes(15)
 
@@ -333,9 +334,9 @@ class Matchmaking:
         :param username: The name of the opponent.
         :param game_aspect: The aspect of a game (time control, chess variant, etc.) that caused the opponent to decline a
         challenge. If the parameter is empty, that is equivalent to adding the opponent to the block list.
-        :param timeout: The amount of time to not challenge an opponent. If None, the default is a day.
+        :param timeout: The amount of time to not challenge an opponent. If None, the default is six hours.
         """
-        self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or days(1))
+        self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or DEFAULT_DECLINE_COOLDOWN)
         self.save_state()
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
@@ -482,10 +483,10 @@ class Matchmaking:
             return
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
-        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game for 6 hours.")
         if reason_key in {"rated", "casual"} and challenge_mode != "random":
             self.add_challenge_filter(opponent.name, "")
-            logger.info(f"Will not challenge {opponent} again today because only "
+            logger.info(f"Will not challenge {opponent} again for 6 hours because only "
                         f"{challenge_mode} matchmaking is configured.")
 
         self.show_earliest_challenge_time()

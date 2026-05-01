@@ -863,6 +863,26 @@ def test_matchmaking_state__persists_decline_filters_across_restart(tmp_path) ->
     assert not restarted.should_accept_challenge("ResoluteBot", "")
 
 
+def test_add_challenge_filter__uses_short_default_decline_cooldown() -> None:
+    """Ordinary declines should cool down the opponent for hours, not the full day."""
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    matchmaking.add_challenge_filter("ResoluteBot", "")
+
+    assert matchmaking.challenge_type_acceptable[("ResoluteBot", "")].duration == hours(6)
+
+
 def test_matchmaking_state__persists_plain_rate_limit_backoff_across_restart(tmp_path) -> None:
     """Challenge endpoint cooldown should survive process restarts."""
     state_file = tmp_path / "matchmaking_state.json"
