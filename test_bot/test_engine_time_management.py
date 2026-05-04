@@ -107,6 +107,69 @@ class FakeEngine:
         return self._results.pop(0)
 
 
+class NamedFakeEngine:
+    """Engine protocol that records calls and returns one fixed move."""
+
+    def __init__(self, name: str, move: str) -> None:
+        self.id = {"name": name}
+        self.calls = 0
+        self.move = chess.Move.from_uci(move)
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        self.calls += 1
+        return chess.engine.PlayResult(self.move, None, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        })
+
+
+def test_search__uses_endgame_engine_under_piece_threshold() -> None:
+    """Configured endgames should be searched by the secondary engine."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    main_engine = NamedFakeEngine("main", "e2e4")
+    endgame_engine = NamedFakeEngine("endgame", "e2e3")
+    wrapper.engine = main_engine
+    wrapper.endgame_engine = endgame_engine
+    wrapper.endgame_engine_max_pieces = 3
+
+    board = chess.Board("4k3/8/8/8/8/8/4K3/8 w - - 0 1")
+    result = wrapper.search(board,
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None))
+
+    assert result.move == chess.Move.from_uci("e2e3")
+    assert main_engine.calls == 0
+    assert endgame_engine.calls == 1
+
+
+def test_search__keeps_main_engine_above_endgame_threshold() -> None:
+    """The secondary engine must not replace the main engine in normal middlegames."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    main_engine = NamedFakeEngine("main", "e2e4")
+    endgame_engine = NamedFakeEngine("endgame", "e2e3")
+    wrapper.engine = main_engine
+    wrapper.endgame_engine = endgame_engine
+    wrapper.endgame_engine_max_pieces = 3
+
+    result = wrapper.search(chess.Board(),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None))
+
+    assert result.move == chess.Move.from_uci("e2e4")
+    assert main_engine.calls == 1
+    assert endgame_engine.calls == 0
+
+
 def test_search__extends_shallow_bullet_result_once() -> None:
     """A shallow result with safe clock should get one short follow-up search."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

@@ -182,6 +182,17 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     change_value_to_list(CONFIG, "engine", key="interpreter_options")
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="dir", default=CONFIG["engine"].get("dir"))
+    set_config_default(CONFIG, "engine", "endgame_engine", key="name", default=CONFIG["engine"].get("name"))
+    set_config_default(CONFIG, "engine", "endgame_engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="interpreter", default=None)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="interpreter_options", default=[], force_empty_values=True)
+    change_value_to_list(CONFIG, "engine", "endgame_engine", key="interpreter_options")
+    set_config_default(CONFIG, "engine", "endgame_engine", key="engine_options", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="uci_options", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="max_pieces", default=7)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
@@ -348,6 +359,22 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                   f"The engine {engine} file does not exist.")
     config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
                   f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
+
+    endgame_engine = CONFIG["engine"].get("endgame_engine") or {}
+    if endgame_engine.get("enabled"):
+        endgame_engine_path = os.path.join(endgame_engine["dir"], endgame_engine["name"])
+        config_assert(os.path.isdir(endgame_engine["dir"]),
+                      f'Your endgame engine directory `{endgame_engine["dir"]}` is not a directory.')
+        endgame_working_dir = endgame_engine.get("working_dir")
+        config_assert(not endgame_working_dir or os.path.isdir(endgame_working_dir),
+                      f"Your endgame engine's working directory `{endgame_working_dir}` is not a directory.")
+        config_assert(os.path.isfile(endgame_engine_path),
+                      f"The endgame engine {endgame_engine_path} file does not exist.")
+        config_assert(os.access(endgame_engine_path, os.X_OK),
+                      f"The endgame engine {endgame_engine_path} doesn't have execute (x) permission. "
+                      f"Try: chmod +x {endgame_engine_path}")
+        config_assert(endgame_engine["max_pieces"] > 0,
+                      "engine:endgame_engine:max_pieces must be greater than 0.")
 
     if CONFIG["engine"]["protocol"] == "xboard":
         for section, subsection in (("online_moves", "online_egtb"),

@@ -43,17 +43,8 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
     cfg = engine_config.engine
-    engine_path = os.path.abspath(os.path.join(cfg.dir, cfg.name))
+    commands = engine_commands(cfg)
     engine_type = cfg.protocol
-    commands = []
-    if cfg.interpreter:
-        commands.append(cfg.interpreter)
-        commands.extend(cfg.interpreter_options)
-    commands.append(engine_path)
-    if cfg.engine_options:
-        for k, v in cfg.engine_options.items():
-            commands.append(f"--{k}={v}" if v is not None else f"--{k}")
-
     stderr = subprocess.DEVNULL if cfg.silence_stderr else None
 
     Engine: type[UCIEngine | XBoardEngine | MinimalEngine]
@@ -68,8 +59,24 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
-    return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
-                  cwd=cfg.working_dir)
+    engine = Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
+                    cwd=cfg.working_dir)
+    engine.configure_endgame_engine(cfg.endgame_engine, game, cfg.debug)
+    return engine
+
+
+def engine_commands(cfg: Configuration) -> COMMANDS_TYPE:
+    """Build the command used to start an engine process."""
+    engine_path = os.path.abspath(os.path.join(cfg.dir, cfg.name))
+    commands = []
+    if cfg.interpreter:
+        commands.append(cfg.interpreter)
+        commands.extend(cfg.interpreter_options)
+    commands.append(engine_path)
+    if cfg.engine_options:
+        for k, v in cfg.engine_options.items():
+            commands.append(f"--{k}={v}" if v is not None else f"--{k}")
+    return commands
 
 
 def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:
@@ -100,6 +107,8 @@ class EngineWrapper:
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
         self.strength_limit_elo: int | None = None
+        self.endgame_engine: chess.engine.SimpleEngine | None = None
+        self.endgame_engine_max_pieces = 0
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
         """
@@ -115,6 +124,30 @@ class EngineWrapper:
         except Exception:
             self.engine.close()
             raise
+
+    def configure_endgame_engine(self, cfg: Configuration, game: model.Game | None, debug: bool) -> None:
+        """Start an optional secondary UCI engine used only in low-piece endgames."""
+        if not cfg.enabled:
+            return
+
+        commands = engine_commands(cfg)
+        stderr = subprocess.DEVNULL if cfg.silence_stderr else None
+        options = remove_managed_options(cfg.uci_options or Configuration({}))
+        logger.info(f"Starting endgame engine for <= {cfg.max_pieces} pieces: {commands}")
+        self.endgame_engine = chess.engine.SimpleEngine.popen_uci(commands,
+                                                                  timeout=60.,
+                                                                  debug=debug,
+                                                                  setpgrp=True,
+                                                                  stderr=stderr,
+                                                                  cwd=cfg.working_dir)
+        try:
+            extra_options = {} if game is None else game_specific_options(game)
+            self.endgame_engine.configure(cast(OPTIONS_TYPE, options | extra_options))
+        except Exception:
+            self.endgame_engine.close()
+            self.endgame_engine = None
+            raise
+        self.endgame_engine_max_pieces = cfg.max_pieces
 
     def __enter__(self) -> EngineWrapper:  # noqa: PYI034 (return Self not available until 3.11)
         """Enter context so engine communication will be properly shutdown."""
@@ -257,12 +290,22 @@ class EngineWrapper:
     def set_strength_limit(self, elo: int) -> None:
         """Limit UCI engine strength at runtime."""
         self.engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo})
+        if self.endgame_engine:
+            self.endgame_engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo})
         self.strength_limit_elo = elo
 
     def clear_strength_limit(self) -> None:
         """Restore full UCI engine strength at runtime."""
         self.engine.configure({"UCI_LimitStrength": False})
+        if self.endgame_engine:
+            self.endgame_engine.configure({"UCI_LimitStrength": False})
         self.strength_limit_elo = None
+
+    def engine_for_position(self, board: chess.Board) -> chess.engine.SimpleEngine | FillerEngine:
+        """Return the engine that should search the current position."""
+        if self.endgame_engine and chess.popcount(board.occupied) <= self.endgame_engine_max_pieces:
+            return self.endgame_engine
+        return self.engine
 
     def search(self,
                board: chess.Board,
@@ -285,18 +328,20 @@ class EngineWrapper:
         :return: The move to play.
         """
         time_limit = self.add_go_commands(time_limit)
-        result = self.engine.play(board,
-                                  time_limit,
-                                  info=chess.engine.INFO_ALL,
-                                  ponder=ponder,
-                                  draw_offered=draw_offered,
-                                  root_moves=root_moves if isinstance(root_moves, list) else None)
+        active_engine = self.engine_for_position(board)
+        result = active_engine.play(board,
+                                    time_limit,
+                                    info=chess.engine.INFO_ALL,
+                                    ponder=ponder,
+                                    draw_offered=draw_offered,
+                                    root_moves=root_moves if isinstance(root_moves, list) else None)
         if game and engine_cfg:
-            result = self.extend_shallow_search(board, game, result, draw_offered, root_moves, engine_cfg)
+            result = self.extend_shallow_search(active_engine, board, game, result, draw_offered, root_moves, engine_cfg)
         self.record_search_result(result, board)
         return self.offer_draw_or_resign(result, board)
 
     def extend_shallow_search(self,
+                              active_engine: chess.engine.SimpleEngine | FillerEngine,
                               board: chess.Board,
                               game: model.Game,
                               result: chess.engine.PlayResult,
@@ -311,13 +356,13 @@ class EngineWrapper:
         extra_movetime = msec(shallow_search_guard.extra_movetime_ms)
         logger.info(f"Extending shallow search at depth {result.info.get('depth')} "
                     f"for {msec_str(extra_movetime)} in game {game.id}")
-        return self.engine.play(board,
-                                chess.engine.Limit(time=to_seconds(extra_movetime),
-                                                   clock_id="shallow search guard"),
-                                info=chess.engine.INFO_ALL,
-                                ponder=False,
-                                draw_offered=draw_offered,
-                                root_moves=root_moves if isinstance(root_moves, list) else None)
+        return active_engine.play(board,
+                                  chess.engine.Limit(time=to_seconds(extra_movetime),
+                                                     clock_id="shallow search guard"),
+                                  info=chess.engine.INFO_ALL,
+                                  ponder=False,
+                                  draw_offered=draw_offered,
+                                  root_moves=root_moves if isinstance(root_moves, list) else None)
 
     def should_extend_shallow_search(self,
                                      board: chess.Board,
@@ -549,6 +594,8 @@ class EngineWrapper:
 
     def quit(self) -> None:
         """Tell the engine to shut down."""
+        if self.endgame_engine:
+            self.endgame_engine.quit()
         self.engine.quit()
 
 
