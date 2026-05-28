@@ -463,7 +463,7 @@ class Lichess:
     def get_online_bots(self) -> list[UserProfileType]:
         """Get a list of bots that are online."""
         try:
-            online_bots_str = self.api_get_raw("online_bots")
+            online_bots_str = self.api_get_raw("online_bots", params={"nb": "512"})
             online_bots = list(filter(bool, online_bots_str.split("\n")))
             return list(map(json.loads, online_bots))
         except Exception:
@@ -527,8 +527,8 @@ class Lichess:
         """Cancel a challenge."""
         self.api_post("cancel", challenge_id, raise_for_status=False)
 
-    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
-                        stream: bool = False) -> OnlineType:
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None, *,
+                        stream: bool = False, authenticated: bool = False) -> OnlineType:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,
                               (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
@@ -540,7 +540,8 @@ class Lichess:
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> OnlineType:
-            json_response: OnlineType = self.other_session.get(path, timeout=2, params=params, stream=stream).json()
+            session = self.session if authenticated else self.other_session  # Choose session based on authentication need
+            json_response: OnlineType = session.get(path, timeout=2, params=params, stream=stream).json()
             return json_response
         return online_book_get()
 
