@@ -268,6 +268,83 @@ def test_choose_opponent__respects_absolute_min_rating_with_rating_difference(mo
     assert (base_time, increment, days, variant, mode) == (60, 0, 0, "standard", "rated")
 
 
+def test_choose_opponent__prefers_configured_high_rating_pool(monkeypatch) -> None:
+    """Matchmaking should prefer stronger opponents when a preferred rating floor is configured."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "lowerbot", "perfs": {"blitz": {"rating": 2600, "games": 50}}},
+        {"username": "strongbot", "perfs": {"blitz": {"rating": 2860, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [180],
+            "challenge_increment": [2],
+            "challenge_days": [None],
+            "opponent_min_rating": 2500,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "preferred_opponent_min_rating": 2800,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"blitz": {"rating": 2870}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent == "strongbot"
+
+
+def test_choose_opponent__falls_back_when_preferred_rating_pool_is_empty(monkeypatch) -> None:
+    """A preferred rating floor should not prevent games when only lower fallback candidates are online."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "fallbackbot", "perfs": {"blitz": {"rating": 2600, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [180],
+            "challenge_increment": [2],
+            "challenge_days": [None],
+            "opponent_min_rating": 2500,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "preferred_opponent_min_rating": 2800,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"blitz": {"rating": 2870}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent == "fallbackbot"
+
+
 def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:
     """Bots refusing bot challenges should be treated as permanently blocked for matchmaking."""
     mock_li = Mock()

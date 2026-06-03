@@ -298,6 +298,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
     set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="opponent_max_rating", default=4000, force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="preferred_opponent_min_rating", default=0, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="rating_preference", default="none")
     set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
     set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
@@ -417,6 +418,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                     "no challenges being created.")
         config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being created.")
+        config_warn(matchmaking.get("preferred_opponent_min_rating", 0) >= 0,
+                    "matchmaking.preferred_opponent_min_rating < 0 will disable the high-rated preference pool.")
         max_games_per_day = 100
         game_timeout = minutes(matchmaking["challenge_timeout"])
         config_warn(game_timeout*max_games_per_day >= days(1),

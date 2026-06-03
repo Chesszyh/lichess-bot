@@ -213,6 +213,7 @@ class Matchmaking:
 
         min_rating = match_config.opponent_min_rating
         max_rating = match_config.opponent_max_rating
+        preferred_min_rating = match_config.config.get("preferred_opponent_min_rating", 0)
         rating_diff = match_config.opponent_rating_difference
         bot_rating = self.perf().get(game_type, {}).get("rating", 0)
         if rating_diff is not None and bot_rating > 0:
@@ -248,6 +249,14 @@ class Matchmaking:
         if not online_bots:
             self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
             self.show_earliest_challenge_time()
+        elif preferred_min_rating > 0:
+            preferred_bots = [bot for bot in online_bots
+                              if bot.get("perfs", {}).get(game_type, {}).get("rating", 0) >= preferred_min_rating]
+            if preferred_bots:
+                logger.info(f"Preferring {len(preferred_bots)} opponents rated at least {preferred_min_rating}.")
+                online_bots = preferred_bots
+            else:
+                logger.info(f"No ready opponents rated at least {preferred_min_rating}; using the fallback pool.")
         bot_username = None
         weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 
