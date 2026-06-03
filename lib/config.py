@@ -252,6 +252,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="extra_movetime_ms", default=500)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_clock_ms", default=15000)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_ply", default=8)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_threshold_ms", default=0)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_ms", default=0)
     set_config_default(CONFIG, "engine", "rating_control", key="enabled", default=False)
     set_config_default(CONFIG, "engine", "rating_control", key="admins", default=[], force_empty_values=True)
     change_value_to_list(CONFIG, "engine", "rating_control", key="admins")
@@ -531,6 +533,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     for key in ["min_depth", "extra_movetime_ms", "min_clock_ms", "min_ply"]:
         config_assert(shallow_search_guard.get(key, 0) >= 0,
                       f"`engine:shallow_search_guard:{key}` must be non-negative.")
+
+    bullet_time_management = CONFIG["engine"].get("bullet_time_management") or {}
+    for key in ["winning_mate_clock_threshold_ms", "winning_mate_clock_ms"]:
+        config_assert(bullet_time_management.get(key, 0) >= 0,
+                      f"`engine:bullet_time_management:{key}` must be non-negative.")
 
     rating_control = CONFIG["engine"].get("rating_control") or {}
     config_assert(rating_control.get("min_elo", 0) <= rating_control.get("max_elo", 0),

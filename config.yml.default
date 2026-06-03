@@ -50,6 +50,10 @@ engine:                            # Engine settings.
     min_clock_ms: 15000
     min_ply: 8
 
+  bullet_time_management:
+    winning_mate_clock_threshold_ms: 0 # If positive, use winning_mate_clock_ms after a previous engine search found a forced mate and the bot clock is below this value.
+    winning_mate_clock_ms: 0           # Exact movetime cap for converting a known forced mate in fast games.
+
   rating_control:
     enabled: false                 # Allow trusted users to change UCI_LimitStrength/UCI_Elo during a game with !rating.
     admins: []

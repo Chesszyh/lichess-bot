@@ -110,6 +110,7 @@ class EngineWrapper:
         self.endgame_engine: chess.engine.SimpleEngine | None = None
         self.endgame_engine_max_pieces = 0
         self.endgame_engine_queenless_max_pieces = 0
+        self.last_search_was_forcing_mate = False
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
         """
@@ -220,7 +221,8 @@ class EngineWrapper:
             time_limit, can_ponder = move_time(board, game, can_ponder,
                                                setup_timer, move_overhead,
                                                is_correspondence, correspondence_move_time)
-            time_limit = apply_bullet_time_management(board, game, time_limit, engine_cfg)
+            time_limit = apply_bullet_time_management(board, game, time_limit, engine_cfg,
+                                                      fast_win=self.last_search_was_forcing_mate)
 
             try:
                 if type(self).search is EngineWrapper.search:
@@ -402,7 +404,11 @@ class EngineWrapper:
         """Record final search score for draw/resign decisions."""
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
-        self.scores.append(result.info.get("score", null_score))
+        engine_score = result.info.get("score")
+        score = engine_score or null_score
+        self.scores.append(score)
+        mate = engine_score.relative.mate() if engine_score else None
+        self.last_search_was_forcing_mate = mate is not None and mate > 0
 
     def comment_index(self, move_stack_index: int) -> int:
         """
@@ -865,7 +871,7 @@ def game_clock_time(board: chess.Board,
 
 
 def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limit: chess.engine.Limit,
-                                 engine_cfg: Configuration) -> chess.engine.Limit:
+                                 engine_cfg: Configuration, fast_win: bool = False) -> chess.engine.Limit:
     """Use a lower reported clock in fast games so Stockfish does not spend long chunks of time."""
     bullet_time_management = engine_cfg.lookup("bullet_time_management")
     if not bullet_time_management or not bullet_time_management.enabled:
@@ -893,6 +899,13 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
         clock_cap_ms = bullet_time_management.low_clock_ms
     elif clock_ms <= bullet_time_management.high_clock_threshold_ms:
         clock_cap_ms = bullet_time_management.high_clock_ms
+    winning_mate_clock_threshold_ms = bullet_time_management.lookup("winning_mate_clock_threshold_ms")
+    winning_mate_clock_ms = bullet_time_management.lookup("winning_mate_clock_ms")
+    if (fast_win
+            and winning_mate_clock_threshold_ms is not None
+            and winning_mate_clock_ms is not None
+            and clock_ms <= winning_mate_clock_threshold_ms):
+        clock_cap_ms = min(clock_cap_ms, winning_mate_clock_ms)
 
     capped_clock = max(msec(1), min(msec(clock_ms), msec(clock_cap_ms)))
     if side == "wtime":
