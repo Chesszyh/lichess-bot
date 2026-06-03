@@ -1,0 +1,277 @@
+{
+  "id": "2026-06-03-194751",
+  "generated_at": "2026-06-03T11:47:51.833412891Z",
+  "language": "zh",
+  "pages": [
+    {
+      "slug": "1-gai-lan",
+      "title": "概览",
+      "file": "1-gai-lan.md",
+      "section": "快速开始",
+      "level": "Beginner"
+    },
+    {
+      "slug": "2-kuai-su-kai-shi",
+      "title": "快速开始",
+      "file": "2-kuai-su-kai-shi.md",
+      "section": "快速开始",
+      "level": "Beginner"
+    },
+    {
+      "slug": "3-chuang-jian-lichess-bot-zhang-hao-yu-oauth-token",
+      "title": "创建 Lichess BOT 账号与 OAuth Token",
+      "file": "3-chuang-jian-lichess-bot-zhang-hao-yu-oauth-token.md",
+      "section": "快速开始",
+      "group": "首次部署",
+      "level": "Beginner"
+    },
+    {
+      "slug": "4-an-zhuang-python-huan-jing-bing-yun-xing-ce-shi",
+      "title": "安装 Python 环境并运行测试",
+      "file": "4-an-zhuang-python-huan-jing-bing-yun-xing-ce-shi.md",
+      "section": "快速开始",
+      "group": "首次部署",
+      "level": "Beginner"
+    },
+    {
+      "slug": "5-pei-zhi-bing-yan-zheng-guo-ji-xiang-qi-yin-qing",
+      "title": "配置并验证国际象棋引擎",
+      "file": "5-pei-zhi-bing-yan-zheng-guo-ji-xiang-qi-yin-qing.md",
+      "section": "快速开始",
+      "group": "首次部署",
+      "level": "Beginner"
+    },
+    {
+      "slug": "6-qi-dong-ji-qi-ren-bing-guan-cha-yun-xing-ri-zhi",
+      "title": "启动机器人并观察运行日志",
+      "file": "6-qi-dong-ji-qi-ren-bing-guan-cha-yun-xing-ri-zhi.md",
+      "section": "快速开始",
+      "group": "首次部署",
+      "level": "Beginner"
+    },
+    {
+      "slug": "7-shi-yong-docker-yun-xing-ji-qi-ren",
+      "title": "使用 Docker 运行机器人",
+      "file": "7-shi-yong-docker-yun-xing-ji-qi-ren.md",
+      "section": "快速开始",
+      "group": "首次部署",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "8-pei-zhi-wen-jian-jie-gou-yu-bi-tian-zi-duan",
+      "title": "配置文件结构与必填字段",
+      "file": "8-pei-zhi-wen-jian-jie-gou-yu-bi-tian-zi-duan.md",
+      "section": "快速开始",
+      "group": "基础配置",
+      "level": "Beginner"
+    },
+    {
+      "slug": "9-tiao-zhan-jie-shou-gui-ze-bian-ti-shi-xian-ping-ji-yu-bing-fa",
+      "title": "挑战接收规则：变体、时限、评级与并发",
+      "file": "9-tiao-zhan-jie-shou-gui-ze-bian-ti-shi-xian-ping-ji-yu-bing-fa.md",
+      "section": "快速开始",
+      "group": "基础配置",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "10-kai-ju-ku-zai-xian-zou-fa-yu-can-ju-ku-pei-zhi",
+      "title": "开局库、在线走法与残局库配置",
+      "file": "10-kai-ju-ku-zai-xian-zou-fa-yu-can-ju-ku-pei-zhi.md",
+      "section": "快速开始",
+      "group": "基础配置",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "11-ren-shu-qiu-he-hui-qi-yu-liao-tian-xing-wei-pei-zhi",
+      "title": "认输、求和、悔棋与聊天行为配置",
+      "file": "11-ren-shu-qiu-he-hui-qi-yu-liao-tian-xing-wei-pei-zhi.md",
+      "section": "快速开始",
+      "group": "基础配置",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "12-qi-yong-zhu-dong-pei-dui-bing-tiao-zhan-qi-ta-ji-qi-ren",
+      "title": "启用主动配对并挑战其他机器人",
+      "file": "12-qi-yong-zhu-dong-pei-dui-bing-tiao-zhan-qi-ta-ji-qi-ren.md",
+      "section": "快速开始",
+      "group": "扩展使用",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "13-can-jia-jing-ji-chang-jin-biao-sai-yu-tuan-dui-sai-shi",
+      "title": "参加竞技场锦标赛与团队赛事",
+      "file": "13-can-jia-jing-ji-chang-jin-biao-sai-yu-tuan-dui-sai-shi.md",
+      "section": "快速开始",
+      "group": "扩展使用",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "14-chuang-jian-zi-ding-yi-homemade-yin-qing",
+      "title": "创建自定义 Homemade 引擎",
+      "file": "14-chuang-jian-zi-ding-yi-homemade-yin-qing.md",
+      "section": "快速开始",
+      "group": "扩展使用",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "15-bao-cun-pgn-cai-ji-zi-yuan-shu-ju-yu-dao-chu-bao-gao",
+      "title": "保存 PGN、采集资源数据与导出报告",
+      "file": "15-bao-cun-pgn-cai-ji-zi-yuan-shu-ju-yu-dao-chu-bao-gao.md",
+      "section": "快速开始",
+      "group": "扩展使用",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "16-zheng-ti-jia-gou-lichess-api-yu-qi-lei-yin-qing-zhi-jian-de-qiao-jie-ceng",
+      "title": "整体架构：Lichess API 与棋类引擎之间的桥接层",
+      "file": "16-zheng-ti-jia-gou-lichess-api-yu-qi-lei-yin-qing-zhi-jian-de-qiao-jie-ceng.md",
+      "section": "深入解析",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "17-zhu-xun-huan-shi-jian-liu-yu-duo-jin-cheng-ren-wu-xie-zuo",
+      "title": "主循环、事件流与多进程任务协作",
+      "file": "17-zhu-xun-huan-shi-jian-liu-yu-duo-jin-cheng-ren-wu-xie-zuo.md",
+      "section": "深入解析",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "18-you-xi-sheng-ming-zhou-qi-cong-tiao-zhan-dao-dui-ju-jie-shu",
+      "title": "游戏生命周期：从挑战到对局结束",
+      "file": "18-you-xi-sheng-ming-zhou-qi-cong-tiao-zhan-dao-dui-ju-jie-shu.md",
+      "section": "深入解析",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "19-kong-zhi-liu-kan-men-gou-duan-xian-zhong-lian-yu-you-ya-tui-chu",
+      "title": "控制流看门狗、断线重连与优雅退出",
+      "file": "19-kong-zhi-liu-kan-men-gou-duan-xian-zhong-lian-yu-you-ya-tui-chu.md",
+      "section": "深入解析",
+      "group": "系统架构",
+      "level": "Advanced"
+    },
+    {
+      "slug": "20-tiao-zhan-wan-jia-yu-dui-ju-zhuang-tai-jian-mo",
+      "title": "挑战、玩家与对局状态建模",
+      "file": "20-tiao-zhan-wan-jia-yu-dui-ju-zhuang-tai-jian-mo.md",
+      "section": "深入解析",
+      "group": "核心领域模型",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "21-shi-zhong-ji-shi-qi-yu-bu-tong-shi-jian-kong-zhi-de-chu-li",
+      "title": "时钟、计时器与不同时间控制的处理",
+      "file": "21-shi-zhong-ji-shi-qi-yu-bu-tong-shi-jian-kong-zhi-de-chu-li.md",
+      "section": "深入解析",
+      "group": "核心领域模型",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "22-pei-zhi-jia-zai-mo-ren-zhi-tian-chong-yu-xiao-yan-ji-zhi",
+      "title": "配置加载、默认值填充与校验机制",
+      "file": "22-pei-zhi-jia-zai-mo-ren-zhi-tian-chong-yu-xiao-yan-ji-zhi.md",
+      "section": "深入解析",
+      "group": "核心领域模型",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "23-lei-xing-ding-yi-yu-api-shu-ju-jie-gou-yue-shu",
+      "title": "类型定义与 API 数据结构约束",
+      "file": "23-lei-xing-ding-yi-yu-api-shu-ju-jie-gou-yue-shu.md",
+      "section": "深入解析",
+      "group": "核心领域模型",
+      "level": "Advanced"
+    },
+    {
+      "slug": "24-tong-yin-qing-feng-zhuang-uci-xboard-yu-homemade",
+      "title": "统一引擎封装：UCI、XBoard 与 Homemade",
+      "file": "24-tong-yin-qing-feng-zhuang-uci-xboard-yu-homemade.md",
+      "section": "深入解析",
+      "group": "引擎集成",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "25-shi-jian-guan-li-ponder-sou-suo-can-shu-yu-zou-fa-sheng-cheng",
+      "title": "时间管理、Ponder、搜索参数与走法生成",
+      "file": "25-shi-jian-guan-li-ponder-sou-suo-can-shu-yu-zou-fa-sheng-cheng.md",
+      "section": "深入解析",
+      "group": "引擎集成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "26-wai-bu-zou-fa-lai-yuan-polyglot-yun-fen-xi-opening-explorer-yu-tablebase",
+      "title": "外部走法来源：Polyglot、云分析、Opening Explorer 与 Tablebase",
+      "file": "26-wai-bu-zou-fa-lai-yuan-polyglot-yun-fen-xi-opening-explorer-yu-tablebase.md",
+      "section": "深入解析",
+      "group": "引擎集成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "27-can-ju-zhuan-yong-yin-qing-yu-qian-ceng-sou-suo-bao-hu",
+      "title": "残局专用引擎与浅层搜索保护",
+      "file": "27-can-ju-zhuan-yong-yin-qing-yu-qian-ceng-sou-suo-bao-hu.md",
+      "section": "深入解析",
+      "group": "引擎集成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "28-lichess-bot-api-feng-zhuang-yu-qing-qiu-zhong-shi-ce-lue",
+      "title": "Lichess Bot API 封装与请求重试策略",
+      "file": "28-lichess-bot-api-feng-zhuang-yu-qing-qiu-zhong-shi-ce-lue.md",
+      "section": "深入解析",
+      "group": "平台交互",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "29-liao-tian-wen-hou-yu-hui-qi-qiu-he-yu-ren-shu-jiao-hu",
+      "title": "聊天、问候语、悔棋、求和与认输交互",
+      "file": "29-liao-tian-wen-hou-yu-hui-qi-qiu-he-yu-ren-shu-jiao-hu.md",
+      "section": "深入解析",
+      "group": "平台交互",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "30-su-lu-xian-zhi-shi-bie-tui-bi-ce-lue-yu-tiao-zhan-leng-que",
+      "title": "速率限制识别、退避策略与挑战冷却",
+      "file": "30-su-lu-xian-zhi-shi-bie-tui-bi-ce-lue-yu-tiao-zhan-leng-que.md",
+      "section": "深入解析",
+      "group": "平台交互",
+      "level": "Advanced"
+    },
+    {
+      "slug": "31-sheng-chan-bu-shu-duo-ji-qi-ren-hou-tai-yun-xing-yu-ri-zhi-guan-li",
+      "title": "生产部署：多机器人、后台运行与日志管理",
+      "file": "31-sheng-chan-bu-shu-duo-ji-qi-ren-hou-tai-yun-xing-yu-ri-zhi-guan-li.md",
+      "section": "深入解析",
+      "group": "运维与质量",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "32-zi-yuan-jian-kong-xing-neng-diao-you-yu-bing-fa-rong-liang-gui-hua",
+      "title": "资源监控、性能调优与并发容量规划",
+      "file": "32-zi-yuan-jian-kong-xing-neng-diao-you-yu-bing-fa-rong-liang-gui-hua.md",
+      "section": "深入解析",
+      "group": "运维与质量",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "33-ce-shi-ti-xi-mo-ni-yin-qing-mo-ni-api-yu-he-xin-xing-wei-yan-zheng",
+      "title": "测试体系：模拟引擎、模拟 API 与核心行为验证",
+      "file": "33-ce-shi-ti-xi-mo-ni-yin-qing-mo-ni-api-yu-he-xin-xing-wei-yan-zheng.md",
+      "section": "深入解析",
+      "group": "运维与质量",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "34-an-quan-shi-jian-token-bao-hu-quan-xian-fan-wei-yu-gong-xian-gui-fan",
+      "title": "安全实践：Token 保护、权限范围与贡献规范",
+      "file": "34-an-quan-shi-jian-token-bao-hu-quan-xian-fan-wei-yu-gong-xian-gui-fan.md",
+      "section": "深入解析",
+      "group": "运维与质量",
+      "level": "Advanced"
+    }
+  ]
+}
