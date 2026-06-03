@@ -901,6 +901,9 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
             time_limit.white_inc = None
             time_limit.black_inc = None
             logger.info(f"Using exact movetime cap of {msec_str(capped_clock)} for game {game.id}")
+        elif bullet_time_management.lookup("hard_movetime_caps"):
+            time_limit.time = to_seconds(capped_clock)
+            logger.info(f"Using hard movetime watchdog of {msec_str(capped_clock)} for game {game.id}")
     return time_limit
 
 
