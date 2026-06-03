@@ -140,10 +140,10 @@ def append_sample(path: Path, sample: ResourceSample) -> None:
         })
 
 
-def sample_period_for_active_games(active_game_ids: Sequence[str], sample_period: float,
-                                   idle_sample_period: float) -> float:
-    """Return the sampling interval for the current activity state."""
-    return sample_period if active_game_ids else idle_sample_period
+def should_append_sample(active_game_ids: Sequence[str], now: float, last_idle_sample_time: float,
+                         idle_sample_period: float) -> bool:
+    """Return whether a resource sample should be written now."""
+    return bool(active_game_ids) or now - last_idle_sample_time >= idle_sample_period
 
 
 def monitor_resource_usage(root_pid: int, active_game_ids: Sequence[str], resource_cfg: Configuration) -> None:
@@ -152,12 +152,17 @@ def monitor_resource_usage(root_pid: int, active_game_ids: Sequence[str], resour
     idle_sample_period = float(resource_cfg.idle_sample_period)
     output_path = Path(resource_cfg.directory) / "resource_usage.csv"
     monitor_pid = os.getpid()
+    last_idle_sample_time = -idle_sample_period
     while True:
         active_games = list(active_game_ids)
-        current_sample_period = sample_period_for_active_games(active_games, sample_period, idle_sample_period)
-        sample = sample_process_tree(root_pid, active_games, current_sample_period, exclude_pids={monitor_pid})
-        append_sample(output_path, sample)
-        time.sleep(current_sample_period)
+        now = time.monotonic()
+        if should_append_sample(active_games, now, last_idle_sample_time, idle_sample_period):
+            interval_seconds = sample_period if active_games else idle_sample_period
+            sample = sample_process_tree(root_pid, active_games, interval_seconds, exclude_pids={monitor_pid})
+            append_sample(output_path, sample)
+            if not active_games:
+                last_idle_sample_time = now
+        time.sleep(sample_period)
 
 
 def start_resource_monitor(root_pid: int, active_game_ids: Sequence[str],

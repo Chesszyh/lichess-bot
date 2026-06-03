@@ -5,7 +5,7 @@ import datetime
 from lib.resource_monitor import (ResourceSample,
                                   parse_ps_output,
                                   process_tree,
-                                  sample_period_for_active_games,
+                                  should_append_sample,
                                   summarize_resource_samples)
 
 
@@ -68,11 +68,12 @@ def test_summarize_resource_samples__groups_by_game_day_and_week() -> None:
     assert by_week[0]["group"] == "2026-W16"
 
 
-def test_sample_period_for_active_games__uses_regular_period_during_games() -> None:
+def test_should_append_sample__always_samples_during_games() -> None:
     """Active games should keep high-resolution resource samples."""
-    assert sample_period_for_active_games(["game1"], sample_period=5, idle_sample_period=60) == 5
+    assert should_append_sample(["game1"], now=10, last_idle_sample_time=9, idle_sample_period=60)
 
 
-def test_sample_period_for_active_games__uses_idle_period_without_games() -> None:
+def test_should_append_sample__throttles_idle_samples_until_idle_period_elapsed() -> None:
     """Idle resource samples should be throttled to avoid unbounded log growth."""
-    assert sample_period_for_active_games([], sample_period=5, idle_sample_period=60) == 60
+    assert not should_append_sample([], now=10, last_idle_sample_time=9, idle_sample_period=60)
+    assert should_append_sample([], now=69, last_idle_sample_time=9, idle_sample_period=60)
