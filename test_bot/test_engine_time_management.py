@@ -147,6 +147,24 @@ class MateFakeEngine:
         })
 
 
+class WinningScoreFakeEngine:
+    """Engine protocol that returns a large positive centipawn score."""
+
+    id = {"name": "WinningScoreFakeEngine"}
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        return chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(900), board.turn),
+        })
+
+
 def test_search__uses_endgame_engine_under_piece_threshold() -> None:
     """Configured endgames should be searched by the secondary engine."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())
@@ -210,6 +228,20 @@ def test_record_search_result__does_not_treat_missing_score_as_forcing_mate() ->
     wrapper.record_search_result(result, chess.Board())
 
     assert not wrapper.last_search_was_forcing_mate
+
+
+def test_search__records_winning_score_for_fast_win_time_management() -> None:
+    """A large positive score should make the next fast-game move eligible for the quick win cap."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    wrapper.engine = WinningScoreFakeEngine()
+
+    wrapper.search(chess.Board(),
+                   chess.engine.Limit(time=1.0),
+                   ponder=False,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None))
+
+    assert wrapper.last_search_score_cp == 900
 
 
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:
@@ -513,5 +545,37 @@ def test_apply_bullet_time_management__uses_fast_win_cap_after_forcing_mate() ->
     capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg, fast_win=True)
 
     assert capped.time == 1.0
+    assert capped.white_clock is None
+    assert capped.black_clock is None
+
+
+def test_apply_bullet_time_management__uses_fast_win_cap_after_large_winning_score() -> None:
+    """A large previous score should reduce low-clock conversion time without requiring mate."""
+    game = fast_game("blitz", 300000, 24000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "force_movetime_caps": True,
+            "force_movetime_threshold_ms": 30000,
+            "max_clock_ms": 30000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 30000,
+            "low_clock_threshold_ms": 30000,
+            "low_clock_ms": 5000,
+            "critical_clock_threshold_ms": 5000,
+            "critical_clock_ms": 1000,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 500,
+            "winning_score_threshold_cp": 800,
+            "winning_score_clock_threshold_ms": 30000,
+            "winning_score_clock_ms": 1500,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=24.0, black_clock=220.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg, last_score_cp=900)
+
+    assert capped.time == 1.5
     assert capped.white_clock is None
     assert capped.black_clock is None
