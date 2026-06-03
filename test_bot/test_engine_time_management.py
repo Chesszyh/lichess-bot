@@ -170,6 +170,49 @@ def test_search__keeps_main_engine_above_endgame_threshold() -> None:
     assert endgame_engine.calls == 0
 
 
+def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:
+    """Queenless technical positions can be handed to the secondary engine before low piece count."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    main_engine = NamedFakeEngine("main", "e2e4")
+    endgame_engine = NamedFakeEngine("endgame", "e2e3")
+    wrapper.engine = main_engine
+    wrapper.endgame_engine = endgame_engine
+    wrapper.endgame_engine_max_pieces = 7
+    wrapper.endgame_engine_queenless_max_pieces = 32
+
+    board = chess.Board("rnb1kbnr/pppp1ppp/8/8/8/8/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
+    result = wrapper.search(board,
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None))
+
+    assert result.move == chess.Move.from_uci("e2e3")
+    assert main_engine.calls == 0
+    assert endgame_engine.calls == 1
+
+
+def test_search__keeps_main_engine_for_queenless_positions_above_configured_limit() -> None:
+    """Queenless handoff should still respect its configured piece ceiling."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    main_engine = NamedFakeEngine("main", "e2e4")
+    endgame_engine = NamedFakeEngine("endgame", "e2e3")
+    wrapper.engine = main_engine
+    wrapper.endgame_engine = endgame_engine
+    wrapper.endgame_engine_max_pieces = 7
+    wrapper.endgame_engine_queenless_max_pieces = 20
+
+    result = wrapper.search(chess.Board("rnb1kbnr/pppp1ppp/8/8/8/8/PPPP1PPP/RNB1KBNR w KQkq - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None))
+
+    assert result.move == chess.Move.from_uci("e2e4")
+    assert main_engine.calls == 1
+    assert endgame_engine.calls == 0
+
+
 def test_search__extends_shallow_bullet_result_once() -> None:
     """A shallow result with safe clock should get one short follow-up search."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

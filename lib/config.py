@@ -192,6 +192,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "endgame_engine", key="engine_options", default={}, force_empty_values=True)
     set_config_default(CONFIG, "engine", "endgame_engine", key="uci_options", default={}, force_empty_values=True)
     set_config_default(CONFIG, "engine", "endgame_engine", key="max_pieces", default=7)
+    set_config_default(CONFIG, "engine", "endgame_engine", key="queenless_max_pieces", default=0)
     set_config_default(CONFIG, "engine", "endgame_engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
@@ -375,6 +376,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"Try: chmod +x {endgame_engine_path}")
         config_assert(endgame_engine["max_pieces"] > 0,
                       "engine:endgame_engine:max_pieces must be greater than 0.")
+        config_assert(endgame_engine["queenless_max_pieces"] >= 0,
+                      "engine:endgame_engine:queenless_max_pieces must be greater than or equal to 0.")
 
     if CONFIG["engine"]["protocol"] == "xboard":
         for section, subsection in (("online_moves", "online_egtb"),

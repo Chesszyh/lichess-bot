@@ -109,6 +109,7 @@ class EngineWrapper:
         self.strength_limit_elo: int | None = None
         self.endgame_engine: chess.engine.SimpleEngine | None = None
         self.endgame_engine_max_pieces = 0
+        self.endgame_engine_queenless_max_pieces = 0
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
         """
@@ -133,7 +134,9 @@ class EngineWrapper:
         commands = engine_commands(cfg)
         stderr = subprocess.DEVNULL if cfg.silence_stderr else None
         options = remove_managed_options(cfg.uci_options or Configuration({}))
-        logger.info(f"Starting endgame engine for <= {cfg.max_pieces} pieces: {commands}")
+        queenless_message = (f" or queenless <= {cfg.queenless_max_pieces} pieces"
+                             if cfg.queenless_max_pieces else "")
+        logger.info(f"Starting endgame engine for <= {cfg.max_pieces} pieces{queenless_message}: {commands}")
         self.endgame_engine = chess.engine.SimpleEngine.popen_uci(commands,
                                                                   timeout=60.,
                                                                   debug=debug,
@@ -148,6 +151,7 @@ class EngineWrapper:
             self.endgame_engine = None
             raise
         self.endgame_engine_max_pieces = cfg.max_pieces
+        self.endgame_engine_queenless_max_pieces = cfg.queenless_max_pieces
 
     def __enter__(self) -> EngineWrapper:  # noqa: PYI034 (return Self not available until 3.11)
         """Enter context so engine communication will be properly shutdown."""
@@ -303,8 +307,14 @@ class EngineWrapper:
 
     def engine_for_position(self, board: chess.Board) -> chess.engine.SimpleEngine | FillerEngine:
         """Return the engine that should search the current position."""
-        if self.endgame_engine and chess.popcount(board.occupied) <= self.endgame_engine_max_pieces:
-            return self.endgame_engine
+        if self.endgame_engine:
+            piece_count = chess.popcount(board.occupied)
+            queenless = not (board.queens & board.occupied)
+            if (piece_count <= self.endgame_engine_max_pieces
+                    or (self.endgame_engine_queenless_max_pieces
+                        and queenless
+                        and piece_count <= self.endgame_engine_queenless_max_pieces)):
+                return self.endgame_engine
         return self.engine
 
     def search(self,
