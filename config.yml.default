@@ -231,6 +231,7 @@ resource_monitor:
   enabled: false                   # Record CPU and memory usage for lichess-bot and child engine processes.
   directory: "resource_records"    # Directory containing resource_usage.csv.
   sample_period: 5                 # Seconds between samples.
+  idle_sample_period: 5            # Seconds between samples when no games are active.
 
 arena:
   enabled: false                   # Set it to 'true' to join configured team Arena tournaments.

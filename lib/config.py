@@ -152,6 +152,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "resource_monitor", key="enabled", default=False)
     set_config_default(CONFIG, "resource_monitor", key="directory", default="resource_records", force_empty_values=True)
     set_config_default(CONFIG, "resource_monitor", key="sample_period", default=5)
+    set_config_default(CONFIG, "resource_monitor", key="idle_sample_period", default=CONFIG["resource_monitor"]["sample_period"])
     set_config_default(CONFIG, "arena", key="enabled", default=False)
     set_config_default(CONFIG, "arena", key="teams", default=[], force_empty_values=True)
     change_value_to_list(CONFIG, "arena", key="teams")
@@ -438,6 +439,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     resource_monitor = CONFIG["resource_monitor"]
     config_assert(resource_monitor["sample_period"] > 0, "`resource_monitor:sample_period` must be greater than 0.")
+    config_assert(resource_monitor["idle_sample_period"] > 0,
+                  "`resource_monitor:idle_sample_period` must be greater than 0.")
 
     arena = CONFIG["arena"]
     config_assert(arena["scan_period"] > 0, "`arena:scan_period` must be greater than 0.")

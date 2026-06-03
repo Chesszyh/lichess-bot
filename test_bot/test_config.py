@@ -61,3 +61,38 @@ def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypat
 
     with pytest.raises(Exception, match="not-a-choice"):
         config.validate_config(raw_config)
+
+
+def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_period() -> None:
+    """Idle resource sampling should preserve legacy sample cadence unless configured."""
+    raw_config = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+        "resource_monitor": {"sample_period": 17},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["resource_monitor"]["idle_sample_period"] == 17
+
+
+def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch) -> None:
+    """Idle resource sampling period must be positive."""
+    raw_config = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+        "resource_monitor": {"idle_sample_period": 0},
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(config.os, "access", lambda *_: True)
+
+    with pytest.raises(Exception, match="idle_sample_period"):
+        config.validate_config(raw_config)

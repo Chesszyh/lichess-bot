@@ -140,15 +140,24 @@ def append_sample(path: Path, sample: ResourceSample) -> None:
         })
 
 
+def sample_period_for_active_games(active_game_ids: Sequence[str], sample_period: float,
+                                   idle_sample_period: float) -> float:
+    """Return the sampling interval for the current activity state."""
+    return sample_period if active_game_ids else idle_sample_period
+
+
 def monitor_resource_usage(root_pid: int, active_game_ids: Sequence[str], resource_cfg: Configuration) -> None:
     """Continuously sample lichess-bot process-tree resource usage."""
     sample_period = float(resource_cfg.sample_period)
+    idle_sample_period = float(resource_cfg.idle_sample_period)
     output_path = Path(resource_cfg.directory) / "resource_usage.csv"
     monitor_pid = os.getpid()
     while True:
-        sample = sample_process_tree(root_pid, list(active_game_ids), sample_period, exclude_pids={monitor_pid})
+        active_games = list(active_game_ids)
+        current_sample_period = sample_period_for_active_games(active_games, sample_period, idle_sample_period)
+        sample = sample_process_tree(root_pid, active_games, current_sample_period, exclude_pids={monitor_pid})
         append_sample(output_path, sample)
-        time.sleep(sample_period)
+        time.sleep(current_sample_period)
 
 
 def start_resource_monitor(root_pid: int, active_game_ids: Sequence[str],
