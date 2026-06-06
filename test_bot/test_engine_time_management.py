@@ -802,3 +802,40 @@ def test_apply_bullet_time_management__keeps_complex_equal_blitz_positions_uncap
     assert capped.time == 30.0
     assert capped.white_clock == 30.0
     assert capped.black_clock == 270.0
+
+
+def test_apply_bullet_time_management__prefers_blitz_time_management_for_blitz() -> None:
+    """If blitz_time_management is defined and enabled, it should be preferred over bullet_time_management for blitz."""
+    game = fast_game("blitz", 300000, 270000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet"],
+            "max_clock_ms": 10000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 10000,
+            "low_clock_threshold_ms": 0,
+            "low_clock_ms": 0,
+            "critical_clock_threshold_ms": 0,
+            "critical_clock_ms": 0,
+            "emergency_clock_threshold_ms": 0,
+            "emergency_clock_ms": 0,
+        },
+        "blitz_time_management": {
+            "enabled": True,
+            "max_clock_ms": 120000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 120000,
+            "low_clock_threshold_ms": 0,
+            "low_clock_ms": 0,
+            "critical_clock_threshold_ms": 0,
+            "critical_clock_ms": 0,
+            "emergency_clock_threshold_ms": 0,
+            "emergency_clock_ms": 0,
+        }
+    })
+
+    limit = chess.engine.Limit(white_clock=270.0, black_clock=270.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg)
+
+    assert capped.white_clock == 120.0

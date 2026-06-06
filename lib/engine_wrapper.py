@@ -905,13 +905,20 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
                                  engine_cfg: Configuration, fast_win: bool = False,
                                  last_score_cp: int | None = None) -> chess.engine.Limit:
     """Use a lower reported clock in fast games so Stockfish does not spend long chunks of time."""
-    bullet_time_management = engine_cfg.lookup("bullet_time_management")
-    if not bullet_time_management or not bullet_time_management.enabled:
-        return time_limit
+    bullet_time_management = None
+    if game.speed == "blitz":
+        blitz_tm = engine_cfg.lookup("blitz_time_management")
+        if blitz_tm and blitz_tm.enabled:
+            bullet_time_management = blitz_tm
 
-    configured_speeds = bullet_time_management.lookup("speeds") or ["bullet"]
-    if game.speed not in configured_speeds:
-        return time_limit
+    if bullet_time_management is None:
+        bullet_time_management = engine_cfg.lookup("bullet_time_management")
+        if not bullet_time_management or not bullet_time_management.enabled:
+            return time_limit
+
+        configured_speeds = bullet_time_management.lookup("speeds") or ["bullet"]
+        if game.speed not in configured_speeds:
+            return time_limit
 
     side = wbtime(board)
     clock = time_limit.white_clock if side == "wtime" else time_limit.black_clock
