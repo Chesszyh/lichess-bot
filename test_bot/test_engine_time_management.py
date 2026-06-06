@@ -107,6 +107,35 @@ class FakeEngine:
         return self._results.pop(0)
 
 
+class WorseFollowUpFakeEngine:
+    """Engine protocol whose follow-up search is shallower than the original result."""
+
+    id = {"name": "WorseFollowUpFakeEngine"}
+
+    def __init__(self) -> None:
+        self.calls: list[chess.engine.Limit] = []
+        self._results = [
+            chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, {
+                "depth": 8,
+                "score": chess.engine.PovScore(chess.engine.Cp(20), chess.WHITE),
+            }),
+            chess.engine.PlayResult(chess.Move.from_uci("d2d4"), None, {
+                "depth": 4,
+                "score": chess.engine.PovScore(chess.engine.Cp(-20), chess.WHITE),
+            }),
+        ]
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        self.calls.append(limit)
+        return self._results.pop(0)
+
+
 class NamedFakeEngine:
     """Engine protocol that records calls and returns one fixed move."""
 
@@ -412,6 +441,35 @@ def test_search__extends_shallow_bullet_result_once() -> None:
     assert fake_engine.calls[1].time == 0.7
     assert len(wrapper.scores) == 1
     assert wrapper.scores[0].relative.score() == 25
+
+
+def test_search__keeps_original_result_when_shallow_extension_is_worse() -> None:
+    """A follow-up shallow search should not replace a deeper original result."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    fake_engine = WorseFollowUpFakeEngine()
+    wrapper.engine = fake_engine
+    engine_cfg = Configuration({
+        "shallow_search_guard": {
+            "enabled": True,
+            "speeds": ["blitz"],
+            "min_depth": 12,
+            "extra_movetime_ms": 1200,
+            "min_clock_ms": 30000,
+            "min_ply": 0,
+        },
+    })
+
+    result = wrapper.search(chess.Board(),
+                            chess.engine.Limit(white_clock=180, black_clock=180),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=fast_game("blitz", 180000, 180000),
+                            engine_cfg=engine_cfg)
+
+    assert result.move == chess.Move.from_uci("e2e4")
+    assert result.info["depth"] == 8
+    assert len(fake_engine.calls) == 2
 
 
 def test_apply_bullet_time_management__keeps_high_clock_blitz_uncapped() -> None:

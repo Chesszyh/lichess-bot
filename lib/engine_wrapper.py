@@ -390,13 +390,21 @@ class EngineWrapper:
         extra_movetime = msec(shallow_search_guard.extra_movetime_ms)
         logger.info(f"Extending shallow search at depth {result.info.get('depth')} "
                     f"for {msec_str(extra_movetime)} in game {game.id}")
-        return active_engine.play(board,
-                                  chess.engine.Limit(time=to_seconds(extra_movetime),
-                                                     clock_id="shallow search guard"),
-                                  info=chess.engine.INFO_ALL,
-                                  ponder=False,
-                                  draw_offered=draw_offered,
-                                  root_moves=root_moves if isinstance(root_moves, list) else None)
+        follow_up = active_engine.play(board,
+                                       chess.engine.Limit(time=to_seconds(extra_movetime),
+                                                          clock_id="shallow search guard"),
+                                       info=chess.engine.INFO_ALL,
+                                       ponder=False,
+                                       draw_offered=draw_offered,
+                                       root_moves=root_moves if isinstance(root_moves, list) else None)
+        original_depth = result.info.get("depth") or 0
+        follow_up_depth = follow_up.info.get("depth") or 0
+        if follow_up_depth > original_depth:
+            return follow_up
+
+        logger.info(f"Keeping original depth {original_depth} over shallow follow-up depth {follow_up_depth} "
+                    f"for game {game.id}")
+        return result
 
     def should_extend_shallow_search(self,
                                      board: chess.Board,
