@@ -940,6 +940,19 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
             and last_score_cp >= winning_score_threshold_cp
             and clock_ms <= winning_score_clock_threshold_ms):
         clock_cap_ms = min(clock_cap_ms, winning_score_clock_ms)
+    equal_simplified_score_threshold_cp = bullet_time_management.lookup("equal_simplified_score_threshold_cp")
+    equal_simplified_piece_threshold = bullet_time_management.lookup("equal_simplified_piece_threshold")
+    equal_simplified_clock_threshold_ms = bullet_time_management.lookup("equal_simplified_clock_threshold_ms")
+    equal_simplified_clock_ms = bullet_time_management.lookup("equal_simplified_clock_ms")
+    if (last_score_cp is not None
+            and equal_simplified_score_threshold_cp is not None
+            and equal_simplified_piece_threshold is not None
+            and equal_simplified_clock_threshold_ms is not None
+            and equal_simplified_clock_ms is not None
+            and abs(last_score_cp) <= equal_simplified_score_threshold_cp
+            and chess.popcount(board.occupied) <= equal_simplified_piece_threshold
+            and clock_ms <= equal_simplified_clock_threshold_ms):
+        clock_cap_ms = min(clock_cap_ms, equal_simplified_clock_ms)
 
     capped_clock = max(msec(1), min(msec(clock_ms), msec(clock_cap_ms)))
     if side == "wtime":

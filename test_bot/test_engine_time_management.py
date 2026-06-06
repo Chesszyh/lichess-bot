@@ -675,3 +675,72 @@ def test_apply_bullet_time_management__uses_fast_win_cap_after_large_winning_sco
     assert capped.time == 1.5
     assert capped.white_clock is None
     assert capped.black_clock is None
+
+
+def test_apply_bullet_time_management__caps_equal_simplified_blitz_positions() -> None:
+    """Stable equal simplified blitz positions should not burn the full high-clock watchdog."""
+    game = fast_game("blitz", 300000, 270000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "force_movetime_caps": True,
+            "force_movetime_threshold_ms": 30000,
+            "hard_movetime_caps": True,
+            "max_clock_ms": 30000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 30000,
+            "low_clock_threshold_ms": 30000,
+            "low_clock_ms": 5000,
+            "critical_clock_threshold_ms": 5000,
+            "critical_clock_ms": 1000,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 500,
+            "equal_simplified_score_threshold_cp": 25,
+            "equal_simplified_piece_threshold": 12,
+            "equal_simplified_clock_threshold_ms": 600000,
+            "equal_simplified_clock_ms": 4000,
+        },
+    })
+    board = chess.Board("8/8/8/4k3/8/4K3/8/8 w - - 0 1")
+
+    limit = chess.engine.Limit(white_clock=270.0, black_clock=270.0, white_inc=2.0, black_inc=2.0)
+    capped = apply_bullet_time_management(board, game, limit, engine_cfg, last_score_cp=10)
+
+    assert capped.time == 4.0
+    assert capped.white_clock == 4.0
+    assert capped.black_clock == 270.0
+
+
+def test_apply_bullet_time_management__keeps_complex_equal_blitz_positions_uncapped_by_equal_rule() -> None:
+    """The equal-position cap should not shorten complex middlegames just because the score is near 0."""
+    game = fast_game("blitz", 300000, 270000)
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "force_movetime_caps": True,
+            "force_movetime_threshold_ms": 30000,
+            "hard_movetime_caps": True,
+            "max_clock_ms": 30000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 30000,
+            "low_clock_threshold_ms": 30000,
+            "low_clock_ms": 5000,
+            "critical_clock_threshold_ms": 5000,
+            "critical_clock_ms": 1000,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 500,
+            "equal_simplified_score_threshold_cp": 25,
+            "equal_simplified_piece_threshold": 12,
+            "equal_simplified_clock_threshold_ms": 600000,
+            "equal_simplified_clock_ms": 4000,
+        },
+    })
+
+    limit = chess.engine.Limit(white_clock=270.0, black_clock=270.0, white_inc=2.0, black_inc=2.0)
+    capped = apply_bullet_time_management(chess.Board(), game, limit, engine_cfg, last_score_cp=10)
+
+    assert capped.time == 30.0
+    assert capped.white_clock == 30.0
+    assert capped.black_clock == 270.0

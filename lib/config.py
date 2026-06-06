@@ -262,6 +262,10 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_score_threshold_cp", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_score_clock_threshold_ms", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_score_clock_ms", default=0)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="equal_simplified_score_threshold_cp", default=0)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="equal_simplified_piece_threshold", default=0)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="equal_simplified_clock_threshold_ms", default=0)
+    set_config_default(CONFIG, "engine", "bullet_time_management", key="equal_simplified_clock_ms", default=0)
     set_config_default(CONFIG, "engine", "rating_control", key="enabled", default=False)
     set_config_default(CONFIG, "engine", "rating_control", key="admins", default=[], force_empty_values=True)
     change_value_to_list(CONFIG, "engine", "rating_control", key="admins")
@@ -544,7 +548,9 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     bullet_time_management = CONFIG["engine"].get("bullet_time_management") or {}
     for key in ["winning_mate_clock_threshold_ms", "winning_mate_clock_ms",
-                "winning_score_threshold_cp", "winning_score_clock_threshold_ms", "winning_score_clock_ms"]:
+                "winning_score_threshold_cp", "winning_score_clock_threshold_ms", "winning_score_clock_ms",
+                "equal_simplified_score_threshold_cp", "equal_simplified_piece_threshold",
+                "equal_simplified_clock_threshold_ms", "equal_simplified_clock_ms"]:
         config_assert(bullet_time_management.get(key, 0) >= 0,
                       f"`engine:bullet_time_management:{key}` must be non-negative.")
 
