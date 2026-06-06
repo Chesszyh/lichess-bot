@@ -165,6 +165,51 @@ class WinningScoreFakeEngine:
         })
 
 
+class DrawishFakeEngine:
+    """Engine protocol that returns a near-equal score."""
+
+    id = {"name": "DrawishFakeEngine"}
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        return chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, {
+            "depth": 20,
+            "score": chess.engine.PovScore(chess.engine.Cp(10), board.turn),
+        })
+
+
+def high_rated_draw_cfg() -> Configuration:
+    """Create draw config that accepts stable equal positions from elite opponents."""
+    return Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_moves": 10,
+        "offer_draw_score": 0,
+        "offer_draw_pieces": 10,
+        "high_rated_accept_draw_enabled": True,
+        "high_rated_accept_draw_min_rating": 3000,
+        "high_rated_accept_draw_moves": 2,
+        "high_rated_accept_draw_score": 25,
+        "high_rated_accept_draw_pieces": 32,
+        "resign_enabled": False,
+        "resign_moves": 3,
+        "resign_score": -1000,
+    })
+
+
+def high_rated_blitz_game(opponent_rating: int = 3060) -> Game:
+    """Create a blitz game against a high-rated bot opponent."""
+    game = fast_game("blitz", 180000, 120000)
+    game.black.rating = opponent_rating
+    game.black.title = "BOT"
+    game.black.is_bot = True
+    return game
+
+
 def test_search__uses_endgame_engine_under_piece_threshold() -> None:
     """Configured endgames should be searched by the secondary engine."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())
@@ -242,6 +287,57 @@ def test_search__records_winning_score_for_fast_win_time_management() -> None:
                    root_moves=chess.engine.PlayResult(None, None))
 
     assert wrapper.last_search_score_cp == 900
+
+
+def test_search__accepts_high_rated_draw_offer_in_stable_equal_endgame() -> None:
+    """A high-rated opponent's draw offer should be accepted in a stable equal simplified position."""
+    wrapper = EngineWrapper({}, high_rated_draw_cfg())
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=True,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(),
+                            engine_cfg=Configuration({}))
+
+    assert result.draw_offered
+
+
+def test_search__does_not_accept_high_rated_draw_rule_without_incoming_offer() -> None:
+    """The elite draw rule should not make us offer draws proactively."""
+    wrapper = EngineWrapper({}, high_rated_draw_cfg())
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(),
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
+
+
+def test_search__does_not_accept_high_rated_draw_rule_for_lower_rated_opponent() -> None:
+    """The elite draw rule should not accept offers from ordinary lower-rated opponents."""
+    wrapper = EngineWrapper({}, high_rated_draw_cfg())
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=True,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(opponent_rating=2700),
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
 
 
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:

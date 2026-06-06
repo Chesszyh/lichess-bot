@@ -264,10 +264,21 @@ class EngineWrapper:
         time_limit.nodes = self.go_commands.nodes
         return time_limit
 
-    def offer_draw_or_resign(self, result: chess.engine.PlayResult, board: chess.Board) -> chess.engine.PlayResult:
+    def offer_draw_or_resign(self,
+                             result: chess.engine.PlayResult,
+                             board: chess.Board,
+                             draw_offered: bool = False,
+                             game: model.Game | None = None) -> chess.engine.PlayResult:
         """Offer draw or resign depending on the score of the engine."""
         def actual(score: chess.engine.PovScore) -> int:
             return score.relative.score(mate_score=40000)
+
+        def recent_scores_near_draw(score_count: int, score_range: int) -> bool:
+            scores = self.scores[-score_count:]
+
+            def score_near_draw(score: chess.engine.PovScore) -> bool:
+                return abs(actual(score)) <= score_range
+            return len(scores) == len(list(filter(score_near_draw, scores)))
 
         can_offer_draw = self.draw_or_resign.offer_draw_enabled
         draw_offer_moves = self.draw_or_resign.offer_draw_moves
@@ -276,11 +287,20 @@ class EngineWrapper:
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:
-            scores = self.scores[-draw_offer_moves:]
+            if recent_scores_near_draw(draw_offer_moves, draw_score_range):
+                result.draw_offered = True
 
-            def score_near_draw(score: chess.engine.PovScore) -> bool:
-                return abs(actual(score)) <= draw_score_range
-            if len(scores) == len(list(filter(score_near_draw, scores))):
+        accept_elite_draw = self.draw_or_resign.lookup("high_rated_accept_draw_enabled")
+        if draw_offered and accept_elite_draw and game:
+            elite_min_rating: int = self.draw_or_resign.high_rated_accept_draw_min_rating
+            elite_draw_moves: int = self.draw_or_resign.high_rated_accept_draw_moves
+            elite_score_range: int = self.draw_or_resign.high_rated_accept_draw_score
+            elite_piece_count: int = self.draw_or_resign.high_rated_accept_draw_pieces
+            opponent_rating = game.opponent.rating or 0
+            if (opponent_rating >= elite_min_rating
+                    and pieces_on_board <= elite_piece_count
+                    and len(self.scores) >= elite_draw_moves
+                    and recent_scores_near_draw(elite_draw_moves, elite_score_range)):
                 result.draw_offered = True
 
         resign_enabled = self.draw_or_resign.resign_enabled
@@ -352,7 +372,7 @@ class EngineWrapper:
         if game and engine_cfg:
             result = self.extend_shallow_search(active_engine, board, game, result, draw_offered, root_moves, engine_cfg)
         self.record_search_result(result, board)
-        return self.offer_draw_or_resign(result, board)
+        return self.offer_draw_or_resign(result, board, draw_offered, game)
 
     def extend_shallow_search(self,
                               active_engine: chess.engine.SimpleEngine | FillerEngine,
