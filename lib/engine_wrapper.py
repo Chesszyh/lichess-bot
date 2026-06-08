@@ -290,11 +290,13 @@ class EngineWrapper:
         rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0) if game else 0
         rating_gap_allows_normal_draw = draw_rating_gap_limit <= 0 or rating_gap < draw_rating_gap_limit
         min_rating_allows_normal_offer = draw_offered or draw_min_rating <= 0 or opponent_rating >= draw_min_rating
+        clock_allows_normal_draw = normal_draw_clock_allows_offer(self.draw_or_resign, game, draw_offered)
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if (can_offer_draw
                 and rating_gap_allows_normal_draw
                 and min_rating_allows_normal_offer
+                and clock_allows_normal_draw
                 and len(self.scores) >= draw_offer_moves
                 and enough_pieces_captured
                 and recent_scores_near_draw(draw_offer_moves, draw_score_range)):
@@ -1103,6 +1105,34 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
 def check_for_draw_offer(game: model.Game) -> bool:
     """Check if the bot was offered a draw."""
     return bool(game.state.get(f"{game.opponent_color[0]}draw"))
+
+
+def normal_draw_clock_allows_offer(draw_or_resign_cfg: Configuration,
+                                   game: model.Game | None,
+                                   draw_offered: bool) -> bool:
+    """Whether the normal draw rule should accept/offer given the live clock edge."""
+    if not draw_offered or not game or not draw_or_resign_cfg.lookup("offer_draw_clock_advantage_enabled"):
+        return True
+
+    speeds = draw_or_resign_cfg.lookup("offer_draw_clock_advantage_speeds") or ["bullet", "blitz"]
+    if game.speed not in speeds:
+        return True
+
+    white_time = game.state.get("wtime")
+    black_time = game.state.get("btime")
+    if white_time is None or black_time is None:
+        return True
+
+    my_time = int(white_time if game.is_white else black_time)
+    opponent_time = int(black_time if game.is_white else white_time)
+    opponent_threshold = int(draw_or_resign_cfg.lookup("offer_draw_clock_advantage_opponent_ms") or 0)
+    min_advantage = int(draw_or_resign_cfg.lookup("offer_draw_clock_advantage_min_ms") or 0)
+    if opponent_time <= opponent_threshold and my_time - opponent_time >= min_advantage:
+        logger.info("Declining normal draw offer because opponent has "
+                    f"{msec_str(msec(opponent_time))} and bot has {msec_str(msec(my_time))}.")
+        return False
+
+    return True
 
 
 def get_game_specific_polyglot_cfg(polyglot_cfg: Configuration, game: model.Game) -> Configuration:

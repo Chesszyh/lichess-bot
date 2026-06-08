@@ -285,6 +285,25 @@ The game ended by threefold repetition from an equal Italian Game, Giuoco Pianis
 
 Operational note: repeated target-band draws are not currently a regression. If they become the main bottleneck, analyze opening families and conversion chances before relaxing the 3080 floor.
 
+### Draw Offers: Keep Playing With Large Clock Edge
+
+Evidence game: `J7nJYTTZ`, a rated 90+1 bullet game as white against `TakticproChess` rated 3097.
+
+The bot accepted an incoming draw offer in a stable `0.00` queen endgame while holding a large clock edge. The live log showed the bot had about 97 seconds while the opponent had about 11 seconds. A target-band draw is acceptable when clocks are normal, but accepting here gives up a practical bullet win condition that is especially valuable on this 4-core ThinkPad deployment.
+
+Change made:
+
+- Add `draw_or_resign.offer_draw_clock_advantage_enabled`.
+- Add speed, opponent-clock, and minimum-clock-advantage thresholds for that guard.
+- Enable the guard in the live private Stockfish config for `bullet` and `blitz`.
+- Set the live thresholds to decline normal draw offers when the opponent has at most 15 seconds and the bot has at least a 60 second clock edge.
+
+Regression test:
+
+- `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`
+
+Operational note: this only blocks normal draw-offer acceptance under a large clock edge. It does not stop the bot from offering or accepting ordinary equal target-band draws when both clocks are healthy or close.
+
 ### Verification From This Pass
 
 Commands that passed:
@@ -306,6 +325,9 @@ repetition_guard.enabled=True
 repetition_guard.min_rating_gap=-25
 repetition_guard.max_score_loss_cp=150
 draw_or_resign.offer_draw_min_rating=3080
+draw_or_resign.offer_draw_clock_advantage_enabled=True
+draw_or_resign.offer_draw_clock_advantage_opponent_ms=15000
+draw_or_resign.offer_draw_clock_advantage_min_ms=60000
 challenge.min_rating=3080
 matchmaking.opponent_min_rating=3080
 matchmaking.preferred_opponent_min_rating=3080

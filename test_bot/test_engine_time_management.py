@@ -332,6 +332,26 @@ def target_floor_draw_cfg() -> Configuration:
     })
 
 
+def clock_guard_draw_cfg() -> Configuration:
+    """Create draw config that keeps playing when the opponent is close to flagging."""
+    return Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_moves": 2,
+        "offer_draw_score": 25,
+        "offer_draw_pieces": 32,
+        "offer_draw_rating_gap_limit": 0,
+        "offer_draw_min_rating": 3080,
+        "offer_draw_clock_advantage_enabled": True,
+        "offer_draw_clock_advantage_speeds": ["bullet", "blitz"],
+        "offer_draw_clock_advantage_opponent_ms": 15000,
+        "offer_draw_clock_advantage_min_ms": 60000,
+        "high_rated_accept_draw_enabled": False,
+        "resign_enabled": False,
+        "resign_moves": 3,
+        "resign_score": -1000,
+    })
+
+
 def high_rated_blitz_game(opponent_rating: int = 3060) -> Game:
     """Create a blitz game against a high-rated bot opponent."""
     game = fast_game("blitz", 180000, 120000)
@@ -520,6 +540,27 @@ def test_search__offers_normal_draw_at_target_rating_floor() -> None:
                             engine_cfg=Configuration({}))
 
     assert result.draw_offered
+
+
+def test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging() -> None:
+    """A large bullet clock edge should keep the bot playing instead of accepting a normal draw offer."""
+    wrapper = EngineWrapper({}, clock_guard_draw_cfg())
+    wrapper.engine = cast(FillerEngine, DrawishFakeEngine())
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+    game = high_rated_blitz_game(opponent_rating=3097)
+    game.speed = "bullet"
+    game.state["wtime"] = 97378
+    game.state["btime"] = 11080
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=True,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
 
 
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:
