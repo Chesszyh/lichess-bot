@@ -76,6 +76,7 @@ class Matchmaking:
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.cool_down_challenge_target(self.challenge_id)
+            self.cool_down_outgoing_challenge_cadence()
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.discard_challenge(self.challenge_id)
@@ -445,6 +446,10 @@ class Matchmaking:
         self.add_challenge_filter(opponent, "", OUTGOING_CHALLENGE_COOLDOWN)
         logger.info(f"Will not challenge {opponent} again for 12 hours after an unanswered outgoing challenge.")
 
+    def cool_down_outgoing_challenge_cadence(self) -> None:
+        """Apply the configured global cadence after an outgoing challenge does not become a game."""
+        self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
+
     def accepted_challenge(self, event: EventType) -> None:
         """
         Set the challenge id to an empty string, if the challenge was accepted.
@@ -460,6 +465,7 @@ class Matchmaking:
         fallback_target = (challenge_info.get("destUser") or {}).get("name")
         if challenge_id == self.challenge_id or challenge_id in self.challenge_targets:
             self.cool_down_challenge_target(challenge_id, fallback_target)
+            self.cool_down_outgoing_challenge_cadence()
             self.show_earliest_challenge_time()
         self.discard_challenge(challenge_id)
 
@@ -475,7 +481,12 @@ class Matchmaking:
         challenge_mode = self.challenge_modes.get(challenge.id, self.matchmaking_cfg.challenge_mode)
         logger.info(f"{opponent} declined {challenge}: {reason}")
         self.discard_challenge(challenge.id)
-        if not challenge.from_self or self.challenge_filter == FilterType.NONE:
+        if not challenge.from_self:
+            return
+
+        self.cool_down_outgoing_challenge_cadence()
+        if self.challenge_filter == FilterType.NONE:
+            self.show_earliest_challenge_time()
             return
 
         mode = "rated" if challenge.rated else "casual"
