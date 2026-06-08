@@ -33,6 +33,10 @@ Effective private config intent:
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
+- Endgame tablebase move sources are enabled for fast games: local 5-piece Syzygy is used directly by lichess-bot, and
+  online EGTB is enabled up to `180` base seconds and `8` pieces when the bot has at least `10` seconds left. This targets
+  technical bullet/blitz endgames without adding local engine load. This took effect after a safe restart at 2026-06-08
+  19:03 CST.
 - The private config file now caps incoming bot games at `120` base seconds and outgoing bot games at `90` base seconds.
   The incoming cap took effect after a safe restart at 2026-06-08 18:53 CST, after game `ZiJe1OaC` had ended and all game
   engine processes had exited; the outgoing `90` second cap took effect after a safe restart at 2026-06-08 18:56 CST.
@@ -54,6 +58,11 @@ The earlier outgoing controls included `180` and `240` second bases. Historical 
 Black at `180+1` (`39.9%`), `180+2` (`37.6%`), `240+1` (`44.7%`), and `240+2` (`38.3%`). The current config removes long
 blitz bases and then removes the remaining outgoing `120` second base, keeping proactive matchmaking fully in increment
 bullet controls.
+
+The latest `60+2` bullet loss to `Cheszter` was not a clock-loss pattern: the bot still had `87` seconds when mated. Local
+Syzygy probing showed the 4-piece phase was already lost, while the log showed all late moves came from `Source: Engine`
+instead of lichess-bot EGTB. Enabling direct local Syzygy and online EGTB gives exact move sources in future fast technical
+endgames before the capped search has to solve them unaided.
 
 ## Why This Is Safer
 
