@@ -134,6 +134,9 @@ class Matchmaking:
         elif response.get("opponent_is_rate_limited"):
             self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
             self.retryable_challenge_error = True
+        elif self.is_friend_only_response(response):
+            self.add_to_block_list(username)
+            self.retryable_challenge_error = True
         elif self.is_plain_rate_limit_response(response):
             delay = self.next_plain_rate_limit_delay()
             self.rate_limit_timer = Timer(delay)
@@ -148,6 +151,11 @@ class Matchmaking:
     def is_plain_rate_limit_response(self, response: ChallengeType) -> bool:
         """Detect older challenge rate-limit responses without structured timeout data."""
         return "too many requests" in str(response.get("error", "")).lower()
+
+    def is_friend_only_response(self, response: ChallengeType) -> bool:
+        """Detect challenge endpoint responses for bots that only accept friend challenges."""
+        error = str(response.get("error", "")).lower()
+        return "only accepts challenges from friends" in error or "只接受来自好友的挑战" in error
 
     def next_plain_rate_limit_delay(self) -> datetime.timedelta:
         """Return exponential cooldown for challenge rate limits without server-provided retry time."""
