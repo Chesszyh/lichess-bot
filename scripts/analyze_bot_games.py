@@ -58,6 +58,7 @@ class GameSummary:
     lower_rated_draw_count: int
     lower_rated_draws_by_opening: list[tuple[str, int]]
     lower_rated_draw_prefixes: list[tuple[str, int]]
+    lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
     recent_losses: list[GameRecord]
 
@@ -273,6 +274,11 @@ def summarize_records(records_dir: Path,
     ]
     lower_rated_draws_by_opening = Counter(record.opening for record in lower_rated_draws).most_common()
     lower_rated_draw_prefixes = Counter(record.move_prefix for record in lower_rated_draws if record.move_prefix).most_common()
+    lower_rated_draw_contexts = Counter(
+        f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in lower_rated_draws
+        if record.move_prefix
+    ).most_common()
     lower_rated_draws.sort(key=lambda record: record.rating_gap or 0, reverse=True)
     recent_losses = sorted(
         losses,
@@ -296,6 +302,7 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_count=len(lower_rated_draws),
         lower_rated_draws_by_opening=lower_rated_draws_by_opening,
         lower_rated_draw_prefixes=lower_rated_draw_prefixes,
+        lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
         recent_losses=recent_losses,
     )
@@ -404,6 +411,13 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "Lower-Rated Draw Prefixes",
         summary.lower_rated_draw_prefixes,
         empty_text="No lower-rated draw prefixes found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Contexts",
+        summary.lower_rated_draw_contexts,
+        empty_text="No lower-rated draw contexts found.",
         quote_item=True,
     )
 

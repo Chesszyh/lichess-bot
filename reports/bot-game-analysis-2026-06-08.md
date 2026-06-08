@@ -136,6 +136,19 @@
 - `3` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7`
 - `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6`
 
+## Lower-Rated Draw Contexts
+
+- `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5 | black | blitz | 180+2`
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | white | blitz | 240+1`
+- `2` x `d4 Nf6 c4 e6 g3 d5 Nf3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | blitz | 180+1`
+- `2` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+1`
+- `2` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | 240+0`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 90+0`
+- `2` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5 | black | bullet | 60+0`
+
 ## Largest Lower-Rated Draw Gaps
 
 - gap `576` vs `GNUPassant` (2330) in `ilovecatgirl vs GNUPassant - Cdt4VUHk.pgn`: Caro-Kann Defense: Advance Variation, Short Variation

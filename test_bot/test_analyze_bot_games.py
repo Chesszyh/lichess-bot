@@ -239,3 +239,25 @@ def test_render_markdown__clusters_lower_rated_draw_openings_and_prefixes(tmp_pa
     assert "`2` x French Defense" in markdown
     assert "Lower-Rated Draw Prefixes" in markdown
     assert "`2` x `e4 e6 d4 d5`" in markdown
+
+
+def test_render_markdown__clusters_lower_rated_draw_contexts(tmp_path: Path) -> None:
+    """Lower-rated draw leaks should expose color, speed, and exact clock context."""
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", f"LowerBot{index}")
+        draw_headers["WhiteElo"] = "2940"
+        draw_headers["BlackElo"] = str(2939 - index)
+        draw_headers["TimeControl"] = "60+1"
+        write_pgn(tmp_path, f"white-bullet-lower-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    black_draw_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "LowerCaroBot", "ilovecatgirl")
+    black_draw_headers["WhiteElo"] = "2930"
+    black_draw_headers["BlackElo"] = "2940"
+    black_draw_headers["TimeControl"] = "180+2"
+    write_pgn(tmp_path, "black-blitz-lower-draw.pgn", black_draw_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", max_prefix_plies=4)
+    markdown = render_markdown(summary)
+
+    assert summary.lower_rated_draw_contexts[0] == ("e4 e6 d4 d5 | white | bullet | 60+1", 2)
+    assert "Lower-Rated Draw Contexts" in markdown
+    assert "`2` x `e4 e6 d4 d5 | white | bullet | 60+1`" in markdown
