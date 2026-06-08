@@ -35,4 +35,4 @@ Effective private config intent:
 
 The previous live config had `challenge_timeout: 1`, which validates but triggers the repository warning about potentially using the 100 bot-vs-bot games/day allowance quickly. The revised config encourages more games through broader incoming acceptance and better time-control coverage, without increasing outgoing challenge frequency.
 
-The bullet weighting was edited while the bot was already running. It will take effect only after a later safe restart when no game is active.
+The increased bullet weighting took effect after a safe restart at 2026-06-08 17:54 CST, when no game engine child process was active.
