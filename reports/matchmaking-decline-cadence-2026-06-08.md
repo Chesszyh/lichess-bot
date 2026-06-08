@@ -24,8 +24,9 @@ hard minimum `60` second API wait.
 
 ## Post-Deploy Evidence
 
-- The bot was safely restarted only after `GET /api/account/playing` returned no active games.
-- After the restart, `WOIHrVov` finished as a rated `120+1` bullet draw against `CupchessBot` with rating diff `0`.
+- `WOIHrVov` finished before the restart as a rated `120+1` bullet draw against `CupchessBot` with rating diff `0`.
+- The bot was safely restarted only after `GET /api/account/playing` returned no active games and the game engine child
+  processes had exited.
 - The next outgoing challenge was scheduled for 2026-06-08 21:42:28 CST, 15 minutes after the local game-done event.
 - A later clean startup with no active game scheduled the next outgoing challenge for 2026-06-08 21:46:08 CST, again
   matching `matchmaking.challenge_timeout: 15`.
