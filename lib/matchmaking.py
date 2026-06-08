@@ -123,6 +123,7 @@ class Matchmaking:
     def handle_challenge_error_response(self, response: ChallengeType, username: str) -> None:
         """If a challenge fails, print the error and adjust the challenge requirements in response."""
         logger.error(response)
+        self.cool_down_outgoing_challenge_cadence()
         if response.get("bot_is_rate_limited"):
             timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
             self.rate_limit_timer = Timer(timeout)

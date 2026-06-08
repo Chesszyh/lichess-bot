@@ -4,7 +4,7 @@ from pytest import MonkeyPatch
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
-from lib.timer import days, hours, minutes, years
+from lib.timer import Timer, days, hours, minutes, years
 import random
 
 
@@ -821,6 +821,36 @@ def test_handle_challenge_error_response__cools_down_target_on_plain_too_many_re
 
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == days(1)
+
+
+def test_handle_challenge_error_response__uses_configured_challenge_cadence(monkeypatch: MonkeyPatch) -> None:
+    """Challenge endpoint failures should not fall back to one-minute outgoing retries."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.last_game_ended_delay = Timer()
+    monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    matchmaking.handle_challenge_error_response({
+        "error": "BusyBot reached the bot-vs-bot daily limit.",
+        "opponent_is_rate_limited": True,
+        "rate_limit_timeout": hours(1),
+    }, "BusyBot")
+
+    assert not matchmaking.should_create_challenge()
+    assert matchmaking.last_game_ended_delay.duration == minutes(15)
 
 
 def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -> None:
