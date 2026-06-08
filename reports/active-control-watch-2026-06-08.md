@@ -8,7 +8,9 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 - Latest local PGN remains `game_records/CloudNetBot vs ilovecatgirl - X4YQN6x8.pgn` at 2026-06-08 20:20 CST.
 - The running bot is idle and, after a 20:56 CST process restart, scheduled its next outgoing challenge after 2026-06-08
   21:11:46 CST.
-- No runtime restart or engine experiment was initiated for this review.
+- No local engine experiment was initiated for this review.
+- Outgoing active-control sampling is now `60+1:90+1:120+1 = 3:6:9`, up from `1:4:9`. `challenge_timeout`
+  remains `15` minutes, so this changes control selection only, not active-challenge frequency.
 
 ## Evidence
 
@@ -24,4 +26,7 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 
 ## Decision
 
-Do not change runtime config from this sample. The repeated recent loss source, `MEGA-NOOB-BOT`, is already blocked in private config, and the only post-block active-control game is rating-positive. The correct next action is continued evidence collection across `60+1`, `90+1`, and `120+1`, not another broad control or opening change.
+Keep the active rated controls at `60+1`, `90+1`, and `120+1`, but collect more short-bullet evidence by increasing the
+outgoing `60+1` and `90+1` weights. The repeated recent loss source, `MEGA-NOOB-BOT`, is already blocked in private
+config, and the only post-block active-control game is rating-positive. Do not broaden controls or change openings from
+this sample.
