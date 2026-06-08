@@ -317,6 +317,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="decline_cooldown_minutes", default=360, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="outgoing_challenge_cooldown_minutes", default=720,
                        force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="draw_cooldown_minutes", default=0, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="online_block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="include_challenge_block_list", default=False, force_empty_values=True)

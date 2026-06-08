@@ -471,7 +471,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 active_games.discard(event["game"]["id"])
                 started_games.discard(event["game"]["id"])
                 pending_games.discard(event["game"]["id"])
-                matchmaker.game_done()
+                matchmaker.game_done(event["game"])
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
@@ -1079,7 +1079,13 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
+    control_queue.put_nowait({"type": "local_game_done",
+                              "game": {"id": game.id,
+                                       "opponent": game.opponent.name,
+                                       "opponent_title": game.opponent.title,
+                                       "speed": game.speed,
+                                       "status": game.state.get("status"),
+                                       "winner": game.state.get("winner")}})
     pgn_queue.put_nowait({"game": {"id": game.id,
                                    "pgn": pgn_record,
                                    "complete": is_game_over(game)}})

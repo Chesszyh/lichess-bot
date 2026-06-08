@@ -357,6 +357,10 @@ Changes made:
   - Default: `360` minutes.
   - Live private Stockfish config: `180` minutes.
   - Explicit rated/casual mode-conflict declines still keep the longer six-hour global cooldown.
+- Add `matchmaking.draw_cooldown_minutes`.
+  - Default: `0` minutes, so this is opt-in.
+  - Live private Stockfish config: `30` minutes.
+  - Purpose: after `xzMGfX4n` and `Wp8SbY5A`, avoid immediately spending another bot-vs-bot daily game on the same target-band draw sink.
 
 Related commits:
 
@@ -365,6 +369,7 @@ Related commits:
 - `3d849d5 Track matchmaking cooldown sources`
 - `176e5b1 Shorten ordinary decline cooldowns by config`
 - This pass: log target-band cooldown blockers.
+- This pass: cool down drawn fast-game bot opponents.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -375,7 +380,9 @@ Commands that passed:
 ```bash
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
+.venv/bin/pytest test_bot/test_game_stream.py -q
 .venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py
+.venv/bin/ruff check --config test_bot/ruff.toml lib/lichess_bot.py lib/config.py --ignore C901,PLR0912
 git diff --check
 ```
 
@@ -388,7 +395,7 @@ Latest passing result for the time-management and repetition-guard file:
 Latest passing result for the matchmaking cooldown and config checks:
 
 ```text
-54 passed
+57 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -410,11 +417,13 @@ matchmaking.preferred_opponent_min_rating=3080
 matchmaking.blitz_fallback.preferred_opponent_min_rating=3080
 matchmaking.decline_cooldown_minutes=180
 matchmaking.outgoing_challenge_cooldown_minutes=180
+matchmaking.draw_cooldown_minutes=30
 ```
 
 Known verification debt:
 
 - `ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing complexity, docstring, mutable class attribute, and unused fake-engine argument warnings.
+- `ruff check --config test_bot/ruff.toml lib/lichess_bot.py lib/config.py` still fails on existing `lichess_bot_main`, `play_game`, and `validate_config` complexity.
 - `mypy --strict lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing timeout typing, homemade engine override signatures, and fake-engine assignment types.
 - `mypy --strict lib/matchmaking.py` is still blocked by existing `lib/lichess.py` timeout type errors.
 - Full `ruff check --config test_bot/ruff.toml lib/config.py` is still blocked by existing `validate_config` complexity.
@@ -445,6 +454,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
+| Repeated target-band draw sink | `xzMGfX4n` and `Wp8SbY5A` were consecutive draws against `BlueMoonBot` | Add opt-in `draw_cooldown_minutes`; live value `30` for drawn bullet/blitz games against bots | `test_game_done__cools_down_bot_after_fast_draw`; `test_game_done__does_not_cool_down_bot_after_win`; config default test | Active |
 
 Current private live thresholds worth preserving unless new games disprove them:
 

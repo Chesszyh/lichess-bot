@@ -1098,6 +1098,62 @@ def test_cancelled_challenge__uses_configured_outgoing_cooldown() -> None:
     assert matchmaking.challenge_filter_sources[("BusyBot", "")] == "unanswered_outgoing_challenge"
 
 
+def test_game_done__cools_down_bot_after_fast_draw() -> None:
+    """Repeated target-band draws should not immediately consume another bot-vs-bot game."""
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "draw_cooldown_minutes": 30,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3035}}}
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    matchmaking.game_done({
+        "id": "abc123",
+        "opponent": "BlueMoonBot",
+        "opponent_title": "BOT",
+        "speed": "bullet",
+        "status": "draw",
+    })
+
+    assert not matchmaking.should_accept_challenge("BlueMoonBot", "")
+    assert matchmaking.challenge_type_acceptable[("BlueMoonBot", "")].duration == minutes(30)
+    assert matchmaking.challenge_filter_sources[("BlueMoonBot", "")] == "drawn_game"
+
+
+def test_game_done__does_not_cool_down_bot_after_win() -> None:
+    """Post-game draw cooldowns should not block productive decisive pairings."""
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "draw_cooldown_minutes": 30,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3035}}}
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    matchmaking.game_done({
+        "id": "abc123",
+        "opponent": "BlueMoonBot",
+        "opponent_title": "BOT",
+        "speed": "bullet",
+        "status": "mate",
+    })
+
+    assert matchmaking.should_accept_challenge("BlueMoonBot", "")
+
+
 def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expires(monkeypatch) -> None:
     """An expired outgoing challenge should cool down that opponent before creating another one."""
     mock_li = Mock()

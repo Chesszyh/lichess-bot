@@ -413,10 +413,39 @@ class Matchmaking:
         self.challenge_targets.pop(challenge_id, None)
         self.challenge_modes.pop(challenge_id, None)
 
-    def game_done(self) -> None:
+    def game_done(self, game_info: dict[str, object] | None = None) -> None:
         """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
+        self.cool_down_drawn_game_opponent(game_info)
         self.last_game_ended_delay.reset()
         self.show_earliest_challenge_time()
+
+    def cool_down_drawn_game_opponent(self, game_info: dict[str, object] | None) -> None:
+        """Avoid immediately repeating drawn fast games against the same bot."""
+        if not game_info:
+            return
+
+        cooldown_minutes = self.matchmaking_cfg.lookup("draw_cooldown_minutes") or 0
+        if cooldown_minutes <= 0:
+            return
+
+        if game_info.get("status") != "draw":
+            return
+
+        if game_info.get("opponent_title") != "BOT":
+            return
+
+        speed = game_info.get("speed")
+        if speed not in {"bullet", "blitz"}:
+            return
+
+        opponent = game_info.get("opponent")
+        if not isinstance(opponent, str) or not opponent:
+            return
+
+        cooldown = minutes(cooldown_minutes)
+        self.add_challenge_filter(opponent, "", cooldown, "drawn_game")
+        logger.info(f"Will not challenge {opponent} again for {int(cooldown.total_seconds() / 60)} minutes "
+                    f"after a drawn {speed} game.")
 
     def show_earliest_challenge_time(self) -> None:
         """Show the earliest that the next challenge will be created."""
