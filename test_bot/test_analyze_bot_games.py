@@ -169,6 +169,29 @@ def test_summarize_records__can_filter_to_exact_time_controls(tmp_path: Path) ->
     assert "180+2" not in markdown
 
 
+def test_summarize_records__can_filter_to_speed_bucket(tmp_path: Path) -> None:
+    """Bullet/blitz tuning should be able to isolate one Lichess speed bucket."""
+    bullet_headers = base_headers("1-0", "Bullet Opening", "ilovecatgirl", "BulletBot")
+    bullet_headers["TimeControl"] = "60+1"
+    bullet_headers["WhiteRatingDiff"] = "+4"
+    write_pgn(tmp_path, "bullet-win.pgn", bullet_headers, "1. e4 c5 1-0")
+    blitz_headers = base_headers("0-1", "Blitz Opening", "ilovecatgirl", "BlitzBot")
+    blitz_headers["TimeControl"] = "180+2"
+    blitz_headers["WhiteRatingDiff"] = "-6"
+    write_pgn(tmp_path, "blitz-loss.pgn", blitz_headers, "1. d4 Nf6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", speeds={"blitz"})
+    markdown = render_markdown(summary)
+
+    assert parse_args(["--speeds", "blitz"]).speeds == "blitz"
+    assert summary.total_games == 1
+    assert summary.speeds == {"blitz"}
+    assert summary.results_by_speed == [("blitz loss", 1)]
+    assert summary.rating_impact_by_speed == [("blitz", 1, -6)]
+    assert "Speeds: `blitz`" in markdown
+    assert "bullet" not in markdown
+
+
 def test_render_markdown__shows_unknown_result_terminations(tmp_path: Path) -> None:
     """Abandoned games should not be hidden inside the generic unknown bucket."""
     abandoned_headers = base_headers("*", "King's Pawn Game", "AbandonBot", "ilovecatgirl")
