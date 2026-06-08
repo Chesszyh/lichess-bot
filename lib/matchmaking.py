@@ -25,6 +25,7 @@ DEFAULT_DECLINE_COOLDOWN = hours(6)
 DEFAULT_DECLINE_COOLDOWN_MINUTES = 360
 DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES = 720
 NO_CANDIDATE_DELAY = minutes(15)
+TARGET_BAND_COOLDOWN_RETRY_BUFFER = seconds(30)
 MAX_TARGET_BAND_COOLDOWN_BLOCKERS = 5
 
 
@@ -43,6 +44,7 @@ class Matchmaking:
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.rate_limit_timer = Timer()
         self.no_candidate_timer = Timer()
+        self.next_target_band_cooldown_delay: datetime.timedelta | None = None
         self.plain_rate_limit_failures = 0
 
         # Maximum time between challenges, even if there are active games
@@ -239,6 +241,9 @@ class Matchmaking:
                         remaining_minutes = math.ceil(remaining.total_seconds() / 60)
                         source = self.challenge_filter_source(username, "")
                         cooldown_blockers.append((remaining_minutes, -rating, username, rating, source))
+                        if (self.next_target_band_cooldown_delay is None
+                                or remaining < self.next_target_band_cooldown_delay):
+                            self.next_target_band_cooldown_delay = remaining
             else:
                 suitable_bots.append(bot)
         if rejection_counts:
@@ -257,7 +262,12 @@ class Matchmaking:
 
     def cool_down_no_candidates(self) -> None:
         """Back off briefly after an empty candidate pool."""
-        self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
+        delay = NO_CANDIDATE_DELAY
+        if self.next_target_band_cooldown_delay is not None:
+            delay = min(delay, self.next_target_band_cooldown_delay + TARGET_BAND_COOLDOWN_RETRY_BUFFER)
+            delay = max(delay, self.min_wait_time)
+            logger.info(f"Retrying after target-band cooldown in {math.ceil(delay.total_seconds() / 60)} minutes.")
+        self.no_candidate_timer = Timer(delay)
         self.show_earliest_challenge_time()
 
     def filter_ready_opponents(self, online_bots: list[UserProfileType], variant: str, game_type: str,
@@ -353,6 +363,7 @@ class Matchmaking:
 
     def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
         """Choose an opponent."""
+        self.next_target_band_cooldown_delay = None
         last_choice: tuple[str | None, int, int, int, str, str] = (None, 0, 0, 0, "standard", "casual")
         for override_choice in self.choose_override_sequence():
             bot_username, base_time, increment, num_days, variant, mode, had_ready_candidates = (

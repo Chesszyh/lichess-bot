@@ -559,6 +559,48 @@ def test_choose_opponent__logs_target_band_cooldown_blockers(
     assert "lowcooldownbot" not in caplog.text
 
 
+def test_choose_opponent__retries_when_target_band_cooldown_expires_soon(
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture) -> None:
+    """Empty target pools should wake up when a target-band bot cooldown is about to expire."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "Cheszter", "perfs": {"bullet": {"rating": 3106, "games": 50}}},
+    ]
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 3080,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3030}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.add_challenge_filter("Cheszter", "", minutes(7), "drawn_game")
+
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    caplog.set_level(logging.INFO)
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent is None
+    assert minutes(7) < matchmaking.no_candidate_timer.duration < minutes(8)
+    assert "Retrying after target-band cooldown in 8 minutes." in caplog.messages
+
+
 def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:
     """Bots refusing bot challenges should be treated as permanently blocked for matchmaking."""
     mock_li = Mock()

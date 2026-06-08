@@ -381,6 +381,15 @@ Changes made:
   - Live private Stockfish config: `360` minutes.
   - Purpose: cap old source-unknown global cooldowns that were saved before cooldown source tracking and now block scarce target-band candidates for years.
   - Safety boundary: only empty-aspect cooldowns with missing or `unknown` source are capped; configured blocklist entries are re-added after state load and remain 10-year blocks.
+- Shorten no-candidate retry waits when a target-band cooldown is about to expire.
+  - Evidence: at `2026-06-08 19:49:58 UTC`, bullet and blitz fallback both found `0` suitable opponents, while `Cheszter` was in the 3080+ bullet target band with only `7m` of `drawn_game` cooldown remaining.
+  - Previous behavior waited the fixed `15m` no-candidate delay, so the bot would idle for several extra minutes after the best visible target-band candidate became eligible again.
+  - New behavior keeps the fixed `15m` wait when there is no near-expiring target-band cooldown, but wakes shortly after the earliest target-band cooldown expiry when that is sooner.
+  - This improves game volume without lowering the `3080` rating floor, deleting cooldown state, or repeatedly challenging a still-cooled opponent.
+  - Live result after restart: the next search at `19:57:06 UTC` found exactly one suitable bullet opponent and challenged `Cheszter`.
+  - Evidence game: `VT7zOio9`, a rated bullet draw as black against `Cheszter` rated 3104, was not a loss and gave NeuroSoCute `+1`.
+  - In that game the bot declined incoming draw offers and skipped proactive normal draw offers while holding a large clock edge. The final threefold was allowed only after the guarded alternatives were measured as losing `280` and `468` centipawns, beyond the live `repetition_guard.max_score_loss_cp: 150`.
+  - Operational note: this result supports the current score-loss safety cap. Future improvement should target earlier opening asymmetry or complexity, not forcing materially worse non-repeating moves in dead-drawn endings.
 
 Related commits:
 
@@ -393,6 +402,7 @@ Related commits:
 - This pass: filter the repeated bot-side Berlin Wall book move.
 - This pass: try blitz fallback immediately when the preferred bullet pool is empty.
 - This pass: cap legacy source-unknown global cooldowns in live config.
+- This pass: retry after near-expiring target-band cooldowns instead of always waiting a full no-candidate interval.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -404,6 +414,7 @@ Commands that passed:
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
 .venv/bin/pytest test_bot/test_engine_time_management.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
+.venv/bin/pytest test_bot/test_matchmaking.py::test_choose_opponent__retries_when_target_band_cooldown_expires_soon test_bot/test_matchmaking.py::test_choose_opponent__backs_off_when_all_candidates_are_filtered test_bot/test_matchmaking.py::test_choose_opponent__backs_off_when_no_online_candidates_match_filters -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py test_bot/test_external_moves.py -q
 .venv/bin/pytest test_bot/test_engine_time_management.py test_bot/test_config.py test_bot/test_matchmaking.py test_bot/test_external_moves.py -q
 .venv/bin/pytest test_bot/test_game_stream.py -q
@@ -517,6 +528,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Repeated Berlin Wall book draws | Recent white-side bot draws repeatedly entered `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 ... Qxd8+ Kxd8`, including `Q1poOSgG`, `Wp8SbY5A`, and `nSLk3U9v` | Add opt-in Polyglot `avoid_moves`; live bot profile skips `Bb5` after `e4 e5 Nf3 Nc6` | `test_get_book_move__avoid_moves_filters_configured_san_line`; config default test; live config mirrored privately | Active, watch if Italian/other alternatives improve conversion |
 | Bullet pool empty while blitz is allowed | Post-deploy logs at `18:27:48` showed default bullet searched `[3080, 4000]`, found `0` suitable opponents, and waited until `18:42:48`; no same-cycle blitz attempt happened | Add opt-in `try_overrides_on_empty_pool`; live value `true`, with default bullet weight `5` before blitz fallback weight `1` | `test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty`; config default test | Active |
 | Legacy source-unknown cooldowns | Runtime logs showed target-band candidates such as `maia3-79m_2600` blocked by `global_cooldown_unknown` for about 10 years from old state | Add opt-in `legacy_unknown_cooldown_max_minutes`; live value `360`, capped only for source-unknown global cooldowns loaded from state | `test_matchmaking_state__caps_legacy_unknown_global_cooldowns_when_configured`; configured blocklist regression keeps 10-year blocks | Active, watch pool volume |
+| No-candidate retry cadence | At `19:49:58 UTC`, Cheszter was a 3106 bullet target blocked by only `7m` of draw cooldown, but the bot scheduled the next search `15m` later | When the target-band pool is empty because of a soon-expiring cooldown, retry shortly after that cooldown expires instead of always waiting the full no-candidate interval | `test_choose_opponent__retries_when_target_band_cooldown_expires_soon`; existing no-candidate backoff tests still pass | Active, improves volume without lowering rating floor |
 
 Current private live thresholds worth preserving unless new games disprove them:
 
