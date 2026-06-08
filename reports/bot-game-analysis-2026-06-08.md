@@ -2,8 +2,8 @@
 
 ## Scope
 
-- Games analyzed: `2354`
-- Results: `{'draw': 1397, 'loss': 465, 'unknown': 45, 'win': 447}`
+- Games analyzed: `2355`
+- Results: `{'draw': 1397, 'loss': 466, 'unknown': 45, 'win': 447}`
 - Opening risk gate: FAILED (66 >= 3)
 - No local engine analysis was run.
 
@@ -27,7 +27,7 @@
 - `269` x bullet draw
 - `242` x bullet win
 - `205` x blitz win
-- `79` x bullet loss
+- `80` x bullet loss
 - `31` x blitz unknown
 - `14` x bullet unknown
 
@@ -59,12 +59,12 @@
 
 ## Loss Colors
 
-- `330` x black
+- `331` x black
 - `135` x white
 
 ## Loss Terminations
 
-- `333` x Normal
+- `334` x Normal
 - `132` x Time forfeit
 
 ## Time Forfeit Loss Controls
@@ -164,6 +164,7 @@
 
 ## Recent Losses
 
+- `2026-06-08 10:47:09+00:00` `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: Queen's Gambit Accepted: Central Variation, Greco Variation
 - `2026-06-08 10:16:53+00:00` `ilovecatgirl vs abcd_engine - 2QVD5cp2.pgn` vs `abcd_engine`: Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `2026-06-08 08:51:21+00:00` `ArasanX vs ilovecatgirl - CNjERGD9.pgn` vs `ArasanX`: Sicilian Defense: Najdorf Variation, English Attack
 - `2026-06-08 08:05:00+00:00` `TakticproChess vs ilovecatgirl - cArqfmSd.pgn` vs `TakticproChess`: Semi-Slav Defense
@@ -173,4 +174,3 @@
 - `2026-06-07 18:39:20+00:00` `suniferia vs ilovecatgirl - GxAtiN96.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, English Attack
 - `2026-06-07 17:29:47+00:00` `CupchessBot vs ilovecatgirl - x4Cr3jad.pgn` vs `CupchessBot`: Sicilian Defense: Najdorf Variation, Zagreb Variation
 - `2026-06-07 16:05:57+00:00` `ilovecatgirl vs suniferia - 2Yrx6U31.pgn` vs `suniferia`: Caro-Kann Defense: Advance Variation, Short Variation
-- `2026-06-07 13:40:13+00:00` `rascal1 vs ilovecatgirl - wHib2C1q.pgn` vs `rascal1`: Sicilian Defense: Moscow Variation, Sokolsky Variation
