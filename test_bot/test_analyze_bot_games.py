@@ -431,6 +431,34 @@ def test_render_markdown__shows_clock_rich_normal_losses_by_base_fraction(tmp_pa
     assert "low-clock-bullet-loss.pgn" not in clock_rich_section
 
 
+def test_render_markdown__shows_clock_pressure_misses(tmp_path: Path) -> None:
+    """Losses with bot clock rich and opponent clock low should be called out as time-use misses."""
+    pressure_headers = base_headers("1-0", "Semi-Slav Defense", "PressureBot", "ilovecatgirl")
+    pressure_headers["TimeControl"] = "120+1"
+    write_pgn(
+        tmp_path,
+        "pressure-miss-loss.pgn",
+        pressure_headers,
+        "1. d4 { [%clk 0:00:04] } d5 { [%clk 0:01:20] } 1-0",
+    )
+    ordinary_headers = base_headers("1-0", "Caro-Kann Defense", "SteadyBot", "ilovecatgirl")
+    ordinary_headers["TimeControl"] = "120+1"
+    write_pgn(
+        tmp_path,
+        "ordinary-clock-rich-loss.pgn",
+        ordinary_headers,
+        "1. e4 { [%clk 0:00:40] } c6 { [%clk 0:01:20] } 1-0",
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert [record.path.name for record in summary.clock_pressure_misses] == ["pressure-miss-loss.pgn"]
+    pressure_section = markdown.split("## Clock-Pressure Misses", maxsplit=1)[1].split("## Largest Bot Eval Drops")[0]
+    assert "`80s` left vs opponent `4s` in `pressure-miss-loss.pgn` vs `PressureBot`: Semi-Slav Defense" in pressure_section
+    assert "ordinary-clock-rich-loss.pgn" not in pressure_section
+
+
 def test_render_markdown__shows_largest_bot_eval_drops(tmp_path: Path) -> None:
     """Saved engine evals should identify tactical/conversion drops without rerunning engines."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "StrongBot")

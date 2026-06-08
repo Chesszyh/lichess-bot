@@ -452,6 +452,20 @@
 - `67s` left in `MEGA-NOOB-BOT vs ilovecatgirl - 87C7maRn.pgn` vs `MEGA-NOOB-BOT`: Ruy Lopez: Open, Bernstein Variation
 - `61s` left in `ilovecatgirl vs RockingSuperstars - acAezKqI.pgn` vs `RockingSuperstars`: Scotch Game: Mieses Variation
 
+## Clock-Pressure Miss Contexts
+
+- `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
+- `1` x `Queen's Pawn Game: London System | black | bullet | 90+1`
+- `1` x `Caro-Kann Defense | black | bullet | 120+1`
+- `1` x `Scandinavian Defense: Modern Variation | black | bullet | 60+1`
+
+## Clock-Pressure Misses
+
+- `80s` left vs opponent `7s` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
+- `55s` left vs opponent `3s` in `ToromBot vs ilovecatgirl - OC4pcXIJ.pgn` vs `ToromBot`: Queen's Pawn Game: London System
+- `42s` left vs opponent `9s` in `abhisun_bot vs ilovecatgirl - WsrVL0wc.pgn` vs `abhisun_bot`: Caro-Kann Defense
+- `32s` left vs opponent `7s` in `MDBOT vs ilovecatgirl - g6cJXfgh.pgn` vs `MDBOT`: Scandinavian Defense: Modern Variation
+
 ## Largest Bot Eval Drops
 
 - `-389.10` after `a5` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: `-10.85` to `-399.95` (Semi-Slav Defense: Anti-Moscow Gambit | black | 120+1)

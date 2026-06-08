@@ -64,6 +64,7 @@ class GameRecord:
     rating_gap: int | None
     bot_rating_diff: int | None
     bot_final_clock_seconds: float | None
+    opponent_final_clock_seconds: float | None
     move_prefix: str
     bot_eval_points: list[BotEvalPoint]
 
@@ -123,6 +124,8 @@ class GameSummary:
     high_clock_normal_losses: list[GameRecord]
     focused_high_clock_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_loss_contexts: list[tuple[str, int]]
+    clock_pressure_misses: list[GameRecord]
+    clock_pressure_miss_contexts: list[tuple[str, int]]
     largest_bot_eval_drops: list[BotEvalDrop]
     recent_losses: list[GameRecord]
 
@@ -270,9 +273,8 @@ def game_move_prefix(game: chess.pgn.Game, max_prefix_plies: int) -> str:
     return " ".join(moves)
 
 
-def game_bot_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> float | None:
-    """Return the last PGN clock value recorded after one of the bot's moves."""
-    bot_color = chess.WHITE if bot_is_white else chess.BLACK
+def game_final_clock_seconds(game: chess.pgn.Game, target_color: chess.Color) -> float | None:
+    """Return the last PGN clock value recorded after one target-color move."""
     board = game.board()
     final_clock_seconds: float | None = None
     node: chess.pgn.GameNode = game
@@ -284,10 +286,22 @@ def game_bot_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> fl
         mover = board.turn
         board.push(move)
         clock_seconds = next_node.clock()
-        if mover == bot_color and clock_seconds is not None:
+        if mover == target_color and clock_seconds is not None:
             final_clock_seconds = clock_seconds
         node = next_node
     return final_clock_seconds
+
+
+def game_bot_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> float | None:
+    """Return the last PGN clock value recorded after one of the bot's moves."""
+    bot_color = chess.WHITE if bot_is_white else chess.BLACK
+    return game_final_clock_seconds(game, bot_color)
+
+
+def game_opponent_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> float | None:
+    """Return the last PGN clock value recorded after one opponent move."""
+    opponent_color = chess.BLACK if bot_is_white else chess.WHITE
+    return game_final_clock_seconds(game, opponent_color)
 
 
 def variation_terminal_eval_cp(node: chess.pgn.GameNode) -> int | None:
@@ -430,6 +444,7 @@ def parse_game(path: Path,
         rating_gap=rating_gap,
         bot_rating_diff=bot_rating_diff,
         bot_final_clock_seconds=game_bot_final_clock_seconds(game, bot_is_white),
+        opponent_final_clock_seconds=game_opponent_final_clock_seconds(game, bot_is_white),
         move_prefix=game_move_prefix(game, max_prefix_plies),
         bot_eval_points=[],
     )
@@ -444,6 +459,7 @@ def summarize_records(records_dir: Path,
                       control_min_games: int = 10,
                       high_clock_loss_threshold_seconds: int = 60,
                       clock_rich_loss_base_fraction: float = 0.35,
+                      opponent_low_clock_threshold_seconds: int = 10,
                       eval_drop_recent_loss_limit: int = 50,
                       focus_time_controls: set[str] | None = None,
                       time_controls: set[str] | None = None,
@@ -624,6 +640,22 @@ def summarize_records(records_dir: Path,
         for record in high_clock_normal_losses
         if focus_time_controls and record.time_control in focus_time_controls
     ).most_common()
+    clock_pressure_misses = [
+        record for record in clock_rich_normal_losses
+        if record.opponent_final_clock_seconds is not None
+        and record.opponent_final_clock_seconds <= opponent_low_clock_threshold_seconds
+    ]
+    clock_pressure_misses.sort(
+        key=lambda record: (
+            record.bot_final_clock_seconds or 0,
+            -(record.opponent_final_clock_seconds or 0),
+        ),
+        reverse=True,
+    )
+    clock_pressure_miss_contexts = Counter(
+        f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in clock_pressure_misses
+    ).most_common()
     largest_bot_eval_drops = bot_eval_drops(recent_losses[:eval_drop_recent_loss_limit])
 
     return GameSummary(
@@ -678,6 +710,8 @@ def summarize_records(records_dir: Path,
         high_clock_normal_losses=high_clock_normal_losses[:10],
         focused_high_clock_normal_loss_contexts=focused_high_clock_normal_loss_contexts,
         high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
+        clock_pressure_misses=clock_pressure_misses[:10],
+        clock_pressure_miss_contexts=clock_pressure_miss_contexts,
         largest_bot_eval_drops=largest_bot_eval_drops[:10],
         recent_losses=recent_losses,
     )
@@ -1038,6 +1072,21 @@ def append_clock_loss_section(lines: list[str], title: str, records: list[GameRe
         lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
 
 
+def append_clock_pressure_miss_section(lines: list[str], records: list[GameRecord]) -> None:
+    """Append losses where the bot kept clock while the opponent was nearly out of time."""
+    lines.extend(["", "## Clock-Pressure Misses", ""])
+    if not records:
+        lines.append("- No clock-pressure misses found at the configured threshold.")
+        return
+    for record in records:
+        bot_clock = format_seconds(record.bot_final_clock_seconds or 0)
+        opponent_clock = format_seconds(record.opponent_final_clock_seconds or 0)
+        lines.append(
+            f"- `{bot_clock}` left vs opponent `{opponent_clock}` in "
+            f"{game_link(record)} vs `{record.opponent}`: {record.opening}"
+        )
+
+
 def append_recent_losses_section(lines: list[str], records: list[GameRecord]) -> None:
     """Append a markdown section for the latest losses."""
     lines.extend(["", "## Recent Losses", ""])
@@ -1176,6 +1225,16 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         summary.high_clock_normal_losses,
         empty_text="- No high-clock normal losses found at the configured threshold.",
     )
+
+    append_count_section(
+        lines,
+        "Clock-Pressure Miss Contexts",
+        summary.clock_pressure_miss_contexts,
+        empty_text="No clock-pressure miss contexts found.",
+        quote_item=True,
+    )
+
+    append_clock_pressure_miss_section(lines, summary.clock_pressure_misses)
 
     append_eval_drop_section(lines, summary.largest_bot_eval_drops)
     append_recent_losses_section(lines, summary.recent_losses)

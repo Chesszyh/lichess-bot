@@ -198,6 +198,14 @@
 
 - `80s` left in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
 
+## Clock-Pressure Miss Contexts
+
+- `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
+
+## Clock-Pressure Misses
+
+- `80s` left vs opponent `7s` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
+
 ## Largest Bot Eval Drops
 
 - `-389.10` after `a5` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: `-10.85` to `-399.95` (Semi-Slav Defense: Anti-Moscow Gambit | black | 120+1)
