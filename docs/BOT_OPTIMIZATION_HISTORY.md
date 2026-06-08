@@ -241,12 +241,17 @@ Evidence game: `dzsQr4Rh`, a bullet draw by agreement as white against `Cupchess
 
 The bot repeatedly evaluated the simplified endgame as `0.00` and then offered a draw. The opponent was rated above the bot, so the current lower-rated-draw protection did not block the offer. For a deployment trying to stabilize near 3080, this is still a weak practical outcome when the opponent is below that target band: the bot locks in no meaningful rating progress instead of continuing to test the opponent's conversion and clock handling.
 
-No code change was committed for this yet. The next focused change should be:
+Change made:
 
-- Add a normal draw-offer floor such as `draw_or_resign.offer_draw_min_rating`.
+- Add `draw_or_resign.offer_draw_min_rating`.
 - Set the live private Stockfish config to `offer_draw_min_rating: 3080`.
+- Apply the floor only to bot-initiated normal engine-equality draw offers.
 - Keep elite incoming draw acceptance separate from bot-initiated normal equality draw offers.
-- Add regression coverage proving that a drawish position against an opponent below the floor does not set `draw_offered`, while the same position against an opponent at or above the floor still may offer a draw.
+
+Regression tests:
+
+- `test_search__does_not_offer_normal_draw_below_target_rating_floor`
+- `test_search__offers_normal_draw_at_target_rating_floor`
 
 Operational note: this should be implemented as a narrow draw-offer policy, not as a blanket refusal to accept every high-rated draw offer. The aim is to stop the bot from voluntarily ending playable equal games below the target rating band.
 
@@ -261,7 +266,7 @@ Commands that passed:
 Latest passing result for the time-management and repetition-guard file:
 
 ```text
-28 passed
+30 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -286,6 +291,6 @@ Prioritize these directions before adding heavier local experiments:
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
 - Make repetition avoidance time-aware. When the opponent is very low on time, allow slightly more score loss to keep the game alive; when both sides have enough time, keep the current conservative threshold.
-- Add an opponent-rating floor for bot-initiated normal draw offers, then validate it against games like `dzsQr4Rh`.
+- Validate the new draw-offer floor in live games like `dzsQr4Rh`; if too many target-band games become dead flag races, tune the floor or add a clock-aware exception.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.
 - Clean up `engine_wrapper.py` complexity and test fake-engine typing before larger strategy changes, so future regressions are easier to isolate.

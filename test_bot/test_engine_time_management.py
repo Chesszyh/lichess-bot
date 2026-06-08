@@ -316,6 +316,22 @@ def lower_rated_draw_guard_cfg() -> Configuration:
     })
 
 
+def target_floor_draw_cfg() -> Configuration:
+    """Create draw config that only proactively offers normal draws inside the target rating band."""
+    return Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_moves": 2,
+        "offer_draw_score": 25,
+        "offer_draw_pieces": 32,
+        "offer_draw_rating_gap_limit": 0,
+        "offer_draw_min_rating": 3080,
+        "high_rated_accept_draw_enabled": False,
+        "resign_enabled": False,
+        "resign_moves": 3,
+        "resign_score": -1000,
+    })
+
+
 def high_rated_blitz_game(opponent_rating: int = 3060) -> Game:
     """Create a blitz game against a high-rated bot opponent."""
     game = fast_game("blitz", 180000, 120000)
@@ -470,6 +486,40 @@ def test_search__does_not_accept_normal_draw_offer_when_lower_rated_gap_exceeds_
                             engine_cfg=Configuration({}))
 
     assert not result.draw_offered
+
+
+def test_search__does_not_offer_normal_draw_below_target_rating_floor() -> None:
+    """The normal draw rule should not voluntarily lock in draws below the target opponent band."""
+    wrapper = EngineWrapper({}, target_floor_draw_cfg())
+    wrapper.engine = cast(FillerEngine, DrawishFakeEngine())
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(opponent_rating=3060),
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
+
+
+def test_search__offers_normal_draw_at_target_rating_floor() -> None:
+    """The target floor should still allow normal draw offers against target-band opponents."""
+    wrapper = EngineWrapper({}, target_floor_draw_cfg())
+    wrapper.engine = cast(FillerEngine, DrawishFakeEngine())
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(opponent_rating=3080),
+                            engine_cfg=Configuration({}))
+
+    assert result.draw_offered
 
 
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:

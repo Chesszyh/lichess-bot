@@ -285,16 +285,20 @@ class EngineWrapper:
         draw_score_range: int = self.draw_or_resign.offer_draw_score
         draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
         draw_rating_gap_limit: int = self.draw_or_resign.lookup("offer_draw_rating_gap_limit") or 0
+        draw_min_rating: int = self.draw_or_resign.lookup("offer_draw_min_rating") or 0
+        opponent_rating = (game.opponent.rating or 0) if game else 0
         rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0) if game else 0
         rating_gap_allows_normal_draw = draw_rating_gap_limit <= 0 or rating_gap < draw_rating_gap_limit
+        min_rating_allows_normal_offer = draw_offered or draw_min_rating <= 0 or opponent_rating >= draw_min_rating
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if (can_offer_draw
                 and rating_gap_allows_normal_draw
+                and min_rating_allows_normal_offer
                 and len(self.scores) >= draw_offer_moves
-                and enough_pieces_captured):
-            if recent_scores_near_draw(draw_offer_moves, draw_score_range):
-                result.draw_offered = True
+                and enough_pieces_captured
+                and recent_scores_near_draw(draw_offer_moves, draw_score_range)):
+            result.draw_offered = True
 
         accept_elite_draw = self.draw_or_resign.lookup("high_rated_accept_draw_enabled")
         if draw_offered and accept_elite_draw and game:
@@ -302,7 +306,6 @@ class EngineWrapper:
             elite_draw_moves: int = self.draw_or_resign.high_rated_accept_draw_moves
             elite_score_range: int = self.draw_or_resign.high_rated_accept_draw_score
             elite_piece_count: int = self.draw_or_resign.high_rated_accept_draw_pieces
-            opponent_rating = game.opponent.rating or 0
             if (opponent_rating >= elite_min_rating
                     and pieces_on_board <= elite_piece_count
                     and len(self.scores) >= elite_draw_moves
