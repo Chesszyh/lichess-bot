@@ -32,7 +32,8 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
   one rated `120+1` draw against `CupchessBot`, net `+0`, no losses, and no clock leak.
 - The active-control analyzer now ranks lower-rated draw opponents directly. The largest historical active-control
   lower-rated draw cluster is `duchessAI | bullet | 60+1` with `5` draws; the same report shows that exact `60+1`
-  sub-sample is `-6` over `6` rated-diff games, while the post-block windows have no lower-rated draw leaks.
+  sub-sample is `-6` over `6` rated-diff games. It is also the largest rating-negative draw opponent cluster, while the
+  post-block windows have no lower-rated or rating-negative draw leaks.
 - `reports/active-control-loss-clusters-2026-06-08.md` separates stale April active-control losses from the three June 8
   active-control losses, avoiding a broad opening/config change from historical data.
 - The refreshed analyzer now ranks opponent impact across any filtered report, not only exact focused controls. In the

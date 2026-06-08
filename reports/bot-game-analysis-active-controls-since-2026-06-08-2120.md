@@ -142,6 +142,10 @@
 
 - No lower-rated draw leaks found at the configured threshold.
 
+## Rating-Negative Draw Opponents
+
+- No rating-negative draw opponent clusters found.
+
 ## Rating-Negative Draw Terminations
 
 - No rating-negative draw terminations found.

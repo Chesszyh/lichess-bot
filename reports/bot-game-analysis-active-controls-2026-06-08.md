@@ -332,6 +332,17 @@
 - gap `93` vs `AggressiveStockfish` (2895) in `AggressiveStockfish vs ilovecatgirl - CFYHfwEL.pgn`: Semi-Slav Defense: Normal Variation
 - gap `89` vs `duchessAI` (2810) in `duchessAI vs ilovecatgirl - L5sa80j5.pgn`: Old Indian Defense: Czech Variation, with Nf3
 
+## Rating-Negative Draw Opponents
+
+- `5` x `duchessAI | bullet | 60+1`
+- `2` x `Valhalla-Bot | bullet | 120+1`
+- `1` x `AggressiveStockfish | bullet | 120+1`
+- `1` x `AggressiveStockfish | bullet | 90+1`
+- `1` x `DefenchessOfficial | bullet | 90+1`
+- `1` x `Worst-ai | bullet | 120+1`
+- `1` x `duchessAI | bullet | 90+1`
+- `1` x `odonata-bot | bullet | 120+1`
+
 ## Rating-Negative Draw Terminations
 
 - `13` x Normal

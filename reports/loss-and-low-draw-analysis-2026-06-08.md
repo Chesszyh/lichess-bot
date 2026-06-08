@@ -32,6 +32,10 @@ is `duchessAI | bullet | 60+1` with `5` draws, plus one `duchessAI | bullet | 90
 and post-21:20 CST active-control windows have no lower-rated draw leaks, so this remains a watch item rather than a new
 block.
 
+The same analyzer now ranks rating-negative draw opponents. The `duchessAI | bullet | 60+1` cluster is also the largest
+rating-negative draw cluster, but it remains historical relative to the current post-block windows, which have no
+rating-negative draws.
+
 `ToromBot` and `MDBOT` remain on watch rather than being blocked in this turn. Their active-control losses are from
 April 2026, before the current Black fast-book and active-control restrictions, and both are strong `3060+` opponents;
 they are better treated as future strength-regression samples unless new post-change losses appear.

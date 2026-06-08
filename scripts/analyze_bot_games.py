@@ -112,6 +112,7 @@ class GameSummary:
     focused_lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
+    rating_negative_draws_by_opponent: list[tuple[str, int]]
     rating_negative_draws_by_termination: list[tuple[str, int]]
     focused_rating_negative_draw_contexts: list[tuple[str, int]]
     rating_negative_draw_contexts: list[tuple[str, int]]
@@ -567,6 +568,9 @@ def summarize_records(records_dir: Path,
         record for record in records
         if record.bot_result == "draw" and record.bot_rating_diff is not None and record.bot_rating_diff < 0
     ]
+    rating_negative_draws_by_opponent = Counter(
+        f"{record.opponent} | {record.speed} | {record.time_control}" for record in rating_negative_draws
+    ).most_common()
     rating_negative_draws_by_termination = Counter(record.termination for record in rating_negative_draws).most_common()
     rating_negative_draw_contexts = Counter(
         f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.time_control}"
@@ -661,6 +665,7 @@ def summarize_records(records_dir: Path,
         focused_lower_rated_draw_contexts=focused_lower_rated_draw_contexts,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
+        rating_negative_draws_by_opponent=rating_negative_draws_by_opponent,
         rating_negative_draws_by_termination=rating_negative_draws_by_termination,
         focused_rating_negative_draw_contexts=focused_rating_negative_draw_contexts,
         rating_negative_draw_contexts=rating_negative_draw_contexts,
@@ -851,6 +856,13 @@ def append_eval_drop_section(lines: list[str], drops: list[BotEvalDrop]) -> None
 
 def append_rating_negative_draw_sections(lines: list[str], summary: GameSummary) -> None:
     """Append sections for draws that cost rating."""
+    append_count_section(
+        lines,
+        "Rating-Negative Draw Opponents",
+        summary.rating_negative_draws_by_opponent,
+        empty_text="No rating-negative draw opponent clusters found.",
+        quote_item=True,
+    )
     append_count_section(
         lines,
         "Rating-Negative Draw Terminations",

@@ -530,6 +530,37 @@ def test_render_markdown__shows_rating_negative_draws(tmp_path: Path) -> None:
     assert "rating-positive-draw.pgn" not in markdown
 
 
+def test_render_markdown__clusters_rating_negative_draw_opponents(tmp_path: Path) -> None:
+    """Rating-negative draw opponents should be visible as repeated matchmaking leaks."""
+    for index in range(2):
+        negative_headers = base_headers("1/2-1/2", "French Defense", "duchessAI", "ilovecatgirl")
+        negative_headers["WhiteElo"] = str(2800 + index)
+        negative_headers["BlackElo"] = "2940"
+        negative_headers["WhiteRatingDiff"] = "+2"
+        negative_headers["BlackRatingDiff"] = "-2"
+        negative_headers["TimeControl"] = "60+1"
+        write_pgn(tmp_path, f"duchess-negative-draw-{index}.pgn", negative_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    positive_headers = base_headers("1/2-1/2", "Queen's Pawn Game", "HigherBot", "ilovecatgirl")
+    positive_headers["WhiteElo"] = "3038"
+    positive_headers["BlackElo"] = "3029"
+    positive_headers["WhiteRatingDiff"] = "-1"
+    positive_headers["BlackRatingDiff"] = "+1"
+    positive_headers["TimeControl"] = "90+1"
+    write_pgn(tmp_path, "rating-positive-draw.pgn", positive_headers, "1. Nf3 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.rating_negative_draws_by_opponent[0] == ("duchessAI | bullet | 60+1", 2)
+    assert "Rating-Negative Draw Opponents" in markdown
+    assert "`2` x `duchessAI | bullet | 60+1`" in markdown
+    opponent_section = markdown.split("## Rating-Negative Draw Opponents", maxsplit=1)[1].split(
+        "## Rating-Negative Draw Terminations",
+        maxsplit=1,
+    )[0]
+    assert "HigherBot | bullet | 90+1" not in opponent_section
+
+
 def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_path: Path) -> None:
     """Focused rating impact should keep active controls separate from abandoned historical controls."""
     current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
