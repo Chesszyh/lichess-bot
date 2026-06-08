@@ -87,7 +87,15 @@ def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
+def move_allows_threefold_claim(board: chess.Board, move: chess.Move) -> bool:
+    """Whether playing move lets the next player claim or force a threefold draw immediately."""
+    next_board = board.copy(stack=True)
+    next_board.push(move)
+    return next_board.is_repetition(3) or next_board.can_claim_threefold_repetition()
+
+
 PONDERPV_CHARACTERS = 6  # The length of ", Pv: ".
+REPETITION_AVOID_MIN_SCORE_CP = -50
 
 
 class EngineWrapper:
@@ -386,6 +394,33 @@ class EngineWrapper:
             cast(Any, self.pondering_engine).ping()
             self.pondering_engine = None
 
+    def should_avoid_repetition_draw(self, game: model.Game | None) -> bool:
+        """Whether the next search should reject immediate repetition-draw roots."""
+        if not game or game.mode != "rated" or game.speed not in ("bullet", "blitz"):
+            return False
+
+        bot_rating = game.me.rating
+        opponent_rating = game.opponent.rating
+        if bot_rating is None or opponent_rating is None or opponent_rating > bot_rating:
+            return False
+
+        return self.last_search_score_cp is not None and self.last_search_score_cp >= REPETITION_AVOID_MIN_SCORE_CP
+
+    def root_moves_avoiding_repetition_draw(self, board: chess.Board, root_moves: MOVE,
+                                            game: model.Game | None) -> MOVE:
+        """Filter roots that let a lower-rated opponent claim or force an immediate repetition draw."""
+        if not self.should_avoid_repetition_draw(game):
+            return root_moves
+
+        candidate_moves = root_moves if isinstance(root_moves, list) else list(board.legal_moves)
+        safe_moves = [move for move in candidate_moves if not move_allows_threefold_claim(board, move)]
+        if not safe_moves or len(safe_moves) == len(candidate_moves):
+            return root_moves
+
+        game_id = game.id if game else "?"
+        logger.info(f"Avoiding {len(candidate_moves) - len(safe_moves)} repetition-draw root move(s) in game {game_id}")
+        return safe_moves
+
     def search(self,
                board: chess.Board,
                time_limit: chess.engine.Limit,
@@ -415,6 +450,7 @@ class EngineWrapper:
             ponder = False
         active_engine = self.engine_for_position(board)
         self.stop_inactive_ponder(active_engine)
+        root_moves = self.root_moves_avoiding_repetition_draw(board, root_moves, game)
         result = active_engine.play(board,
                                     time_limit,
                                     info=chess.engine.INFO_ALL,

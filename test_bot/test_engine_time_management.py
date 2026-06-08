@@ -79,6 +79,24 @@ def fast_game(speed: str, initial_ms: int, clock_ms: int) -> Game:
     return Game(game_event, "bo", "https://lichess.org", timedelta(seconds=60))
 
 
+def repetition_draw_board() -> chess.Board:
+    """Recreate the YDxZJH1Q position where Kd2-e1 allows a repetition draw claim."""
+    board = chess.Board()
+    for move in [
+        "e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "g8f6", "e1g1", "f6e4",
+        "f1e1", "e4d6", "f3e5", "f8e7", "b5f1", "c6e5", "e1e5", "e8g8",
+        "d2d4", "d6e8", "d4d5", "d7d6", "e5e1", "e7g5", "b1c3", "g5c1",
+        "a1c1", "c8f5", "d1f3", "f5g6", "c3e2", "e8f6", "e2d4", "f8e8",
+        "f3b3", "a8b8", "e1e8", "d8e8", "c2c4", "a7a6", "h2h3", "c7c5",
+        "d5c6", "b7c6", "b3a3", "c6c5", "d4e2", "e8e5", "a3a6", "f6e4",
+        "c1d1", "h7h5", "b2b3", "b8e8", "a6c6", "e4f2", "g1f2", "e5e3",
+        "f2e1", "e3g3", "e1d2", "g3e3", "d2e1", "e3g3", "e1d2", "g3g5",
+        "d2e1", "g5h4", "e1d2", "h4g5",
+    ]:
+        board.push_uci(move)
+    return board
+
+
 class FakeEngine:
     """Engine protocol that returns predetermined depths."""
 
@@ -208,6 +226,31 @@ class PonderingNamedFakeEngine(NamedFakeEngine):
     def ping(self) -> None:
         """Record that a pending ponder search was stopped."""
         self.pings += 1
+
+
+class RootMovesRecordingFakeEngine:
+    """Engine protocol that records root move restrictions."""
+
+    def __init__(self) -> None:
+        """Initialize storage for root move calls."""
+        self.id = {"name": "RootMovesRecordingFakeEngine"}
+        self.root_move_calls: list[list[chess.Move] | None] = []
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        """Record root moves and return the first legal allowed move."""
+        _ = limit, info, ponder, draw_offered
+        self.root_move_calls.append(root_moves)
+        move = root_moves[0] if root_moves else next(iter(board.legal_moves))
+        return chess.engine.PlayResult(move, None, {
+            "depth": 8,
+            "score": chess.engine.PovScore(chess.engine.Cp(20), board.turn),
+        })
 
 
 class MateFakeEngine:
@@ -747,6 +790,68 @@ def test_search__stops_main_engine_ponder_before_endgame_engine_handoff() -> Non
 
     assert main_engine.pings == 1
     assert endgame_engine.calls == 1
+
+
+def test_search__filters_repetition_draw_roots_against_lower_rated_bot() -> None:
+    """Fast rated games against lower-rated bots should avoid moves that allow an immediate repetition claim."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    engine = RootMovesRecordingFakeEngine()
+    wrapper.engine = engine
+    wrapper.last_search_score_cp = 20
+    board = repetition_draw_board()
+
+    wrapper.search(board,
+                   chess.engine.Limit(time=1.0),
+                   ponder=False,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None),
+                   game=bullet_game(),
+                   engine_cfg=disabled_external_move_cfg())
+
+    root_moves = engine.root_move_calls[-1]
+    assert root_moves is not None
+    assert chess.Move.from_uci("d2e1") not in root_moves
+    assert chess.Move.from_uci("e2f4") in root_moves
+
+
+def test_search__allows_repetition_draw_roots_against_higher_rated_bot() -> None:
+    """Draws remain acceptable against higher-rated bots."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    engine = RootMovesRecordingFakeEngine()
+    wrapper.engine = engine
+    wrapper.last_search_score_cp = 20
+    game = bullet_game()
+    game.opponent.rating = 3100
+    board = repetition_draw_board()
+
+    wrapper.search(board,
+                   chess.engine.Limit(time=1.0),
+                   ponder=False,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None),
+                   game=game,
+                   engine_cfg=disabled_external_move_cfg())
+
+    assert engine.root_move_calls[-1] is None
+
+
+def test_search__allows_repetition_draw_roots_when_score_is_losing() -> None:
+    """A repetition draw should not be rejected when the previous score says the bot is losing."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    engine = RootMovesRecordingFakeEngine()
+    wrapper.engine = engine
+    wrapper.last_search_score_cp = -200
+    board = repetition_draw_board()
+
+    wrapper.search(board,
+                   chess.engine.Limit(time=1.0),
+                   ponder=False,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None),
+                   game=bullet_game(),
+                   engine_cfg=disabled_external_move_cfg())
+
+    assert engine.root_move_calls[-1] is None
 
 
 def test_search__keeps_main_engine_for_queenless_positions_above_configured_limit() -> None:
