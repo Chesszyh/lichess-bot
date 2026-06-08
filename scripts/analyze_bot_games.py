@@ -778,6 +778,71 @@ def append_rating_negative_draw_sections(lines: list[str], summary: GameSummary)
         lines.append("- No rating-negative draws found.")
 
 
+def append_lower_rated_draw_sections(lines: list[str], summary: GameSummary) -> None:
+    """Append sections for draws against lower-rated opponents."""
+    lines.extend(["", "## Lower-Rated Draws", ""])
+    lines.append(f"- Lower-rated draws found: `{summary.lower_rated_draw_count}`")
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Openings",
+        summary.lower_rated_draws_by_opening,
+        empty_text="No lower-rated draw opening clusters found.",
+    )
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Prefixes",
+        summary.lower_rated_draw_prefixes,
+        empty_text="No lower-rated draw prefixes found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Focused Lower-Rated Draw Contexts",
+        summary.focused_lower_rated_draw_contexts,
+        empty_text="No focused lower-rated draw contexts found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Contexts",
+        summary.lower_rated_draw_contexts,
+        empty_text="No lower-rated draw contexts found.",
+        quote_item=True,
+    )
+
+    lines.extend(["", "## Largest Lower-Rated Draw Gaps", ""])
+    if summary.lower_rated_draws:
+        lines.extend(
+                f"- gap `{record.rating_gap}` vs `{record.opponent}` "
+                f"({record.opponent_rating}) in {game_link(record)}: {record.opening}"
+                for record in summary.lower_rated_draws
+        )
+    else:
+        lines.append("- No lower-rated draw leaks found at the configured threshold.")
+
+
+def append_clock_loss_section(lines: list[str], title: str, records: list[GameRecord], *, empty_text: str) -> None:
+    """Append a markdown section for losses where the bot finished with enough clock."""
+    lines.extend(["", f"## {title}", ""])
+    if not records:
+        lines.append(empty_text)
+        return
+    for record in records:
+        clock = format_seconds(record.bot_final_clock_seconds or 0)
+        lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
+
+
+def append_recent_losses_section(lines: list[str], records: list[GameRecord]) -> None:
+    """Append a markdown section for the latest losses."""
+    lines.extend(["", "## Recent Losses", ""])
+    if not records:
+        lines.append("- No recent losses found.")
+        return
+    for record in records:
+        started = record.utc_started.isoformat(sep=" ") if record.utc_started else "unknown time"
+        lines.append(f"- `{started}` {game_link(record)} vs `{record.opponent}`: {record.opening}")
+
+
 def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     """Render a markdown analysis report."""
     lines = [
@@ -836,46 +901,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         quote_item=True,
     )
 
-    lines.extend(["", "## Lower-Rated Draws", ""])
-    lines.append(f"- Lower-rated draws found: `{summary.lower_rated_draw_count}`")
-    append_count_section(
-        lines,
-        "Lower-Rated Draw Openings",
-        summary.lower_rated_draws_by_opening,
-        empty_text="No lower-rated draw opening clusters found.",
-    )
-    append_count_section(
-        lines,
-        "Lower-Rated Draw Prefixes",
-        summary.lower_rated_draw_prefixes,
-        empty_text="No lower-rated draw prefixes found.",
-        quote_item=True,
-    )
-    append_count_section(
-        lines,
-        "Focused Lower-Rated Draw Contexts",
-        summary.focused_lower_rated_draw_contexts,
-        empty_text="No focused lower-rated draw contexts found.",
-        quote_item=True,
-    )
-    append_count_section(
-        lines,
-        "Lower-Rated Draw Contexts",
-        summary.lower_rated_draw_contexts,
-        empty_text="No lower-rated draw contexts found.",
-        quote_item=True,
-    )
-
-    lines.extend(["", "## Largest Lower-Rated Draw Gaps", ""])
-    if summary.lower_rated_draws:
-        lines.extend(
-                f"- gap `{record.rating_gap}` vs `{record.opponent}` "
-                f"({record.opponent_rating}) in {game_link(record)}: {record.opening}"
-                for record in summary.lower_rated_draws
-        )
-    else:
-        lines.append("- No lower-rated draw leaks found at the configured threshold.")
-
+    append_lower_rated_draw_sections(lines, summary)
     append_rating_negative_draw_sections(lines, summary)
 
     append_count_section(
@@ -886,13 +912,12 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         quote_item=True,
     )
 
-    lines.extend(["", "## Clock-Rich Normal Losses", ""])
-    if summary.clock_rich_normal_losses:
-        for record in summary.clock_rich_normal_losses:
-            clock = format_seconds(record.bot_final_clock_seconds or 0)
-            lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
-    else:
-        lines.append("- No clock-rich normal losses found at the configured threshold.")
+    append_clock_loss_section(
+        lines,
+        "Clock-Rich Normal Losses",
+        summary.clock_rich_normal_losses,
+        empty_text="- No clock-rich normal losses found at the configured threshold.",
+    )
 
     append_count_section(
         lines,
@@ -910,23 +935,15 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         quote_item=True,
     )
 
-    lines.extend(["", "## High-Clock Normal Losses", ""])
-    if summary.high_clock_normal_losses:
-        for record in summary.high_clock_normal_losses:
-            clock = format_seconds(record.bot_final_clock_seconds or 0)
-            lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
-    else:
-        lines.append("- No high-clock normal losses found at the configured threshold.")
+    append_clock_loss_section(
+        lines,
+        "High-Clock Normal Losses",
+        summary.high_clock_normal_losses,
+        empty_text="- No high-clock normal losses found at the configured threshold.",
+    )
 
     append_eval_drop_section(lines, summary.largest_bot_eval_drops)
-
-    lines.extend(["", "## Recent Losses", ""])
-    if summary.recent_losses:
-        for record in summary.recent_losses:
-            started = record.utc_started.isoformat(sep=" ") if record.utc_started else "unknown time"
-            lines.append(f"- `{started}` {game_link(record)} vs `{record.opponent}`: {record.opening}")
-    else:
-        lines.append("- No recent losses found.")
+    append_recent_losses_section(lines, summary.recent_losses)
 
     return "\n".join(lines) + "\n"
 
