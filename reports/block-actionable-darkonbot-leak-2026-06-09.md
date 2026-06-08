@@ -24,7 +24,8 @@ The earlier leak watchlist mixed already-blocked opponents with still-actionable
 
 ## Verification
 
-- Watched the new analyzer tests fail before implementation.
-- `pytest test_bot/test_analyze_bot_games.py::test_render_markdown__separates_unblocked_opponent_leaks test_bot/test_analyze_bot_games.py::test_blocked_opponents_from_config__loads_challenge_and_matchmaking_lists -q`
+- `pytest test_bot/test_analyze_bot_games.py -q`
+- `ruff check --config test_bot/ruff.toml scripts/analyze_bot_games.py test_bot/test_analyze_bot_games.py`
+- `mypy --strict --explicit-package-bases scripts/analyze_bot_games.py test_bot/test_analyze_bot_games.py`
 - Parsed both `config.yml` and `.config-history/config.yml` with PyYAML.
 - Regenerated active-control reports with `--block-list-config config.yml`.
