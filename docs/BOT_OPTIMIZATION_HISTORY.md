@@ -361,6 +361,10 @@ Changes made:
   - Default: `0` minutes, so this is opt-in.
   - Live private Stockfish config: `30` minutes.
   - Purpose: after `xzMGfX4n` and `Wp8SbY5A`, avoid immediately spending another bot-vs-bot daily game on the same target-band draw sink.
+- Add `engine.polyglot.avoid_moves`.
+  - Default: `[]`, so this is opt-in.
+  - Live private Stockfish bot profile: after `e4 e5 Nf3 Nc6`, skip `Bb5`.
+  - Purpose: repeated white-side Berlin Wall draws showed that the book should stop entering `Bb5 Nf6 O-O Nxe4` against bots.
 
 Related commits:
 
@@ -370,6 +374,7 @@ Related commits:
 - `176e5b1 Shorten ordinary decline cooldowns by config`
 - This pass: log target-band cooldown blockers.
 - This pass: cool down drawn fast-game bot opponents.
+- This pass: filter the repeated bot-side Berlin Wall book move.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -381,8 +386,10 @@ Commands that passed:
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_game_stream.py -q
+.venv/bin/pytest test_bot/test_external_moves.py -q
 .venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py
 .venv/bin/ruff check --config test_bot/ruff.toml lib/lichess_bot.py lib/config.py --ignore C901,PLR0912
+.venv/bin/ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_external_moves.py --ignore C901,D101,D102,D103,D107,PLR0912,PLR0913,PLR0915,PLR0917,PLW2901,RUF012,RUF100,ARG002
 git diff --check
 ```
 
@@ -396,6 +403,12 @@ Latest passing result for the matchmaking cooldown and config checks:
 
 ```text
 57 passed
+```
+
+Latest passing result for the current book-filter, config, time-management, and matchmaking regression set:
+
+```text
+100 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -418,6 +431,14 @@ matchmaking.blitz_fallback.preferred_opponent_min_rating=3080
 matchmaking.decline_cooldown_minutes=180
 matchmaking.outgoing_challenge_cooldown_minutes=180
 matchmaking.draw_cooldown_minutes=30
+engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
+engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
+```
+
+The live private book profile was checked against the real Polyglot book after `e4 e5 Nf3 Nc6`; it returned:
+
+```text
+f1c4
 ```
 
 Known verification debt:
@@ -455,6 +476,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
 | Repeated target-band draw sink | `xzMGfX4n` and `Wp8SbY5A` were consecutive draws against `BlueMoonBot` | Add opt-in `draw_cooldown_minutes`; live value `30` for drawn bullet/blitz games against bots | `test_game_done__cools_down_bot_after_fast_draw`; `test_game_done__does_not_cool_down_bot_after_win`; config default test | Active |
+| Repeated Berlin Wall book draws | Recent white-side bot draws repeatedly entered `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 ... Qxd8+ Kxd8`, including `Q1poOSgG`, `Wp8SbY5A`, and `nSLk3U9v` | Add opt-in Polyglot `avoid_moves`; live bot profile skips `Bb5` after `e4 e5 Nf3 Nc6` | `test_get_book_move__avoid_moves_filters_configured_san_line`; config default test; live config mirrored privately | Active, watch if Italian/other alternatives improve conversion |
 
 Current private live thresholds worth preserving unless new games disprove them:
 

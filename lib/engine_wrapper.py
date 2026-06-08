@@ -1173,6 +1173,55 @@ def get_game_specific_polyglot_cfg(polyglot_cfg: Configuration, game: model.Game
     return polyglot_cfg | opponent_cfg
 
 
+def board_matches_san_sequence(board: chess.Board, san_moves: str) -> bool:
+    """Return whether the board position follows the configured SAN move sequence."""
+    reference_board = chess.Board()
+    try:
+        for san in san_moves.split():
+            reference_board.push_san(san)
+    except ValueError:
+        logger.warning(f"Ignoring invalid polyglot avoid_moves sequence: {san_moves}")
+        return False
+
+    return (reference_board.board_fen() == board.board_fen()
+            and reference_board.turn == board.turn
+            and reference_board.castling_rights == board.castling_rights
+            and reference_board.ep_square == board.ep_square)
+
+
+def get_polyglot_avoid_moves(board: chess.Board, polyglot_cfg: Configuration) -> set[chess.Move]:
+    """Parse configured book moves to avoid in the current position."""
+    avoid_rules = polyglot_cfg.lookup("avoid_moves") or []
+    avoid_moves: set[chess.Move] = set()
+    if not isinstance(avoid_rules, list):
+        logger.warning("Ignoring engine:polyglot:avoid_moves because it is not a list.")
+        return avoid_moves
+
+    for rule in avoid_rules:
+        if not isinstance(rule, dict):
+            logger.warning("Ignoring invalid engine:polyglot:avoid_moves rule because it is not a dictionary.")
+            continue
+
+        after_moves = rule.get("after", "")
+        moves = rule.get("moves", [])
+        if not isinstance(after_moves, str) or not isinstance(moves, list):
+            logger.warning("Ignoring invalid engine:polyglot:avoid_moves rule shape.")
+            continue
+
+        if not board_matches_san_sequence(board, after_moves):
+            continue
+
+        for san in moves:
+            if not isinstance(san, str):
+                continue
+            try:
+                avoid_moves.add(board.parse_san(san))
+            except ValueError:
+                logger.warning(f"Ignoring invalid polyglot avoid_moves move {san} after {after_moves}.")
+
+    return avoid_moves
+
+
 def get_book_move(board: chess.Board, game: model.Game,
                   polyglot_cfg: Configuration) -> chess.engine.PlayResult:
     """Get a move from an opening book."""
@@ -1198,21 +1247,26 @@ def get_book_move(board: chess.Board, game: model.Game,
                 selection = polyglot_cfg.selection
                 min_weight = polyglot_cfg.min_weight
                 normalization = polyglot_cfg.normalization
-                weights = [entry.weight for entry in reader.find_all(board)]
+                entries = list(reader.find_all(board))
+                avoid_moves = get_polyglot_avoid_moves(board, polyglot_cfg)
+                if avoid_moves:
+                    entries = [entry for entry in entries if entry.move not in avoid_moves]
+
+                weights = [entry.weight for entry in entries]
                 scalar = (sum(weights) if normalization == "sum" and weights else
                           max(weights) if normalization == "max" and weights else 100)
                 min_weight = min_weight * scalar / 100
+                entries = [entry for entry in entries if entry.weight >= min_weight]
 
                 if selection == "weighted_random":
-                    entries = list(reader.find_all(board, minimum_weight=min_weight))
                     weights = [entry.weight for entry in entries]
                     move = random.choices(entries, weights=weights, k=1)[0].move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=min_weight).move
+                    move = random.choice(entries).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=min_weight).move
-            except IndexError:
-                # python-chess raises "IndexError" if no entries found.
+                    move = max(entries, key=lambda entry: entry.weight).move
+            except (IndexError, ValueError):
+                # python-chess raises IndexError if no entries are found; max() raises ValueError after filtering.
                 move = None
 
         if move is not None:

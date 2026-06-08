@@ -111,6 +111,21 @@ def test_insert_default_values__matchmaking_draw_cooldown_defaults_to_zero() -> 
     assert raw_config["matchmaking"]["draw_cooldown_minutes"] == 0
 
 
+def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None:
+    """Opening-book move filters should be opt-in."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci", "polyglot": {}},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["engine"]["polyglot"]["avoid_moves"] == []
+
+
 def test_validate_config__rejects_unknown_matchmaking_override_weight(monkeypatch: pytest.MonkeyPatch) -> None:
     """Override weights should only reference the default config or configured overrides."""
     raw_config: CONFIG_DICT_TYPE = {

@@ -253,6 +253,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
+    set_config_default(CONFIG, "engine", "polyglot", key="avoid_moves", default=[], force_empty_values=True)
     set_config_default(CONFIG, "engine", "polyglot", key="opponent_selection", default={}, force_empty_values=True)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="enabled", default=False)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="speeds", default=["bullet"], force_empty_values=True)

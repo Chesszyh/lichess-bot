@@ -28,6 +28,7 @@ engine:                            # Engine settings.
     selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
     max_depth: 20                  # How many moves from the start to take from the book.
     normalization: "none"          # Normalization method for the book weights. One of "none", "sum", or "max".
+    avoid_moves: []                # Optional list of book moves to skip after a SAN move sequence, e.g. [{after: "e4 e5", moves: ["Nf3"]}].
     opponent_selection:            # Optional overrides by opponent type. Any omitted key falls back to the base polyglot config above.
 #     human:
 #       selection: "uniform_random"
@@ -40,6 +41,9 @@ engine:                            # Engine settings.
 #       selection: "best_move"
 #       min_weight: 20
 #       max_depth: 12
+#       avoid_moves:
+#         - after: "e4 e5 Nf3 Nc6"
+#           moves: ["Bb5"]
 
   shallow_search_guard:
     enabled: false                 # If a realtime search returns below min_depth while enough clock remains, run one short extra search.
