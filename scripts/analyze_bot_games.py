@@ -67,6 +67,7 @@ class GameSummary:
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
     high_clock_normal_losses: list[GameRecord]
+    high_clock_normal_loss_contexts: list[tuple[str, int]]
     recent_losses: list[GameRecord]
 
 
@@ -338,6 +339,10 @@ def summarize_records(records_dir: Path,
         key=lambda record: record.bot_final_clock_seconds or 0,
         reverse=True,
     )
+    high_clock_normal_loss_contexts = Counter(
+        f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in high_clock_normal_losses
+    ).most_common()
 
     return GameSummary(
         bot_name=bot_name,
@@ -362,6 +367,7 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
         high_clock_normal_losses=high_clock_normal_losses[:10],
+        high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
         recent_losses=recent_losses,
     )
 
@@ -525,6 +531,14 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         )
     else:
         lines.append("- No lower-rated draw leaks found at the configured threshold.")
+
+    append_count_section(
+        lines,
+        "High-Clock Normal Loss Contexts",
+        summary.high_clock_normal_loss_contexts,
+        empty_text="No high-clock normal loss contexts found.",
+        quote_item=True,
+    )
 
     lines.extend(["", "## High-Clock Normal Losses", ""])
     if summary.high_clock_normal_losses:

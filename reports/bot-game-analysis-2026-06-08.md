@@ -206,6 +206,19 @@
 - gap `427` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - SO2bW34b.pgn`: Sicilian Defense: Najdorf Variation
 - gap `419` vs `prokopakop` (2511) in `prokopakop vs ilovecatgirl - ZnbOQOsf.pgn`: Sicilian Defense: Najdorf Variation
 
+## High-Clock Normal Loss Contexts
+
+- `5` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 300+2`
+- `4` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 240+2`
+- `3` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 300+1`
+- `3` x `Sicilian Defense: Moscow Variation, Main Line | black | bullet | 120+0`
+- `2` x `Semi-Slav Defense: Anti-Moscow Gambit | black | blitz | 300+2`
+- `2` x `Caro-Kann Defense: Advance Variation | black | blitz | 300+2`
+- `2` x `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack | black | blitz | 300+2`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 300+2`
+- `2` x `Caro-Kann Defense: Advance Variation | black | blitz | 240+3`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 240+0`
+
 ## High-Clock Normal Losses
 
 - `330s` left in `ilovecatgirl vs RecklessEngine - wKRb8aH8.pgn` vs `RecklessEngine`: Caro-Kann Defense: Advance Variation, Short Variation

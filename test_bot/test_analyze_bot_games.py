@@ -256,6 +256,9 @@ def test_render_markdown__shows_high_clock_normal_losses(tmp_path: Path) -> None
     markdown = render_markdown(summary)
 
     assert [record.path.name for record in summary.high_clock_normal_losses] == ["high-clock-normal-loss.pgn"]
+    assert summary.high_clock_normal_loss_contexts == [("Queen's Gambit Accepted | black | bullet | 60+2", 1)]
+    assert "High-Clock Normal Loss Contexts" in markdown
+    assert "`1` x `Queen's Gambit Accepted | black | bullet | 60+2`" in markdown
     assert "High-Clock Normal Losses" in markdown
     high_clock_section = markdown.split("## High-Clock Normal Losses", maxsplit=1)[1].split("## Recent Losses")[0]
     assert "`87s` left in `high-clock-normal-loss.pgn` vs `Cheszter`: Queen's Gambit Accepted" in high_clock_section
