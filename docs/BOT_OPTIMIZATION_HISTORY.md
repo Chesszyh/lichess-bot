@@ -203,6 +203,20 @@ Additional private config change:
   - `Nb8` with weight `6`.
 - With live `normalization: max` and `min_weight: 50`, `Nb8` remains above threshold after filtering `Na5`, so the bot can leave the repeated Chigorin line without weakening the book threshold or dropping out of book.
 
+Follow-up evidence: the next live target-band game `IBkQluUF` as white against `Cheszter` reached `Italian Game: Two Knights Defense, Polerio Defense, Bishop Check Line` and drew by threefold. This repeated the same white-side `4. Ng5` Two Knights family seen in `ol8VgVif`, and the final repetition guard allowed the draw only because the best non-repeating move lost `214 cp`, above the live `150 cp` limit.
+
+Additional private config change:
+
+- In the bot-specific Polyglot profile, skip `Ng5` after:
+  - `e4 e5 Nf3 Nc6 Bc4 Nf6`
+- The real live book was checked at that position. It contains:
+  - `Ng5` with weight `31`.
+  - `d4` with weight `15`.
+  - `O-O` with weight `4`.
+  - `Nc3` and `d3` with weight `3`.
+- With live `normalization: max` and `min_weight: 50`, `d4` remains above threshold after filtering `Ng5`, so the bot stays in book while leaving the forcing Two Knights repetition channel.
+- Do not raise the repetition guard cap from this game alone; the guard behaved as configured, and the cleaner fix is to avoid the opening family that keeps producing equal repetition positions.
+
 Verification:
 
 ```text
