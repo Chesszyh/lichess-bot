@@ -1,10 +1,13 @@
 """Tests for OAuth token validation fallbacks."""
 
 from collections import defaultdict
+import time
+from typing import cast
 
 import chess
 import chess.engine
 import pytest
+import requests
 from requests.exceptions import ReadTimeout
 
 from lib import lichess
@@ -51,7 +54,7 @@ def make_lichess_with_session(session: object) -> lichess.Lichess:
     """Create a Lichess object without token validation for API unit tests."""
     li = lichess.Lichess.__new__(lichess.Lichess)
     li.baseUrl = "https://lichess.org/"
-    li.session = session
+    li.session = cast(requests.Session, session)
     li.logging_level = 20
     li.rate_limit_timers = defaultdict(Timer)
     return li
@@ -129,7 +132,7 @@ def test_get_token_info__returns_direct_token_info(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(li, "api_post", fake_api_post)
     monkeypatch.setattr(li, "api_get_json", fake_api_get_json)
-    monkeypatch.setattr(lichess.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "sleep", lambda _: None)
 
     assert li.get_token_info(access_token) == {"scopes": "bot:play", "userId": "ilovecatgirl"}
     assert profile_called is False
@@ -141,7 +144,7 @@ def test_get_token_info__falls_back_to_bot_profile(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(li, "api_post", lambda _endpoint_name, **_: {})
     monkeypatch.setattr(li, "api_get_json", lambda _endpoint_name: {"id": "ilovecatgirl", "title": "BOT"})
-    monkeypatch.setattr(lichess.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "sleep", lambda _: None)
 
     assert li.get_token_info("token") == {"scopes": "bot:play", "userId": "ilovecatgirl"}
 
@@ -152,6 +155,6 @@ def test_get_token_info__non_bot_profile_returns_none(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(li, "api_post", lambda _endpoint_name, **_: {})
     monkeypatch.setattr(li, "api_get_json", lambda _endpoint_name: {"id": "alice", "title": "GM"})
-    monkeypatch.setattr(lichess.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "sleep", lambda _: None)
 
     assert li.get_token_info("token") is None
