@@ -26,5 +26,6 @@ Lichess challenge endpoint.
 
 - `pytest test_bot/test_matchmaking.py::test_challenge__retries_next_candidate_when_opponent_is_rate_limited -q`
 - `pytest test_bot/test_matchmaking.py -q`
-- `mypy --strict --explicit-package-bases lib/matchmaking.py`
-- `git diff --check`
+- `mypy --strict lib/matchmaking.py`
+- `ruff check --config test_bot/ruff.toml lib/matchmaking.py --select B007,ARG005,ANN001`
+- `git diff --check -- lib/matchmaking.py test_bot/test_matchmaking.py`
