@@ -125,6 +125,9 @@ engine:                            # Engine settings.
     high_rated_accept_draw_moves: 2 # How many recent scores must be near equal for the elite draw-offer rule.
     high_rated_accept_draw_score: 25 # Maximum absolute cp score for the elite draw-offer rule.
     high_rated_accept_draw_pieces: 32 # Maximum pieces on board for the elite draw-offer rule.
+    high_rated_accept_draw_clock_pressure_enabled: false # If true, reject elite draw offers when the opponent is near flagging and our clock is safe.
+    high_rated_accept_draw_clock_pressure_own_clock_ms: 30000 # Own clock threshold for rejecting draw offers under clock pressure.
+    high_rated_accept_draw_clock_pressure_opponent_clock_ms: 15000 # Opponent clock threshold for rejecting draw offers under clock pressure.
 
   online_moves:
     max_out_of_book_moves: 10      # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.

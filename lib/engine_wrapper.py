@@ -293,6 +293,21 @@ class EngineWrapper:
                 return abs(actual(score)) <= score_range
             return len(scores) == len(list(filter(score_near_draw, scores)))
 
+        def opponent_in_clock_pressure() -> bool:
+            if not game or not self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_enabled"):
+                return False
+            if board.turn == chess.WHITE:
+                own_clock = game.state.get("wtime", 0)
+                opponent_clock = game.state.get("btime", 0)
+            else:
+                own_clock = game.state.get("btime", 0)
+                opponent_clock = game.state.get("wtime", 0)
+            own_threshold = int(self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_own_clock_ms") or 0)
+            opponent_threshold = int(
+                self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_opponent_clock_ms") or 0,
+            )
+            return own_clock >= own_threshold and opponent_clock <= opponent_threshold
+
         can_offer_draw = self.draw_or_resign.offer_draw_enabled
         draw_offer_moves = self.draw_or_resign.offer_draw_moves
         draw_score_range: int = self.draw_or_resign.offer_draw_score
@@ -322,6 +337,7 @@ class EngineWrapper:
             if (opponent_rating >= elite_min_rating
                     and pieces_on_board <= elite_piece_count
                     and len(self.scores) >= elite_draw_moves
+                    and not opponent_in_clock_pressure()
                     and recent_scores_near_draw(elite_draw_moves, elite_score_range)):
                 result.draw_offered = True
 
