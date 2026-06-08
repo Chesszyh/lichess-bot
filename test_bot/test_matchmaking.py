@@ -1144,3 +1144,35 @@ def test_matchmaking_state__persists_outgoing_challenge_cadence_across_restart(t
     monkeypatch.setattr(restarted.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
 
     assert restarted.should_create_challenge()
+
+
+def test_game_done__uses_full_cadence_after_restored_partial_cadence(tmp_path: Path,
+                                                                     monkeypatch: MonkeyPatch) -> None:
+    """After restart, a completed game should reset to the configured full challenge timeout."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.cool_down_outgoing_challenge_cadence()
+    first.last_game_ended_delay.starting_time -= minutes(11).total_seconds()
+    first.save_state()
+
+    restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
+    restarted.game_done()
+    restarted.last_game_ended_delay.starting_time -= minutes(5).total_seconds()
+    monkeypatch.setattr(restarted.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.last_challenge_created_delay, "time_since_reset", lambda: minutes(6))
+
+    assert not restarted.should_create_challenge()
