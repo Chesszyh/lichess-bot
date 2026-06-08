@@ -206,6 +206,19 @@
 - gap `427` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - SO2bW34b.pgn`: Sicilian Defense: Najdorf Variation
 - gap `419` vs `prokopakop` (2511) in `prokopakop vs ilovecatgirl - ZnbOQOsf.pgn`: Sicilian Defense: Najdorf Variation
 
+## High-Clock Normal Losses
+
+- `330s` left in `ilovecatgirl vs RecklessEngine - wKRb8aH8.pgn` vs `RecklessEngine`: Caro-Kann Defense: Advance Variation, Short Variation
+- `250s` left in `TakticproChess vs ilovecatgirl - WwckI7lb.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation
+- `249s` left in `wyxx210704_bot vs ilovecatgirl - ezPjAgnq.pgn` vs `wyxx210704_bot`: Caro-Kann Defense: Advance Variation, Short Variation
+- `235s` left in `Fischer_Bot vs ilovecatgirl - vrgl5zr2.pgn` vs `Fischer_Bot`: Sicilian Defense: Najdorf Variation, Amsterdam Variation
+- `228s` left in `TakticproChess vs ilovecatgirl - QBWEqSHD.pgn` vs `TakticproChess`: Queen's Gambit Declined: Exchange Variation, Positional Variation
+- `226s` left in `abcd_engine vs ilovecatgirl - DWkZsxlH.pgn` vs `abcd_engine`: Semi-Slav Defense: Anti-Moscow Gambit
+- `219s` left in `ilovecatgirl vs Bot1nokk - YXn0UwNp.pgn` vs `Bot1nokk`: Ruy Lopez: Berlin Defense, Berlin Wall
+- `216s` left in `ToromBot vs ilovecatgirl - pKjj73qc.pgn` vs `ToromBot`: Sicilian Defense: Snyder Variation
+- `215s` left in `ResoluteBot vs ilovecatgirl - Ig3MUcQw.pgn` vs `ResoluteBot`: Caro-Kann Defense: Advance Variation
+- `211s` left in `Yafa_bot vs ilovecatgirl - djH7dvmz.pgn` vs `Yafa_bot`: Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
+
 ## Recent Losses
 
 - `2026-06-08 10:47:09+00:00` `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: Queen's Gambit Accepted: Central Variation, Greco Variation

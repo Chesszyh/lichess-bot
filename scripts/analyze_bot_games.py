@@ -37,6 +37,7 @@ class GameRecord:
     opponent_rating: int | None
     rating_gap: int | None
     bot_rating_diff: int | None
+    bot_final_clock_seconds: float | None
     move_prefix: str
 
 
@@ -65,6 +66,7 @@ class GameSummary:
     lower_rated_draw_prefixes: list[tuple[str, int]]
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
+    high_clock_normal_losses: list[GameRecord]
     recent_losses: list[GameRecord]
 
 
@@ -160,6 +162,26 @@ def game_move_prefix(game: chess.pgn.Game, max_prefix_plies: int) -> str:
     return " ".join(moves)
 
 
+def game_bot_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> float | None:
+    """Return the last PGN clock value recorded after one of the bot's moves."""
+    bot_color = chess.WHITE if bot_is_white else chess.BLACK
+    board = game.board()
+    final_clock_seconds: float | None = None
+    node: chess.pgn.GameNode = game
+    while node.variations:
+        next_node = node.variation(0)
+        move = next_node.move
+        if move is None:
+            break
+        mover = board.turn
+        board.push(move)
+        clock_seconds = next_node.clock()
+        if mover == bot_color and clock_seconds is not None:
+            final_clock_seconds = clock_seconds
+        node = next_node
+    return final_clock_seconds
+
+
 def bot_result(result: str, bot_is_white: bool) -> str:
     """Return win/loss/draw from the configured bot's perspective."""
     if result == "1/2-1/2":
@@ -219,6 +241,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
         opponent_rating=opponent_rating,
         rating_gap=rating_gap,
         bot_rating_diff=bot_rating_diff,
+        bot_final_clock_seconds=game_bot_final_clock_seconds(game, bot_is_white),
         move_prefix=game_move_prefix(game, max_prefix_plies),
     )
 
@@ -230,6 +253,7 @@ def summarize_records(records_dir: Path,
                       lower_rated_draw_gap: int = 1,
                       max_base_seconds: int = 300,
                       control_min_games: int = 10,
+                      high_clock_loss_threshold_seconds: int = 60,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
     records: list[GameRecord] = []
@@ -304,6 +328,16 @@ def summarize_records(records_dir: Path,
         key=lambda record: record.utc_started or datetime.min.replace(tzinfo=UTC),
         reverse=True,
     )[:10]
+    high_clock_normal_losses = [
+        record for record in losses
+        if record.termination != "Time forfeit"
+        and record.bot_final_clock_seconds is not None
+        and record.bot_final_clock_seconds >= high_clock_loss_threshold_seconds
+    ]
+    high_clock_normal_losses.sort(
+        key=lambda record: record.bot_final_clock_seconds or 0,
+        reverse=True,
+    )
 
     return GameSummary(
         bot_name=bot_name,
@@ -327,6 +361,7 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_prefixes=lower_rated_draw_prefixes,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
+        high_clock_normal_losses=high_clock_normal_losses[:10],
         recent_losses=recent_losses,
     )
 
@@ -350,6 +385,11 @@ def rating_impact_by_group(records: list[GameRecord],
 def game_link(record: GameRecord) -> str:
     """Return a compact report label for a game record."""
     return f"`{record.path.name}`"
+
+
+def format_seconds(seconds: float) -> str:
+    """Return compact whole-second clock text for report rows."""
+    return f"{round(seconds):.0f}s"
 
 
 def opening_risk_gate_line(summary: GameSummary, risk_threshold: int) -> str:
@@ -486,6 +526,14 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     else:
         lines.append("- No lower-rated draw leaks found at the configured threshold.")
 
+    lines.extend(["", "## High-Clock Normal Losses", ""])
+    if summary.high_clock_normal_losses:
+        for record in summary.high_clock_normal_losses:
+            clock = format_seconds(record.bot_final_clock_seconds or 0)
+            lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
+    else:
+        lines.append("- No high-clock normal losses found at the configured threshold.")
+
     lines.extend(["", "## Recent Losses", ""])
     if summary.recent_losses:
         for record in summary.recent_losses:
@@ -508,6 +556,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-base-seconds", type=int, default=300, help="Maximum base time to include.")
     parser.add_argument("--control-min-games", type=int, default=10,
                         help="Minimum scored games for exact-clock score-rate clusters.")
+    parser.add_argument("--high-clock-loss-threshold-seconds", type=int, default=60,
+                        help="Minimum remaining bot clock for non-time loss examples.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
     return parser.parse_args(argv)
@@ -523,6 +573,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         lower_rated_draw_gap=args.lower_rated_draw_gap,
         max_base_seconds=args.max_base_seconds,
         control_min_games=args.control_min_games,
+        high_clock_loss_threshold_seconds=args.high_clock_loss_threshold_seconds,
         since_utc=parse_since_utc(args.since_utc),
     )
     markdown = render_markdown(summary, risk_threshold=args.risk_threshold)

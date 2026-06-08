@@ -225,6 +225,44 @@ def test_render_markdown__shows_rating_impact_by_opening_and_context(tmp_path: P
     assert "`Sicilian Defense: Najdorf Variation, English Attack | black | bullet`: `-14` rating over `2` games" in markdown
 
 
+def test_render_markdown__shows_high_clock_normal_losses(tmp_path: Path) -> None:
+    """Normal losses with plenty of remaining clock should be separated from clock losses."""
+    high_clock_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
+    high_clock_headers["TimeControl"] = "60+2"
+    write_pgn(
+        tmp_path,
+        "high-clock-normal-loss.pgn",
+        high_clock_headers,
+        "1. d4 { [%clk 0:01:01] } d5 { [%clk 0:01:27] } 1-0",
+    )
+    low_clock_headers = base_headers("1-0", "Sicilian Defense", "FastBot", "ilovecatgirl")
+    low_clock_headers["TimeControl"] = "60+1"
+    write_pgn(
+        tmp_path,
+        "low-clock-normal-loss.pgn",
+        low_clock_headers,
+        "1. e4 { [%clk 0:00:59] } c5 { [%clk 0:00:12] } 1-0",
+    )
+    time_forfeit_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")
+    time_forfeit_headers["Termination"] = "Time forfeit"
+    write_pgn(
+        tmp_path,
+        "high-clock-time-forfeit-loss.pgn",
+        time_forfeit_headers,
+        "1. d4 { [%clk 0:01:27] } Nf6 { [%clk 0:00:59] } 0-1",
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert [record.path.name for record in summary.high_clock_normal_losses] == ["high-clock-normal-loss.pgn"]
+    assert "High-Clock Normal Losses" in markdown
+    high_clock_section = markdown.split("## High-Clock Normal Losses", maxsplit=1)[1].split("## Recent Losses")[0]
+    assert "`87s` left in `high-clock-normal-loss.pgn` vs `Cheszter`: Queen's Gambit Accepted" in high_clock_section
+    assert "low-clock-normal-loss.pgn" not in high_clock_section
+    assert "high-clock-time-forfeit-loss.pgn" not in high_clock_section
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")

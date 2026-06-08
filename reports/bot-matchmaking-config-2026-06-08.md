@@ -19,6 +19,7 @@ Recorded in local config history:
 - `.config-history` commit `40bbf63`: disable the fast bot opening book when playing Black.
 - `.config-history` commit `7dfb401`: increase outgoing bullet matchmaking sample weight.
 - `.config-history` commit `7d5cf39`: avoid weak long blitz bot controls.
+- `.config-history` commit `afd8dba`: bias outgoing bullet matchmaking toward short controls.
 
 Effective private config intent:
 
@@ -27,9 +28,10 @@ Effective private config intent:
 - Bullet challenges must still have increment because `min_increment: 1` and `bullet_requires_increment: true`.
 - Incoming base time is capped to `60` through `120` seconds, allowing practical `1+1` through `2+2` fast games.
 - Outgoing matchmaking can choose `60` or `90` second base times with `1` or `2` second increments.
-- Outgoing matchmaking now weights `90` second bases and `1` second increments more heavily. This raises the
-  configured bullet share from `57/60` possible base/increment combinations to `60/60`, while keeping increment bullet
-  samples such as `60+2` and `90+2` in the pool.
+- Outgoing matchmaking is still fully increment bullet, but now weights shorter bullet controls more heavily:
+  `60+1` is `40/72` combinations, `60+2` is `8/72`, `90+1` is `20/72`, and `90+2` is `4/72`. This raises the
+  configured `60` second sample share from `18/60` to `48/72` while keeping some `90` second increment bullet in the
+  pool for comparison.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
@@ -48,7 +50,7 @@ The refreshed bot-game report now tracks loss terminations. Across `2354` fast b
 
 ## Speed Split Evidence
 
-The refreshed bot-game report now splits results by Lichess speed bucket and exact time control. Historical bullet bot games show `242` wins, `269` draws, and `79` losses, while blitz shows `205` wins, `1128` draws, and `386` losses. This supports keeping the outgoing matchmaking bias toward increment bullet while treating blitz as the weaker pool to diagnose rather than increasing blitz volume.
+The refreshed bot-game report now splits results by Lichess speed bucket and exact time control. Historical bullet bot games show `242` wins, `269` draws, and `80` losses, while blitz shows `205` wins, `1128` draws, and `386` losses. This supports keeping the outgoing matchmaking bias toward increment bullet while collecting more direct `60+1` and `60+2` evidence for lc0's short-clock behavior.
 
 ## Exact Clock Evidence
 
@@ -64,10 +66,15 @@ Syzygy probing showed the 4-piece phase was already lost, while the log showed a
 instead of lichess-bot EGTB. Enabling direct local Syzygy and online EGTB gives exact move sources in future fast technical
 endgames before the capped search has to solve them unaided.
 
+The analyzer now also lists high-clock normal losses separately. These are non-time-forfeit losses where the bot still had
+at least `60` seconds after its last recorded move, so they should be reviewed as chess-strength, opening, or conversion
+problems rather than time-management failures.
+
 ## Why This Is Safer
 
 The previous live config had `challenge_timeout: 1`, which validates but triggers the repository warning about potentially using the 100 bot-vs-bot games/day allowance quickly. The revised config encourages more games through broader incoming acceptance and better time-control coverage, without increasing outgoing challenge frequency.
 
 The `57/60` bullet weighting took effect after safe restarts at 2026-06-08 18:32 CST and 18:53 CST, when no game engine
-child process was active. The new `60/60` outgoing bullet weighting took effect after a safe restart at 2026-06-08
-18:56 CST.
+child process was active. The `60/60` outgoing bullet weighting took effect after a safe restart at 2026-06-08 18:56 CST.
+The short-bullet weighting took effect after a safe restart at 2026-06-08 19:11 CST; `/api/account/playing` returned an
+empty active-game payload and the next outgoing challenge was scheduled for 2026-06-08 19:26:21 CST.
