@@ -2,10 +2,10 @@
 
 ## Scope
 
-- Games analyzed: `260`
+- Games analyzed: `261`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
-- Results: `{'draw': 121, 'loss': 20, 'unknown': 10, 'win': 109}`
+- Results: `{'draw': 121, 'loss': 21, 'unknown': 10, 'win': 109}`
 - Opening risk gate: FAILED (4 >= 3)
 - No local engine analysis was run.
 
@@ -13,6 +13,7 @@
 
 - `duchessAI | bullet | 60+1`: risk `10`, losses `0`, lower-rated draws `5`, rating-negative draws `5`, rating `-10`, latest `2026-04-29T09:36:44+00:00`
 - `MDBOT | bullet | 60+1`: risk `9`, losses `3`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`, latest `2026-04-25T21:41:39+00:00`
+- `Fischer_Bot | bullet | 120+1`: risk `6`, losses `2`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-06-08T14:14:40+00:00`
 - `ToromBot | bullet | 90+1`: risk `6`, losses `2`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-04-28T11:53:54+00:00`
 - `BorkaTower | bullet | 60+1`: risk `4`, losses `1`, lower-rated draws `1`, rating-negative draws `0`, rating `-3`, latest `2026-04-25T10:56:32+00:00`
 - `Valhalla-Bot | bullet | 120+1`: risk `4`, losses `0`, lower-rated draws `2`, rating-negative draws `2`, rating `-2`, latest `2026-04-17T06:48:24+00:00`
@@ -20,7 +21,6 @@
 - `grail-bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-04-25T11:21:16+00:00`
 - `abhisun_bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-9`, latest `2026-04-15T15:43:47+00:00`
 - `RockingSuperstars | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`, latest `2026-04-15T14:32:05+00:00`
-- `DarkOnBot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`, latest `2026-04-14T10:06:52+00:00`
 
 ## Loss Openings
 
@@ -30,23 +30,23 @@
 - `1` x Sicilian Defense: Prins Variation
 - `1` x French Defense: Rubinstein Variation
 - `1` x Sicilian Defense: Scheveningen Variation, Keres Attack
+- `1` x Semi-Slav Defense: Anti-Moscow Gambit
 - `1` x Scandinavian Defense: Modern Variation
 - `1` x Ruy Lopez: Open, Bernstein Variation
 - `1` x Indian Defense: Accelerated London System
-- `1` x Caro-Kann Defense
 
 ## Results by Mode
 
 - `121` x rated draw
 - `109` x rated win
-- `20` x rated loss
+- `21` x rated loss
 - `10` x rated unknown
 
 ## Results by Speed
 
 - `121` x bullet draw
 - `109` x bullet win
-- `20` x bullet loss
+- `21` x bullet loss
 - `10` x bullet unknown
 
 ## Results by Time Control
@@ -58,17 +58,17 @@
 - `24` x 90+1 draw
 - `22` x 90+1 win
 - `10` x 60+1 loss
-- `6` x 120+1 loss
+- `7` x 120+1 loss
 - `4` x 60+1 unknown
 - `4` x 90+1 loss
 
 ## Rating Impact by Mode
 
-- `rated`: `+221` rating over `217` games
+- `rated`: `+215` rating over `218` games
 
 ## Rating Impact by Speed
 
-- `bullet`: `+221` rating over `217` games
+- `bullet`: `+215` rating over `218` games
 
 ## Rating Impact by Time Control
 
@@ -76,8 +76,8 @@
 - `90+1 white`: `+15` rating over `16` games
 - `120+1 white`: `+33` rating over `35` games
 - `60+1 black`: `+39` rating over `45` games
+- `120+1 black`: `+58` rating over `45` games
 - `60+1 white`: `+60` rating over `49` games
-- `120+1 black`: `+64` rating over `44` games
 
 ## Rating Impact by Opening
 
@@ -86,11 +86,11 @@
 - `Scotch Game: Mieses Variation`: `-8` rating over `1` games
 - `Queen's Pawn Game: London System`: `-6` rating over `4` games
 - `French Defense: Rubinstein Variation`: `-6` rating over `1` games
+- `Semi-Slav Defense: Anti-Moscow Gambit`: `-6` rating over `1` games
 - `Sicilian Defense: Scheveningen Variation, Keres Attack`: `-4` rating over `2` games
 - `Queen's Gambit Declined: Traditional Variation`: `-4` rating over `1` games
 - `Scandinavian Defense: Modern Variation`: `-4` rating over `1` games
 - `Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation`: `-3` rating over `4` games
-- `Queen's Gambit Declined: Anti-Tartakower Variation`: `-3` rating over `1` games
 
 ## Rating Impact by Opening Context
 
@@ -99,11 +99,11 @@
 - `Scotch Game: Mieses Variation | white | bullet`: `-8` rating over `1` games
 - `Queen's Pawn Game: London System | black | bullet`: `-6` rating over `4` games
 - `French Defense: Rubinstein Variation | black | bullet`: `-6` rating over `1` games
+- `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet`: `-6` rating over `1` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-5` rating over `1` games
 - `Indian Defense: Accelerated London System | black | bullet`: `-4` rating over `2` games
 - `Queen's Gambit Declined: Traditional Variation | white | bullet`: `-4` rating over `1` games
 - `Scandinavian Defense: Modern Variation | black | bullet`: `-4` rating over `1` games
-- `Sicilian Defense: Scheveningen Variation, Keres Attack | black | bullet`: `-4` rating over `1` games
 
 ## Rating Impact by Opponent
 
@@ -112,11 +112,11 @@
 - `grail-bot | bullet | 120+1`: `-8` rating over `2` games
 - `MDBOT | bullet | 60+1`: `-7` rating over `4` games
 - `duchessAI | bullet | 60+1`: `-6` rating over `6` games
+- `Fischer_Bot | bullet | 120+1`: `-6` rating over `4` games
 - `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
 - `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
 - `abhisun_bot | bullet | 120+1`: `-4` rating over `2` games
 - `TakticproChess | bullet | 120+1`: `-4` rating over `1` games
-- `DarkOnBot | bullet | 90+1`: `-3` rating over `2` games
 
 ## Score by Opponent
 
@@ -126,20 +126,20 @@
 - `bot1e | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `ToromBot | bullet | 90+1`: W-D-L `0-1-2`, score `16.7%` over `3` games
 - `MDBOT | bullet | 60+1`: W-D-L `0-2-3`, score `20.0%` over `5` games
+- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-2`, score `25.0%` over `4` games
 - `abcd_engine | bullet | 60+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
 - `DarkOnBot | bullet | 90+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
-- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
 - `DarkOnBot | bullet | 60+1`: W-D-L `0-7-1`, score `43.8%` over `8` games
 
 ## Focused Rating Impact by Time Control
 
 - `90+1`: `+25` rating over `44` games
-- `120+1`: `+97` rating over `79` games
+- `120+1`: `+91` rating over `80` games
 - `60+1`: `+99` rating over `94` games
 
 ## Focused Score by Time Control
 
-- `120+1`: W-D-L `37-45-6`, score `67.6%` over `88` games
+- `120+1`: W-D-L `37-45-7`, score `66.9%` over `89` games
 - `60+1`: W-D-L `50-52-10`, score `67.9%` over `112` games
 - `90+1`: W-D-L `22-24-4`, score `68.0%` over `50` games
 
@@ -149,12 +149,12 @@
 - `Caro-Kann Defense | black | bullet | 120+1`: `-9` rating over `1` games
 - `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
 - `French Defense: Rubinstein Variation | black | bullet | 120+1`: `-6` rating over `1` games
+- `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`: `-6` rating over `1` games
 - `Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation | white | bullet | 90+1`: `-5` rating over `3` games
 - `Indian Defense: Accelerated London System | black | bullet | 90+1`: `-5` rating over `1` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: `-5` rating over `1` games
 - `French Defense: Steinitz Variation, Boleslavsky Variation | white | bullet | 120+1`: `-4` rating over `3` games
 - `Queen's Pawn Game: London System | black | bullet | 90+1`: `-4` rating over `2` games
-- `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: `-4` rating over `1` games
 
 ## Focused Score by Opening Context
 
@@ -166,8 +166,8 @@
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Scandinavian Defense: Modern Variation | black | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Scotch Game: Mieses Variation | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Sicilian Defense: Prins Variation | black | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
-- `Sicilian Defense: Scheveningen Variation, Keres Attack | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
 ## Focused Rating Impact by Opponent
 
@@ -176,11 +176,11 @@
 - `grail-bot | bullet | 120+1`: `-8` rating over `2` games
 - `MDBOT | bullet | 60+1`: `-7` rating over `4` games
 - `duchessAI | bullet | 60+1`: `-6` rating over `6` games
+- `Fischer_Bot | bullet | 120+1`: `-6` rating over `4` games
 - `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
 - `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
 - `abhisun_bot | bullet | 120+1`: `-4` rating over `2` games
 - `TakticproChess | bullet | 120+1`: `-4` rating over `1` games
-- `DarkOnBot | bullet | 90+1`: `-3` rating over `2` games
 
 ## Focused Score by Opponent
 
@@ -190,9 +190,9 @@
 - `bot1e | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `ToromBot | bullet | 90+1`: W-D-L `0-1-2`, score `16.7%` over `3` games
 - `MDBOT | bullet | 60+1`: W-D-L `0-2-3`, score `20.0%` over `5` games
+- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-2`, score `25.0%` over `4` games
 - `abcd_engine | bullet | 60+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
 - `DarkOnBot | bullet | 90+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
-- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
 - `DarkOnBot | bullet | 60+1`: W-D-L `0-7-1`, score `43.8%` over `8` games
 
 ## Worst Scoring Controls
@@ -200,18 +200,18 @@
 - `120+1 white`: W-D-L `15-22-3`, score `65.0%` over `40` games
 - `60+1 black`: W-D-L `22-25-6`, score `65.1%` over `53` games
 - `90+1 black`: W-D-L `14-16-3`, score `66.7%` over `33` games
-- `120+1 black`: W-D-L `22-23-3`, score `69.8%` over `48` games
+- `120+1 black`: W-D-L `22-23-4`, score `68.4%` over `49` games
 - `60+1 white`: W-D-L `28-27-4`, score `70.3%` over `59` games
 - `90+1 white`: W-D-L `8-8-1`, score `70.6%` over `17` games
 
 ## Loss Colors
 
-- `12` x black
+- `13` x black
 - `8` x white
 
 ## Loss Terminations
 
-- `16` x Normal
+- `17` x Normal
 - `4` x Time forfeit
 
 ## Time Forfeit Loss Controls
@@ -241,10 +241,10 @@
 - `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 f3 e5 Nb3 Be6`
 - `1` x `e4 e6 d4 d5 Nc3 dxe4 Nxe4 Be7 Nf3 Nf6 Nxf6+ Bxf6`
 - `1` x `e4 c5 Nf3 d6 d4 Nf6 Nc3 cxd4 Nxd4 e6 g4 Nc6`
+- `1` x `d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 Bg5 h6 Bh4 dxc4`
 - `1` x `e4 d5 exd5 Nf6 Nf3 Qxd5 Nc3 Qd6 d4 g6 Nb5 Qb6`
 - `1` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`
 - `1` x `d4 Nf6 Bf4 d5 e3 c5 Nf3 Nc6 Nbd2 Qb6 dxc5 Qxb2`
-- `1` x `e4 c6 d4 d6 c4 Qc7 Nf3 Nf6 Nc3 e5 Be2 Be7`
 
 ## Loss Prefix Contexts
 
@@ -253,11 +253,11 @@
 - `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 f3 e5 Nb3 Be6 | black | bullet | Normal`
 - `1` x `e4 e6 d4 d5 Nc3 dxe4 Nxe4 Be7 Nf3 Nf6 Nxf6+ Bxf6 | black | bullet | Normal`
 - `1` x `e4 c5 Nf3 d6 d4 Nf6 Nc3 cxd4 Nxd4 e6 g4 Nc6 | black | bullet | Normal`
+- `1` x `d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 Bg5 h6 Bh4 dxc4 | black | bullet | Normal`
 - `1` x `e4 d5 exd5 Nf6 Nf3 Qxd5 Nc3 Qd6 d4 g6 Nb5 Qb6 | black | bullet | Normal`
 - `1` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 | black | bullet | Normal`
 - `1` x `d4 Nf6 Bf4 d5 e3 c5 Nf3 Nc6 Nbd2 Qb6 dxc5 Qxb2 | black | bullet | Normal`
 - `1` x `e4 c6 d4 d6 c4 Qc7 Nf3 Nf6 Nc3 e5 Be2 Be7 | black | bullet | Normal`
-- `1` x `e4 Nc6 Nf3 e5 Bb5 a6 Ba4 Be7 O-O Nf6 Re1 b5 | white | bullet | Normal`
 
 ## Lower-Rated Draws
 
@@ -402,6 +402,7 @@
 ## Clock-Rich Normal Loss Contexts
 
 - `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
 - `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
 - `1` x `Queen's Pawn Game: London System | black | bullet | 60+1`
 - `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
@@ -410,11 +411,11 @@
 - `1` x `Sicilian Defense: Scheveningen Variation, Keres Attack | black | bullet | 120+1`
 - `1` x `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`
 - `1` x `Caro-Kann Defense | black | bullet | 120+1`
-- `1` x `Scandinavian Defense: Modern Variation | black | bullet | 60+1`
 
 ## Clock-Rich Normal Losses
 
 - `109s` left in `ilovecatgirl vs TakticproChess - yxoZcdPT.pgn` vs `TakticproChess`: Queen's Gambit Declined: Traditional Variation
+- `80s` left in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
 - `74s` left in `ilovecatgirl vs CloudNetBot - AmX1ztAe.pgn` vs `CloudNetBot`: Ruy Lopez: Marshall Attack, Modern Main Line
 - `69s` left in `DarkOnBot vs ilovecatgirl - uzkXLscd.pgn` vs `DarkOnBot`: Queen's Pawn Game: London System
 - `67s` left in `MEGA-NOOB-BOT vs ilovecatgirl - 87C7maRn.pgn` vs `MEGA-NOOB-BOT`: Ruy Lopez: Open, Bernstein Variation
@@ -423,11 +424,11 @@
 - `52s` left in `Fischer_Bot vs ilovecatgirl - hsNmrqpM.pgn` vs `Fischer_Bot`: Sicilian Defense: Scheveningen Variation, Keres Attack
 - `51s` left in `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `42s` left in `abhisun_bot vs ilovecatgirl - WsrVL0wc.pgn` vs `abhisun_bot`: Caro-Kann Defense
-- `32s` left in `MDBOT vs ilovecatgirl - g6cJXfgh.pgn` vs `MDBOT`: Scandinavian Defense: Modern Variation
 
 ## Focused High-Clock Normal Loss Contexts
 
 - `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
 - `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
 - `1` x `Queen's Pawn Game: London System | black | bullet | 60+1`
 - `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
@@ -436,6 +437,7 @@
 ## High-Clock Normal Loss Contexts
 
 - `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
 - `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
 - `1` x `Queen's Pawn Game: London System | black | bullet | 60+1`
 - `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
@@ -444,6 +446,7 @@
 ## High-Clock Normal Losses
 
 - `109s` left in `ilovecatgirl vs TakticproChess - yxoZcdPT.pgn` vs `TakticproChess`: Queen's Gambit Declined: Traditional Variation
+- `80s` left in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
 - `74s` left in `ilovecatgirl vs CloudNetBot - AmX1ztAe.pgn` vs `CloudNetBot`: Ruy Lopez: Marshall Attack, Modern Main Line
 - `69s` left in `DarkOnBot vs ilovecatgirl - uzkXLscd.pgn` vs `DarkOnBot`: Queen's Pawn Game: London System
 - `67s` left in `MEGA-NOOB-BOT vs ilovecatgirl - 87C7maRn.pgn` vs `MEGA-NOOB-BOT`: Ruy Lopez: Open, Bernstein Variation
@@ -451,6 +454,7 @@
 
 ## Largest Bot Eval Drops
 
+- `-389.10` after `a5` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: `-10.85` to `-399.95` (Semi-Slav Defense: Anti-Moscow Gambit | black | 120+1)
 - `-388.17` after `Rd4+` in `MDBOT vs ilovecatgirl - sPAFXbah.pgn` vs `MDBOT`: `-11.72` to `-399.89` (Sicilian Defense: Najdorf Variation, English Attack | black | 60+1)
 - `-388.11` after `Rd5+` in `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: `-11.85` to `-399.96` (Nimzo-Indian Defense: Normal Variation, Classical Defense | white | 60+1)
 - `-356.98` after `Kf5` in `MDBOT vs ilovecatgirl - 55vfNXNG.pgn` vs `MDBOT`: `-42.96` to `-399.94` (Sicilian Defense: Najdorf Variation, English Attack | black | 60+1)
@@ -460,10 +464,10 @@
 - `-56.22` after `Rc8` in `ToromBot vs ilovecatgirl - zZCHoFZs.pgn` vs `ToromBot`: `-24.83` to `-81.05` (Indian Defense: Accelerated London System | black | 90+1)
 - `-47.01` after `Ke5` in `ToromBot vs ilovecatgirl - OC4pcXIJ.pgn` vs `ToromBot`: `-26.51` to `-73.52` (Queen's Pawn Game: London System | black | 90+1)
 - `-35.99` after `Bh2` in `ToromBot vs ilovecatgirl - OC4pcXIJ.pgn` vs `ToromBot`: `-43.34` to `-79.33` (Queen's Pawn Game: London System | black | 90+1)
-- `-29.13` after `Kf3` in `ToromBot vs ilovecatgirl - zZCHoFZs.pgn` vs `ToromBot`: `-43.99` to `-73.12` (Indian Defense: Accelerated London System | black | 90+1)
 
 ## Recent Losses
 
+- `2026-06-08 14:14:40+00:00` `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: Semi-Slav Defense: Anti-Moscow Gambit
 - `2026-06-08 11:52:50+00:00` `MEGA-NOOB-BOT vs ilovecatgirl - 87C7maRn.pgn` vs `MEGA-NOOB-BOT`: Ruy Lopez: Open, Bernstein Variation
 - `2026-06-08 11:28:35+00:00` `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `2026-06-08 10:16:53+00:00` `ilovecatgirl vs abcd_engine - 2QVD5cp2.pgn` vs `abcd_engine`: Nimzo-Indian Defense: Normal Variation, Classical Defense
@@ -473,4 +477,3 @@
 - `2026-04-26 10:25:22+00:00` `ilovecatgirl vs DarkOnBot - DjjdDKeI.pgn` vs `DarkOnBot`: Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation
 - `2026-04-25 21:41:39+00:00` `MDBOT vs ilovecatgirl - sPAFXbah.pgn` vs `MDBOT`: Sicilian Defense: Najdorf Variation, English Attack
 - `2026-04-25 21:16:39+00:00` `MDBOT vs ilovecatgirl - 55vfNXNG.pgn` vs `MDBOT`: Sicilian Defense: Najdorf Variation, English Attack
-- `2026-04-25 11:21:16+00:00` `ilovecatgirl vs grail-bot - ZYjeZXy5.pgn` vs `grail-bot`: French Defense: Steinitz Variation, Boleslavsky Variation
