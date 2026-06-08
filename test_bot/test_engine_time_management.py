@@ -115,6 +115,20 @@ def mzn_bgmqz_depth_eleven_miss_board() -> chess.Board:
     return board
 
 
+def dtw5meie_threefold_board() -> chess.Board:
+    """Recreate DTw5MeIe after 18...Qg3+ where Lichess finished the game as a draw."""
+    board = chess.Board()
+    for move in [
+        "e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "g8f6", "d2d3", "f8c5",
+        "b1d2", "e8g8", "b5c6", "b7c6", "f3e5", "f8e8", "e5f3", "d7d5",
+        "e1g1", "c8g4", "h2h3", "g4h5", "e4e5", "e8e5", "g2g4", "f6g4",
+        "f3e5", "d8h4", "h3g4", "h4g3", "g1h1", "g3h3", "h1g1", "h3g3",
+        "g1h1", "g3h3", "h1g1", "h3g3",
+    ]:
+        board.push_uci(move)
+    return board
+
+
 class FakeEngine:
     """Engine protocol that returns predetermined depths."""
 
@@ -529,6 +543,23 @@ def test_submit_move__does_not_send_move_after_control_stream_finish() -> None:
                         lichess,
                         finished_game_ids=[game.id])
 
+    assert lichess.moves_made == []
+    assert lichess.resigns == 0
+
+
+def test_submit_move__does_not_send_move_after_local_threefold_draw() -> None:
+    """A started gameState can race with a server draw when the board is already a threefold repetition."""
+    game = bullet_game()
+    board = dtw5meie_threefold_board()
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    lichess = MoveRecordingLichess()
+
+    wrapper.submit_move(chess.engine.PlayResult(chess.Move.from_uci("g1h1"), None),
+                        board,
+                        game,
+                        lichess)
+
+    assert board.is_repetition(3)
     assert lichess.moves_made == []
     assert lichess.resigns == 0
 

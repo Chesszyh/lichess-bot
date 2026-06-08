@@ -267,6 +267,9 @@ class EngineWrapper:
         if game.id in finished_game_ids:
             logger.info(f"Skipping move submission because control stream already finished game {game.id}.")
             return
+        if board.is_repetition(3):
+            logger.info(f"Skipping move submission because game {game.id} is already a threefold repetition.")
+            return
 
         self.add_comment(best_move, board)
         self.print_stats()
