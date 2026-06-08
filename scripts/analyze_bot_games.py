@@ -97,6 +97,8 @@ class GameSummary:
     losses_by_color: list[tuple[str, int]]
     losses_by_termination: list[tuple[str, int]]
     time_forfeit_loss_controls: list[tuple[str, int]]
+    unknown_result_terminations: list[tuple[str, int]]
+    unknown_result_contexts: list[tuple[str, int]]
     loss_prefixes: list[tuple[str, int]]
     loss_prefix_contexts: list[tuple[str, int]]
     lower_rated_draw_count: int
@@ -506,6 +508,12 @@ def summarize_records(records_dir: Path,
     time_forfeit_loss_controls = Counter(
         f"{record.time_control} {record.bot_color}" for record in losses if record.termination == "Time forfeit"
     ).most_common()
+    unknowns = [record for record in records if record.bot_result == "unknown"]
+    unknown_result_terminations = Counter(record.termination for record in unknowns).most_common()
+    unknown_result_contexts = Counter(
+        f"{record.termination or 'Unknown'} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in unknowns
+    ).most_common()
     loss_prefixes = Counter(record.move_prefix for record in losses if record.move_prefix).most_common()
     loss_prefix_contexts = Counter(
         f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.termination or 'Unknown'}"
@@ -613,6 +621,8 @@ def summarize_records(records_dir: Path,
         losses_by_color=losses_by_color,
         losses_by_termination=losses_by_termination,
         time_forfeit_loss_controls=time_forfeit_loss_controls,
+        unknown_result_terminations=unknown_result_terminations,
+        unknown_result_contexts=unknown_result_contexts,
         loss_prefixes=loss_prefixes,
         loss_prefix_contexts=loss_prefix_contexts,
         lower_rated_draw_count=len(lower_rated_draws),
@@ -967,6 +977,19 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "Time Forfeit Loss Controls",
         summary.time_forfeit_loss_controls,
         empty_text="No time-forfeit losses found.",
+    )
+    append_count_section(
+        lines,
+        "Unknown Result Terminations",
+        summary.unknown_result_terminations,
+        empty_text="No unknown-result games found.",
+    )
+    append_count_section(
+        lines,
+        "Unknown Result Contexts",
+        summary.unknown_result_contexts,
+        empty_text="No unknown-result contexts found.",
+        quote_item=True,
     )
     append_count_section(
         lines,

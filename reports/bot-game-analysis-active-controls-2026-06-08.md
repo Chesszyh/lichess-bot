@@ -181,6 +181,19 @@
 - `1` x 90+1 white
 - `1` x 120+1 white
 
+## Unknown Result Terminations
+
+- `10` x Abandoned
+
+## Unknown Result Contexts
+
+- `3` x `Abandoned | black | bullet | 60+1`
+- `3` x `Abandoned | white | bullet | 90+1`
+- `1` x `Abandoned | black | bullet | 90+1`
+- `1` x `Abandoned | white | bullet | 60+1`
+- `1` x `Abandoned | white | bullet | 120+1`
+- `1` x `Abandoned | black | bullet | 120+1`
+
 ## Loss Prefixes
 
 - `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`

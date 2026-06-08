@@ -86,6 +86,14 @@
 
 - No time-forfeit losses found.
 
+## Unknown Result Terminations
+
+- No unknown-result games found.
+
+## Unknown Result Contexts
+
+- No unknown-result contexts found.
+
 ## Loss Prefixes
 
 - No loss prefixes found.

@@ -95,6 +95,14 @@
 
 - No time-forfeit losses found.
 
+## Unknown Result Terminations
+
+- No unknown-result games found.
+
+## Unknown Result Contexts
+
+- No unknown-result contexts found.
+
 ## Loss Prefixes
 
 - `1` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`

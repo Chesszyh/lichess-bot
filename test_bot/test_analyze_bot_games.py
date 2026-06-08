@@ -169,6 +169,29 @@ def test_summarize_records__can_filter_to_exact_time_controls(tmp_path: Path) ->
     assert "180+2" not in markdown
 
 
+def test_render_markdown__shows_unknown_result_terminations(tmp_path: Path) -> None:
+    """Abandoned games should not be hidden inside the generic unknown bucket."""
+    abandoned_headers = base_headers("*", "King's Pawn Game", "AbandonBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "60+1"
+    abandoned_headers["Termination"] = "Abandoned"
+    abandoned_headers.pop("WhiteRatingDiff", None)
+    abandoned_headers.pop("BlackRatingDiff", None)
+    write_pgn(tmp_path, "abandoned-active.pgn", abandoned_headers, "1. e4 *")
+    loss_headers = base_headers("1-0", "Sicilian Defense", "StrongBot", "ilovecatgirl")
+    loss_headers["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "rated-loss.pgn", loss_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", time_controls={"60+1"})
+    markdown = render_markdown(summary)
+
+    assert summary.unknown_result_terminations == [("Abandoned", 1)]
+    assert summary.unknown_result_contexts == [("Abandoned | black | bullet | 60+1", 1)]
+    assert "Unknown Result Terminations" in markdown
+    assert "`1` x Abandoned" in markdown
+    assert "Unknown Result Contexts" in markdown
+    assert "`1` x `Abandoned | black | bullet | 60+1`" in markdown
+
+
 def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
     """Black-loss concentration should be visible in the lightweight report."""
     write_pgn(
