@@ -98,6 +98,9 @@ class GameSummary:
     focused_lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
+    focused_rating_negative_draw_contexts: list[tuple[str, int]]
+    rating_negative_draw_contexts: list[tuple[str, int]]
+    rating_negative_draws: list[GameRecord]
     clock_rich_normal_losses: list[GameRecord]
     clock_rich_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_losses: list[GameRecord]
@@ -498,6 +501,21 @@ def summarize_records(records_dir: Path,
         if record.move_prefix and focus_time_controls and record.time_control in focus_time_controls
     ).most_common()
     lower_rated_draws.sort(key=lambda record: record.rating_gap or 0, reverse=True)
+    rating_negative_draws = [
+        record for record in records
+        if record.bot_result == "draw" and record.bot_rating_diff is not None and record.bot_rating_diff < 0
+    ]
+    rating_negative_draw_contexts = Counter(
+        f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in rating_negative_draws
+        if record.move_prefix
+    ).most_common()
+    focused_rating_negative_draw_contexts = Counter(
+        f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in rating_negative_draws
+        if record.move_prefix and focus_time_controls and record.time_control in focus_time_controls
+    ).most_common()
+    rating_negative_draws.sort(key=lambda record: record.bot_rating_diff or 0)
     recent_losses = sorted(
         losses,
         key=lambda record: record.utc_started or datetime.min.replace(tzinfo=UTC),
@@ -567,6 +585,9 @@ def summarize_records(records_dir: Path,
         focused_lower_rated_draw_contexts=focused_lower_rated_draw_contexts,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
+        focused_rating_negative_draw_contexts=focused_rating_negative_draw_contexts,
+        rating_negative_draw_contexts=rating_negative_draw_contexts,
+        rating_negative_draws=rating_negative_draws[:10],
         clock_rich_normal_losses=clock_rich_normal_losses[:10],
         clock_rich_normal_loss_contexts=clock_rich_normal_loss_contexts,
         high_clock_normal_losses=high_clock_normal_losses[:10],
@@ -729,6 +750,34 @@ def append_eval_drop_section(lines: list[str], drops: list[BotEvalDrop]) -> None
     )
 
 
+def append_rating_negative_draw_sections(lines: list[str], summary: GameSummary) -> None:
+    """Append sections for draws that cost rating."""
+    append_count_section(
+        lines,
+        "Focused Rating-Negative Draw Contexts",
+        summary.focused_rating_negative_draw_contexts,
+        empty_text="No focused rating-negative draw contexts found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Rating-Negative Draw Contexts",
+        summary.rating_negative_draw_contexts,
+        empty_text="No rating-negative draw contexts found.",
+        quote_item=True,
+    )
+
+    lines.extend(["", "## Largest Rating-Negative Draws", ""])
+    if summary.rating_negative_draws:
+        lines.extend(
+                f"- `{record.bot_rating_diff}` rating in {game_link(record)} vs `{record.opponent}` "
+                f"({record.opponent_rating}): {record.opening}"
+                for record in summary.rating_negative_draws
+        )
+    else:
+        lines.append("- No rating-negative draws found.")
+
+
 def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     """Render a markdown analysis report."""
     lines = [
@@ -826,6 +875,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         )
     else:
         lines.append("- No lower-rated draw leaks found at the configured threshold.")
+
+    append_rating_negative_draw_sections(lines, summary)
 
     append_count_section(
         lines,

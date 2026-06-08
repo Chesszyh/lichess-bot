@@ -5,7 +5,7 @@
 - Games analyzed: `2`
 - Since UTC: `2026-06-08T11:36:38+00:00`
 - Results: `{'draw': 1, 'loss': 1}`
-- Opening risk gate: passed (1 < 3)
+- Opening risk gate: not enabled
 - No local engine analysis was run.
 
 ## Loss Openings
@@ -107,6 +107,18 @@
 ## Largest Lower-Rated Draw Gaps
 
 - No lower-rated draw leaks found at the configured threshold.
+
+## Focused Rating-Negative Draw Contexts
+
+- No focused rating-negative draw contexts found.
+
+## Rating-Negative Draw Contexts
+
+- No rating-negative draw contexts found.
+
+## Largest Rating-Negative Draws
+
+- No rating-negative draws found.
 
 ## Clock-Rich Normal Loss Contexts
 

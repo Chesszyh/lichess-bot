@@ -100,6 +100,18 @@
 
 - No lower-rated draw leaks found at the configured threshold.
 
+## Focused Rating-Negative Draw Contexts
+
+- No focused rating-negative draw contexts found.
+
+## Rating-Negative Draw Contexts
+
+- No rating-negative draw contexts found.
+
+## Largest Rating-Negative Draws
+
+- No rating-negative draws found.
+
 ## Clock-Rich Normal Loss Contexts
 
 - No clock-rich normal loss contexts found.

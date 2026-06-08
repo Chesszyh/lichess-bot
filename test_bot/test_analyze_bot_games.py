@@ -386,6 +386,35 @@ def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path
     assert "300+2" not in focused_section
 
 
+def test_render_markdown__shows_rating_negative_draws(tmp_path: Path) -> None:
+    """Draw leak triage should prioritize draws that actually cost rating."""
+    negative_headers = base_headers("1/2-1/2", "Sicilian Defense", "ilovecatgirl", "LowerBot")
+    negative_headers["WhiteElo"] = "3020"
+    negative_headers["BlackElo"] = "2950"
+    negative_headers["WhiteRatingDiff"] = "-2"
+    negative_headers["BlackRatingDiff"] = "+2"
+    negative_headers["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "rating-negative-draw.pgn", negative_headers, "1. e4 c5 2. Nf3 d6 1/2-1/2")
+    positive_headers = base_headers("1/2-1/2", "Queen's Pawn Game", "HigherBot", "ilovecatgirl")
+    positive_headers["WhiteElo"] = "3038"
+    positive_headers["BlackElo"] = "3029"
+    positive_headers["WhiteRatingDiff"] = "-1"
+    positive_headers["BlackRatingDiff"] = "+1"
+    positive_headers["TimeControl"] = "90+1"
+    write_pgn(tmp_path, "rating-positive-draw.pgn", positive_headers, "1. Nf3 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", max_prefix_plies=4, focus_time_controls={"60+1", "90+1"})
+    markdown = render_markdown(summary)
+
+    assert summary.rating_negative_draw_contexts == [("e4 c5 Nf3 d6 | white | bullet | 60+1", 1)]
+    assert summary.focused_rating_negative_draw_contexts == [("e4 c5 Nf3 d6 | white | bullet | 60+1", 1)]
+    assert summary.rating_negative_draws[0].path.name == "rating-negative-draw.pgn"
+    assert "Rating-Negative Draw Contexts" in markdown
+    assert "`1` x `e4 c5 Nf3 d6 | white | bullet | 60+1`" in markdown
+    assert "Largest Rating-Negative Draws" in markdown
+    assert "rating-positive-draw.pgn" not in markdown
+
+
 def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_path: Path) -> None:
     """Focused rating impact should keep active controls separate from abandoned historical controls."""
     current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
