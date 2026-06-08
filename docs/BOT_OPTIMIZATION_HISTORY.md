@@ -269,6 +269,22 @@ Change made in the live private Stockfish config:
 
 Operational note: this may reduce game volume when few 3080+ bots are online. That is intentional for this phase: the evidence window had too many non-wins against 3000-3079 and even sub-3000 bots, which is poor signal for stabilizing both bullet and blitz near 3080.
 
+### Post-Floor Live Check
+
+After the 3080 opponent-pool floor was deployed, the live log confirmed the bot searched only inside the target band:
+
+```text
+Seeking bullet game with opponent rating in [3080, 4000] ...
+```
+
+The first selected opponent was rejected by Lichess because of the daily bot-vs-bot opponent rate limit. Existing matchmaking cooldown handling then removed that opponent from the current pool, and the next search selected the remaining suitable opponent instead of retrying the same blocked bot.
+
+Evidence game: `zlb9HQC5`, a rated 90+1 bullet game as black against `TakticproChess` rated 3099.
+
+The game ended by threefold repetition from an equal Italian Game, Giuoco Pianissimo structure. Because the opponent was above the 3080 target band, this draw was acceptable under the current policy and produced a small positive rating result. The bot declined incoming draw offers, so the `offer_draw_min_rating` change behaved as intended in this sample.
+
+Operational note: repeated target-band draws are not currently a regression. If they become the main bottleneck, analyze opening families and conversion chances before relaxing the 3080 floor.
+
 ### Verification From This Pass
 
 Commands that passed:
@@ -290,6 +306,10 @@ repetition_guard.enabled=True
 repetition_guard.min_rating_gap=-25
 repetition_guard.max_score_loss_cp=150
 draw_or_resign.offer_draw_min_rating=3080
+challenge.min_rating=3080
+matchmaking.opponent_min_rating=3080
+matchmaking.preferred_opponent_min_rating=3080
+matchmaking.blitz_fallback.preferred_opponent_min_rating=3080
 ```
 
 Known verification debt:
