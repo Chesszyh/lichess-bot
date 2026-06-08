@@ -26,6 +26,7 @@ Recorded in local config history:
 - `.config-history` commit `c626322`: limit arena base time to active controls.
 - `.config-history` commit `47a1379`: block `MEGA-NOOB-BOT` active controls.
 - `.config-history` commit `287090c`: increase short bullet matchmaking weights.
+- `.config-history` commit `f1051ef`: block `abcd_engine` active-control leak.
 
 Effective private config intent:
 
@@ -44,6 +45,10 @@ Effective private config intent:
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - `MEGA-NOOB-BOT` is blocked for both incoming challenges and outgoing matchmaking after two active-control losses,
   including the 2026-06-08 `90+1` high-clock normal loss.
+- `abcd_engine` is blocked for both incoming challenges and outgoing matchmaking after active-control W-D-L `0-3-1`,
+  net `-10`, including the 2026-06-08 `60+1` time-forfeit loss while `ilovecatgirl` was the higher-rated bot. This is a
+  narrow opponent block, not a global removal of `60+1`, because the active-only `60+1` White pool remains strongly
+  rating-positive.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
 - Endgame tablebase move sources are enabled for fast games: local 5-piece Syzygy is used directly by lichess-bot, and
   online EGTB is enabled up to `180` base seconds and `8` pieces when the bot has at least `10` seconds left. This targets

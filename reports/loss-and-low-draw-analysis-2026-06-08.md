@@ -15,6 +15,22 @@ Scope:
 - Bot losses: `469`
 - Draws against opponents rated at least `100` lower: `109`
 
+## Active-Control Refresh
+
+Current active rated controls are `60+1`, `90+1`, and `120+1`. The filtered active-control report has `259` games, with
+`109` wins, `120` draws, `20` losses, and `10` unknown results. The pool is still rating-positive at `+221` over `216`
+rated-diff games, so broad time-control changes are not justified by the latest evidence.
+
+The lower-rated draw signal is narrower than the full historical report implied. `duchessAI` accounts for `6` lower-rated
+draws in active controls, but the bot is still `+16` over `15` rated-diff games against it, so it should stay available
+for now. The stronger active-control rating leaks are opponent-specific: `MEGA-NOOB-BOT` is already blocked after two
+recent active-control losses, and `abcd_engine` is now blocked after W-D-L `0-3-1`, net `-10`, including the
+2026-06-08 `60+1` white loss where `ilovecatgirl` was higher-rated by `23`.
+
+`ToromBot` and `MDBOT` remain on watch rather than being blocked in this turn. Their active-control losses are from
+April 2026, before the current Black fast-book and active-control restrictions, and both are strong `3060+` opponents;
+they are better treated as future strength-regression samples unless new post-change losses appear.
+
 Top openings in all losses:
 
 | Losses | Opening |
@@ -62,9 +78,9 @@ Top openings in lower-rated draws:
 
 ## Actions From This Turn
 
-- Fix the inactive-game move POST path so a failed move submit after game finish does not force a reconnect.
-- Tighten bot-vs-bot blitz polyglot depth from `6` to `4`, matching the existing bullet cap, because the live
-  `mMJSo1SR` bot blitz game again followed the local book into the largest historical loss/draw cluster:
-  Najdorf English Attack.
-- Keep tracking Najdorf and lower-rated draw clusters after the tighter book-depth changes are actually loaded by the
-  running bot process.
+- Block `abcd_engine` in both incoming challenge and outgoing matchmaking block lists; recorded in local config history
+  commit `f1051ef`.
+- Keep `duchessAI` unblocked despite lower-rated draws because the active-control net result is still materially
+  positive.
+- Keep `ToromBot` and `MDBOT` on watch for post-change games instead of blocking old April losses.
+- Continue tracking Najdorf, lower-rated draw clusters, and high-clock normal losses inside the active-control envelope.

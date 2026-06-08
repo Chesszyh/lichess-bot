@@ -24,5 +24,7 @@ Scope: rated `60+1`, `90+1`, and `120+1` bullet games only
 
 - Do not act on the historical Najdorf active-control cluster yet; it is stale relative to the current Black book and active-control config.
 - Keep `MEGA-NOOB-BOT` blocked. It accounts for two of the three June 8 active-control losses.
-- Keep collecting `60+1` evidence despite the `abcd_engine` time-forfeit loss because the full active-only `60+1 white` pool remains strongly positive.
-- Next actionable trigger: repeated post-block losses or rating-negative draws on the active controls, especially non-MEGA `60+1` time losses or a fresh Black Najdorf loss after the current config.
+- Keep `abcd_engine` blocked as a narrow mitigation for the June 8 `60+1` time-forfeit loss, without removing `60+1`
+  globally because the full active-only `60+1 white` pool remains strongly positive.
+- Next actionable trigger: repeated post-block losses or rating-negative draws on the active controls, especially non-blocked
+  `60+1` time losses or a fresh Black Najdorf loss after the current config.
