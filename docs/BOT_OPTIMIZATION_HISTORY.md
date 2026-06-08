@@ -324,18 +324,63 @@ Regression test:
 
 Operational note: this is a practical bullet/blitz conversion rule, not a general anti-draw setting against stronger bots. Without a large clock edge, the existing rating gate still protects high-rated target-band draws.
 
+### Matchmaking Cooldowns And Pool Diagnostics
+
+After the 3080 floor went live, the next issue was not another completed loss. The bot often found no suitable 3080+ target-band opponents after applying blocklists, cooldowns, game-speed support, and rating filters.
+
+Representative live log after the latest restart:
+
+```text
+Seeking blitz game with opponent rating in [3080, 4000] ...
+Found 314 online bots
+Rejected online bot candidates: configured_blocklist=12, global_cooldown_unknown=40, no_blitz_games=15, rating_below_min=246, self=1
+Choosing from 0 suitable opponents
+```
+
+Changes made:
+
+- Log online-bot rejection counts by reason so sparse pools can be diagnosed from normal runtime logs.
+- Persist cooldown source metadata so new cooldowns are distinguishable as ordinary declines, unanswered outgoing challenges, configured blocklist entries, or other known sources.
+- Preserve legacy cooldowns with source `unknown` rather than guessing. The current state contains mixed old causes, so bulk-deleting `unknown` would be unsafe.
+- Add `matchmaking.outgoing_challenge_cooldown_minutes`.
+  - Default: `720` minutes.
+  - Live private Stockfish config: `180` minutes.
+  - Purpose: scarce 3080+ targets should not disappear for 12 hours merely because they did not answer an outgoing challenge.
+- Add `matchmaking.decline_cooldown_minutes`.
+  - Default: `360` minutes.
+  - Live private Stockfish config: `180` minutes.
+  - Explicit rated/casual mode-conflict declines still keep the longer six-hour global cooldown.
+
+Related commits:
+
+- `d1d2d5c Expose sparse matchmaking rejection causes`
+- `bae1148 Shorten unanswered challenge cooldowns by config`
+- `3d849d5 Track matchmaking cooldown sources`
+- `176e5b1 Shorten ordinary decline cooldowns by config`
+
+Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
+
 ### Verification From This Pass
 
 Commands that passed:
 
 ```bash
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
+.venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
+.venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py
+git diff --check
 ```
 
 Latest passing result for the time-management and repetition-guard file:
 
 ```text
 32 passed
+```
+
+Latest passing result for the matchmaking cooldown and config checks:
+
+```text
+53 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -355,12 +400,16 @@ challenge.min_rating=3080
 matchmaking.opponent_min_rating=3080
 matchmaking.preferred_opponent_min_rating=3080
 matchmaking.blitz_fallback.preferred_opponent_min_rating=3080
+matchmaking.decline_cooldown_minutes=180
+matchmaking.outgoing_challenge_cooldown_minutes=180
 ```
 
 Known verification debt:
 
 - `ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing complexity, docstring, mutable class attribute, and unused fake-engine argument warnings.
 - `mypy --strict lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing timeout typing, homemade engine override signatures, and fake-engine assignment types.
+- `mypy --strict lib/matchmaking.py` is still blocked by existing `lib/lichess.py` timeout type errors.
+- Full `ruff check --config test_bot/ruff.toml lib/config.py` is still blocked by existing `validate_config` complexity.
 - These failures are not clean-room blockers for the repetition changes, but they raise the maintenance cost of further strategy work.
 
 ### Pause-State Summary
@@ -385,7 +434,9 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
 | Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s | Decline normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging` | Active |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard | Add clock-edge override for repetition guard rating gate while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge` | Active |
-| Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Read-only pool analysis started; no policy change yet | Initial classification found very few 3080+ bullet/blitz candidates after cooldown/block filters | Needs next pass |
+| Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs and cooldown source metadata | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, and self-filtering | Active, watch volume |
+| Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
+| Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
 
 Current private live thresholds worth preserving unless new games disprove them:
 
@@ -404,9 +455,10 @@ Current private live thresholds worth preserving unless new games disprove them:
 
 Prioritize these directions before adding heavier local experiments:
 
-- Split target-band opponent exclusions by exact source: permanent config blocklist, ten-year cooldown, daily opponent limit cooldown, unanswered outgoing challenge cooldown, and temporary online blocklists. Do this before relaxing the 3080 floor.
+- Use the new source-specific rejection logs to watch whether `global_cooldown_unknown` shrinks as legacy cooldowns expire and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
+- Add a one-off diagnostic command or runtime log that lists the top target-band blocked candidates with source and remaining cooldown time.
+- If migrating legacy `unknown` cooldowns, classify only entries with strong historical-log evidence. Do not bulk-delete or relabel unknown state.
 - If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.
-- Add instrumentation for why each online bot was rejected from matchmaking. The latest pool check was useful but conflated config blocklist and persistent cooldown state.
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
