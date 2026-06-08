@@ -9,6 +9,7 @@ from lib.config import Configuration
 from lib.engine_wrapper import EngineWrapper, apply_bullet_time_management
 from lib.lichess_types import GameEventType
 from lib.model import Game
+from lib.timer import Timer
 
 
 def draw_or_resign_cfg() -> Configuration:
@@ -212,6 +213,43 @@ class DrawishFakeEngine:
         })
 
 
+class GameFinishRaceEngineWrapper(EngineWrapper):
+    """Engine wrapper whose search observes a game finish before returning a move."""
+
+    def __init__(self, game: Game) -> None:
+        super().__init__({}, draw_or_resign_cfg())
+        self.game = game
+
+    def search(self,
+               board: chess.Board,
+               time_limit: chess.engine.Limit,
+               ponder: bool,
+               draw_offered: bool,
+               root_moves: chess.engine.PlayResult) -> chess.engine.PlayResult:
+        self.game.state["status"] = "draw"
+        return chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        })
+
+
+class MoveRecordingLichess:
+    """Minimal Lichess fake that records move submissions."""
+
+    def __init__(self) -> None:
+        self.moves_made: list[str] = []
+        self.resigns = 0
+
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+        self.moves_made.append(move.move.uci())
+
+    def resign(self, game_id: str) -> None:
+        self.resigns += 1
+
+    def abort(self, game_id: str) -> None:
+        self.resigns += 1
+
+
 def high_rated_draw_cfg() -> Configuration:
     """Create draw config that accepts stable equal positions from elite opponents."""
     return Configuration({
@@ -255,6 +293,83 @@ def high_rated_blitz_game(opponent_rating: int = 3060) -> Game:
     game.black.title = "BOT"
     game.black.is_bot = True
     return game
+
+
+def disabled_external_move_cfg() -> Configuration:
+    """Create engine config that forces normal engine search."""
+    return Configuration({
+        "polyglot": {
+            "enabled": False,
+            "max_depth": 8,
+            "selection": "weighted_random",
+            "min_weight": 1,
+            "normalization": "none",
+            "opponent_selection": {},
+        },
+        "online_moves": {
+            "online_egtb": {
+                "enabled": False,
+                "source": "lichess",
+                "min_time": 20,
+                "max_time": 10800,
+                "max_pieces": 7,
+                "move_quality": "best",
+            },
+            "max_out_of_book_moves": 1,
+            "max_depth": 0,
+            "chessdb_book": {
+                "enabled": False,
+                "min_time": 20,
+                "max_time": 10800,
+                "move_quality": "good",
+                "min_depth": 20,
+            },
+            "lichess_cloud_analysis": {
+                "enabled": False,
+                "min_time": 20,
+                "max_time": 10800,
+                "move_quality": "best",
+                "min_depth": 20,
+                "min_knodes": 0,
+                "max_score_difference": 50,
+            },
+            "lichess_opening_explorer": {
+                "enabled": False,
+                "min_time": 20,
+                "max_time": 10800,
+                "source": "masters",
+                "player_name": "",
+                "sort": "winrate",
+                "min_games": 10,
+            },
+        },
+        "draw_or_resign": draw_or_resign_cfg().config,
+        "lichess_bot_tbs": {
+            "syzygy": {"enabled": False},
+            "gaviota": {"enabled": False},
+        },
+    })
+
+
+def test_play_move__does_not_send_move_after_game_finishes_during_search() -> None:
+    """A gameFinish racing with search completion must not produce a stale move POST."""
+    game = bullet_game()
+    wrapper = GameFinishRaceEngineWrapper(game)
+    lichess = MoveRecordingLichess()
+
+    wrapper.play_move(chess.Board(),
+                      game,
+                      lichess,
+                      Timer(),
+                      timedelta(milliseconds=100),
+                      can_ponder=False,
+                      is_correspondence=False,
+                      correspondence_move_time=timedelta(),
+                      engine_cfg=disabled_external_move_cfg(),
+                      min_time=timedelta())
+
+    assert lichess.moves_made == []
+    assert lichess.resigns == 0
 
 
 def test_search__uses_endgame_engine_under_piece_threshold() -> None:

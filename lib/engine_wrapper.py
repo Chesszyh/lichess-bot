@@ -246,6 +246,14 @@ class EngineWrapper:
         if elapsed < min_time:
             time.sleep(to_seconds(min_time - elapsed))
 
+        self.submit_move(best_move, board, game, li)
+
+    def submit_move(self, best_move: MOVE, board: chess.Board, game: model.Game, li: lichess.Lichess) -> None:
+        """Submit an engine result to Lichess if the game is still active."""
+        if game.state.get("status") != "started":
+            logger.info(f"Skipping move submission because game {game.id} already finished.")
+            return
+
         self.add_comment(best_move, board)
         self.print_stats()
         if best_move.resigned and len(board.move_stack) >= 2:
