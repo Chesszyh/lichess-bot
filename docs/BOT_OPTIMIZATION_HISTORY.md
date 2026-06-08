@@ -192,6 +192,23 @@ Related commits:
 
 Operational note: for high-rated bot games, online opening explorer stats can prefer risky practical lines that are not good for this local Stockfish setup. Treat online openings as a shallow fallback only, not as a middlegame guide.
 
+Follow-up evidence: after the Berlin Wall was filtered on the bot's white side, the latest live target-band game `VT7zOio9` as black against `Cheszter` still reached a repeated Ruy Lopez Closed, Chigorin Defense structure and drew by threefold. The recent game list also shows many black-side bot games entering the same Chigorin path, including lower-rated or low-signal draws against `ilovecatgirl`, `duchessAI`, `Koi_Bot`, `coda_bot`, and `Moment-That-Inspires`.
+
+Additional private config change:
+
+- In the bot-specific Polyglot profile, skip `Na5` after:
+  - `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3`
+- The real live book was checked at that position. It contains:
+  - `Na5` with weight `12`.
+  - `Nb8` with weight `6`.
+- With live `normalization: max` and `min_weight: 50`, `Nb8` remains above threshold after filtering `Na5`, so the bot can leave the repeated Chigorin line without weakening the book threshold or dropping out of book.
+
+Verification:
+
+```text
+bot Nb8 c6b8
+```
+
 ### Repetition Guard: Enforce Root Moves
 
 Evidence game: `KvLfR0la`, a bullet draw by threefold repetition against `friendlybot_1700`.
