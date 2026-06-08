@@ -33,6 +33,10 @@ Effective private config intent:
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
+## Time Forfeit Evidence
+
+The refreshed bot-game report now tracks loss terminations. Across `2354` fast bot-vs-bot games, `132` losses were by `Time forfeit`, with historical clusters concentrated in no-increment blitz, especially `180+0` (`49` losses split across both colors). The current private config already mitigates that cluster by requiring incoming bot games to have at least `1` second increment and by issuing outgoing challenges only with `+1` or `+2` increments.
+
 ## Why This Is Safer
 
 The previous live config had `challenge_timeout: 1`, which validates but triggers the repository warning about potentially using the 100 bot-vs-bot games/day allowance quickly. The revised config encourages more games through broader incoming acceptance and better time-control coverage, without increasing outgoing challenge frequency.
