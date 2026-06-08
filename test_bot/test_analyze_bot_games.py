@@ -316,6 +316,32 @@ def test_render_markdown__shows_clock_rich_normal_losses_by_base_fraction(tmp_pa
     assert "low-clock-bullet-loss.pgn" not in clock_rich_section
 
 
+def test_render_markdown__shows_largest_bot_eval_drops(tmp_path: Path) -> None:
+    """Saved engine evals should identify tactical/conversion drops without rerunning engines."""
+    loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "StrongBot")
+    loss_headers["TimeControl"] = "60+1"
+    write_pgn(
+        tmp_path,
+        "eval-drop-loss.pgn",
+        loss_headers,
+        (
+            "1. d4 ( 1. d4 Nf6 { [%eval 1.20,10] } ) Nf6 "
+            "2. c4 ( 2. c4 e6 { [%eval 0.40,10] } ) e6 "
+            "3. Nc3 ( 3. Nc3 Bb4 { [%eval 0.35,10] } ) Bb4 0-1"
+        ),
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    eval_drop = summary.largest_bot_eval_drops[0]
+    assert eval_drop.path.name == "eval-drop-loss.pgn"
+    assert eval_drop.after_bot_move == "c4"
+    assert eval_drop.drop_cp == 80
+    assert "Largest Bot Eval Drops" in markdown
+    assert "`-0.80` after `c4` in `eval-drop-loss.pgn` vs `StrongBot`: `+1.20` to `+0.40`" in markdown
+
+
 def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path: Path) -> None:
     """Focused high-clock loss contexts should separate current controls from abandoned historical controls."""
     current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")

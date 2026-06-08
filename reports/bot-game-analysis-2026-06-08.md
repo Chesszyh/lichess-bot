@@ -306,6 +306,19 @@
 - `215s` left in `ResoluteBot vs ilovecatgirl - Ig3MUcQw.pgn` vs `ResoluteBot`: Caro-Kann Defense: Advance Variation
 - `211s` left in `Yafa_bot vs ilovecatgirl - djH7dvmz.pgn` vs `Yafa_bot`: Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
 
+## Largest Bot Eval Drops
+
+- `-394.17` after `Kh4` in `ArasanX vs ilovecatgirl - CNjERGD9.pgn` vs `ArasanX`: `-5.81` to `-399.98` (Sicilian Defense: Najdorf Variation, English Attack | black | 180+3)
+- `-389.89` after `Kc7` in `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: `-10.03` to `-399.92` (Sicilian Defense: Najdorf Variation, Adams Attack | black | 300+3)
+- `-389.45` after `Ra2+` in `SimonEricAfonso vs ilovecatgirl - WUJo1fC0.pgn` vs `SimonEricAfonso`: `-10.43` to `-399.88` (Semi-Slav Defense | black | 180+3)
+- `-388.11` after `Rd5+` in `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: `-11.85` to `-399.96` (Nimzo-Indian Defense: Normal Variation, Classical Defense | white | 60+1)
+- `-318.18` after `Kxd8` in `CupchessBot vs ilovecatgirl - x4Cr3jad.pgn` vs `CupchessBot`: `-81.68` to `-399.86` (Sicilian Defense: Najdorf Variation, Zagreb Variation | black | 240+2)
+- `-317.48` after `Kf6` in `TakticproChess vs ilovecatgirl - cArqfmSd.pgn` vs `TakticproChess`: `-82.37` to `-399.85` (Semi-Slav Defense | black | 240+2)
+- `-199.98` after `Re1` in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: `-199.85` to `-399.83` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+2)
+- `-199.97` after `Rb2` in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: `-199.87` to `-399.84` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+2)
+- `-199.97` after `Kc8` in `suniferia vs ilovecatgirl - GxAtiN96.pgn` vs `suniferia`: `-199.79` to `-399.76` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+3)
+- `-199.90` after `Kxb6` in `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: `-199.98` to `-399.88` (Queen's Gambit Accepted: Central Variation, Greco Variation | black | 60+2)
+
 ## Recent Losses
 
 - `2026-06-08 11:28:35+00:00` `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense

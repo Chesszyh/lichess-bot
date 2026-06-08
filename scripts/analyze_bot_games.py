@@ -8,10 +8,35 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import io
+from itertools import pairwise
 from pathlib import Path
 import sys
 
 import chess.pgn
+
+
+@dataclass(frozen=True)
+class BotEvalPoint:
+    """A saved engine evaluation associated with one bot mainline move."""
+
+    san: str
+    ply: int
+    bot_pov_cp: int
+
+
+@dataclass(frozen=True)
+class BotEvalDrop:
+    """A largest saved-eval drop between consecutive bot move searches."""
+
+    path: Path
+    opponent: str
+    opening: str
+    time_control: str
+    bot_color: str
+    after_bot_move: str
+    previous_bot_pov_cp: int
+    bot_pov_cp: int
+    drop_cp: int
 
 
 @dataclass(frozen=True)
@@ -39,6 +64,7 @@ class GameRecord:
     bot_rating_diff: int | None
     bot_final_clock_seconds: float | None
     move_prefix: str
+    bot_eval_points: list[BotEvalPoint]
 
 
 @dataclass(frozen=True)
@@ -75,6 +101,7 @@ class GameSummary:
     high_clock_normal_losses: list[GameRecord]
     focused_high_clock_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_loss_contexts: list[tuple[str, int]]
+    largest_bot_eval_drops: list[BotEvalDrop]
     recent_losses: list[GameRecord]
 
 
@@ -197,6 +224,52 @@ def game_bot_final_clock_seconds(game: chess.pgn.Game, bot_is_white: bool) -> fl
     return final_clock_seconds
 
 
+def variation_terminal_eval_cp(node: chess.pgn.GameNode) -> int | None:
+    """Return the final first-line eval in centipawns from White's perspective."""
+    final_eval_cp: int | None = None
+    current_node = node
+    while True:
+        eval_score = current_node.eval()
+        if eval_score is not None:
+            final_eval_cp = eval_score.white().score(mate_score=40000)
+        if not current_node.variations:
+            return final_eval_cp
+        current_node = current_node.variation(0)
+
+
+def game_bot_eval_points(game: chess.pgn.Game, bot_is_white: bool) -> list[BotEvalPoint]:
+    """Return saved engine evals associated with bot moves, without running an engine."""
+    bot_color = chess.WHITE if bot_is_white else chess.BLACK
+    bot_pov_multiplier = 1 if bot_is_white else -1
+    board = game.board()
+    eval_points: list[BotEvalPoint] = []
+    node: chess.pgn.GameNode = game
+    while node.variations:
+        next_node = node.variation(0)
+        move = next_node.move
+        if move is None:
+            break
+        mover = board.turn
+        san = board.san(move)
+        if mover == bot_color:
+            for side_variation in node.variations[1:]:
+                if side_variation.move != move:
+                    continue
+                white_pov_cp = variation_terminal_eval_cp(side_variation)
+                if white_pov_cp is not None:
+                    eval_points.append(
+                        BotEvalPoint(
+                            san=san,
+                            ply=len(board.move_stack) + 1,
+                            bot_pov_cp=white_pov_cp * bot_pov_multiplier,
+                        ),
+                    )
+                    break
+        board.push(move)
+        node = next_node
+    return eval_points
+
+
 def bot_result(result: str, bot_is_white: bool) -> str:
     """Return win/loss/draw from the configured bot's perspective."""
     if result == "1/2-1/2":
@@ -208,23 +281,46 @@ def bot_result(result: str, bot_is_white: bool) -> str:
     return "unknown"
 
 
-def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord | None:
-    """Parse one PGN file if it is a bot-vs-bot game for bot_name."""
-    game = chess.pgn.read_game(io.StringIO(path.read_text(encoding="utf-8", errors="replace")))
-    if game is None:
-        return None
-
-    headers = game.headers
+def headers_match_filters(headers: chess.pgn.Headers,
+                          bot_name: str,
+                          max_base_seconds: int | None,
+                          since_utc: datetime | None) -> bool:
+    """Return whether PGN headers are in analysis scope."""
     white = headers.get("White", "")
     black = headers.get("Black", "")
     if bot_name not in {white, black}:
+        return False
+    if headers.get("WhiteTitle", "") != "BOT" or headers.get("BlackTitle", "") != "BOT":
+        return False
+    if max_base_seconds is not None and not is_fast_time_control(headers.get("TimeControl", ""), max_base_seconds):
+        return False
+    utc_started = parse_utc_started(headers.get("UTCDate", ""), headers.get("UTCTime", ""))
+    return since_utc is None or (utc_started is not None and utc_started >= since_utc)
+
+
+def parse_game(path: Path,
+               bot_name: str,
+               max_prefix_plies: int,
+               *,
+               max_base_seconds: int | None = None,
+               since_utc: datetime | None = None) -> GameRecord | None:
+    """Parse one PGN file if it is a bot-vs-bot game for bot_name."""
+    pgn_text = path.read_text(encoding="utf-8", errors="replace")
+    headers = chess.pgn.read_headers(io.StringIO(pgn_text))
+    if headers is None:
+        return None
+    if not headers_match_filters(headers, bot_name, max_base_seconds, since_utc):
         return None
 
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    if game is None:
+        return None
+
+    white = headers.get("White", "")
+    black = headers.get("Black", "")
     white_title = headers.get("WhiteTitle", "")
     black_title = headers.get("BlackTitle", "")
-    if white_title != "BOT" or black_title != "BOT":
-        return None
-
+    utc_started = parse_utc_started(headers.get("UTCDate", ""), headers.get("UTCTime", ""))
     white_elo = parse_int(headers.get("WhiteElo", ""))
     black_elo = parse_int(headers.get("BlackElo", ""))
     bot_is_white = white == bot_name
@@ -238,7 +334,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
 
     return GameRecord(
         path=path,
-        utc_started=parse_utc_started(headers.get("UTCDate", ""), headers.get("UTCTime", "")),
+        utc_started=utc_started,
         white=white,
         black=black,
         result=headers.get("Result", "*"),
@@ -258,6 +354,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
         bot_rating_diff=bot_rating_diff,
         bot_final_clock_seconds=game_bot_final_clock_seconds(game, bot_is_white),
         move_prefix=game_move_prefix(game, max_prefix_plies),
+        bot_eval_points=[],
     )
 
 
@@ -270,12 +367,19 @@ def summarize_records(records_dir: Path,
                       control_min_games: int = 10,
                       high_clock_loss_threshold_seconds: int = 60,
                       clock_rich_loss_base_fraction: float = 0.35,
+                      eval_drop_recent_loss_limit: int = 50,
                       focus_time_controls: set[str] | None = None,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
     records: list[GameRecord] = []
     for path in sorted(records_dir.glob("*.pgn")):
-        record = parse_game(path, bot_name, max_prefix_plies)
+        record = parse_game(
+            path,
+            bot_name,
+            max_prefix_plies,
+            max_base_seconds=max_base_seconds,
+            since_utc=since_utc,
+        )
         if record is None:
             continue
         if not is_fast_time_control(record.time_control, max_base_seconds):
@@ -393,6 +497,7 @@ def summarize_records(records_dir: Path,
         for record in high_clock_normal_losses
         if focus_time_controls and record.time_control in focus_time_controls
     ).most_common()
+    largest_bot_eval_drops = bot_eval_drops(recent_losses[:eval_drop_recent_loss_limit])
 
     return GameSummary(
         bot_name=bot_name,
@@ -425,6 +530,7 @@ def summarize_records(records_dir: Path,
         high_clock_normal_losses=high_clock_normal_losses[:10],
         focused_high_clock_normal_loss_contexts=focused_high_clock_normal_loss_contexts,
         high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
+        largest_bot_eval_drops=largest_bot_eval_drops[:10],
         recent_losses=recent_losses,
     )
 
@@ -466,6 +572,39 @@ def score_by_group(records: list[GameRecord],
     return sorted(scores, key=lambda item: (item[5], -item[4], item[0]))
 
 
+def bot_eval_drops(records: list[GameRecord]) -> list[BotEvalDrop]:
+    """Return largest drops between consecutive saved bot-side evaluations."""
+    drops: list[BotEvalDrop] = []
+    for record in records:
+        eval_points = record.bot_eval_points or read_bot_eval_points(record)
+        for previous_point, current_point in pairwise(eval_points):
+            drop_cp = previous_point.bot_pov_cp - current_point.bot_pov_cp
+            if drop_cp <= 0:
+                continue
+            drops.append(
+                BotEvalDrop(
+                    path=record.path,
+                    opponent=record.opponent,
+                    opening=record.opening,
+                    time_control=record.time_control,
+                    bot_color=record.bot_color,
+                    after_bot_move=current_point.san,
+                    previous_bot_pov_cp=previous_point.bot_pov_cp,
+                    bot_pov_cp=current_point.bot_pov_cp,
+                    drop_cp=drop_cp,
+                ),
+            )
+    return sorted(drops, key=lambda drop: (-drop.drop_cp, drop.path.name, drop.after_bot_move))
+
+
+def read_bot_eval_points(record: GameRecord) -> list[BotEvalPoint]:
+    """Read saved eval points from one PGN record on demand."""
+    game = chess.pgn.read_game(io.StringIO(record.path.read_text(encoding="utf-8", errors="replace")))
+    if game is None:
+        return []
+    return game_bot_eval_points(game, record.bot_color == "white")
+
+
 def game_link(record: GameRecord) -> str:
     """Return a compact report label for a game record."""
     return f"`{record.path.name}`"
@@ -474,6 +613,11 @@ def game_link(record: GameRecord) -> str:
 def format_seconds(seconds: float) -> str:
     """Return compact whole-second clock text for report rows."""
     return f"{round(seconds):.0f}s"
+
+
+def format_eval_cp(cp: int) -> str:
+    """Return centipawns as signed pawn units."""
+    return f"{cp / 100:+.2f}"
 
 
 def opening_risk_gate_line(summary: GameSummary, risk_threshold: int) -> str:
@@ -526,6 +670,20 @@ def append_rating_impact_section(lines: list[str], title: str, impacts: list[tup
     lines.extend(
         f"- `{label}`: `{rating_diff:+d}` rating over `{games}` games"
         for label, games, rating_diff in impacts[:10]
+    )
+
+
+def append_eval_drop_section(lines: list[str], drops: list[BotEvalDrop]) -> None:
+    """Append a markdown section for saved engine eval drops."""
+    lines.extend(["", "## Largest Bot Eval Drops", ""])
+    if not drops:
+        lines.append("- No saved bot eval drops found.")
+        return
+    lines.extend(
+        f"- `{format_eval_cp(-drop.drop_cp)}` after `{drop.after_bot_move}` in `{drop.path.name}` "
+        f"vs `{drop.opponent}`: `{format_eval_cp(drop.previous_bot_pov_cp)}` "
+        f"to `{format_eval_cp(drop.bot_pov_cp)}` ({drop.opening} | {drop.bot_color} | {drop.time_control})"
+        for drop in drops
     )
 
 
@@ -664,6 +822,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
             lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
     else:
         lines.append("- No high-clock normal losses found at the configured threshold.")
+
+    append_eval_drop_section(lines, summary.largest_bot_eval_drops)
 
     lines.extend(["", "## Recent Losses", ""])
     if summary.recent_losses:
