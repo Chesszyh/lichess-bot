@@ -23,9 +23,8 @@ Several listed opponents are already blocked, but the pattern indicates that acc
 
 ## Verification
 
-- Watched `test_search__does_not_accept_high_rated_draw_offer_when_opponent_is_in_clock_pressure` fail before implementation.
-- `pytest test_bot/test_engine_time_management.py::test_search__accepts_high_rated_draw_offer_in_stable_equal_endgame test_bot/test_engine_time_management.py::test_search__does_not_accept_high_rated_draw_offer_when_opponent_is_in_clock_pressure test_bot/test_engine_time_management.py::test_search__does_not_accept_high_rated_draw_rule_for_lower_rated_opponent test_bot/test_engine_time_management.py::test_search__does_not_accept_incoming_draw_via_generic_offer_rule -q` -> `4 passed`.
 - `pytest test_bot/test_engine_time_management.py -q` -> `33 passed`.
 - YAML parse check passed for `config.yml.default`, `config.yml`, and `.config-history/config.yml`.
-- `mypy --strict lib/engine_wrapper.py` still reports existing union/override errors in `lib/engine_wrapper.py`, `homemade.py`, and `test_bot/homemade.py`; the clock-pressure helper has no remaining strict-type error.
+- `py_compile lib/engine_wrapper.py test_bot/test_engine_time_management.py` passed.
+- `mypy --strict lib/engine_wrapper.py` still reports existing union/override errors in `lib/engine_wrapper.py`, `homemade.py`, and `test_bot/homemade.py`.
 - `ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_engine_time_management.py` still reports existing complexity and test fake docstring/unused-argument findings.

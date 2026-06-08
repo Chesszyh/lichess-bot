@@ -18,6 +18,7 @@
 ## Outgoing Declines
 
 - `1` x `generic | bullet | 60+1`
+- `1` x `generic | bullet | 90+1`
 
 ## Outgoing No-ID Challenge Responses
 
