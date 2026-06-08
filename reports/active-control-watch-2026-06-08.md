@@ -23,6 +23,8 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 - `reports/bot-game-analysis-active-controls-since-2026-06-08-1936.md` isolates the post-19:36 CST active-control window: `2` rated `90+1` bullet games, net `-4`.
 - The post-19:36 CST window contains one high-clock normal loss to `MEGA-NOOB-BOT` and one rating-positive draw against `CloudNetBot`.
 - `reports/bot-game-analysis-active-controls-since-2026-06-08-2016.md` isolates the post-block window: `1` rated `90+1` bullet draw, net `+1`.
+- `reports/active-control-loss-clusters-2026-06-08.md` separates stale April active-control losses from the three June 8
+  active-control losses, avoiding a broad opening/config change from historical data.
 
 ## Decision
 
