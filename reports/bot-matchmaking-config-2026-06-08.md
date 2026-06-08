@@ -23,9 +23,9 @@ Effective private config intent:
 - Incoming challenges accept `bullet`, `blitz`, and `rapid`.
 - Bullet challenges must still have increment because `min_increment: 1` and `bullet_requires_increment: true`.
 - Incoming base time lower bound is `60` seconds, allowing practical `1+1` and longer bullet.
-- Outgoing matchmaking can choose `60`, `90`, `180`, `240`, or `300` second base times with increments from `1`, `2`, or `3`.
-- Outgoing matchmaking now weights `60`/`90` second bases and `1`/`2` second increments more heavily. This raises the
-  configured bullet share from `8/30` possible base/increment combinations to `20/42`, while keeping blitz samples in the
+- Outgoing matchmaking can choose `60`, `90`, `120`, `180`, `240`, or `300` second base times with `1` or `2` second increments.
+- Outgoing matchmaking now weights `60`/`90`/`120` second bases and `1` second increments more heavily. This raises the
+  configured bullet share from `8/30` possible base/increment combinations to `34/54`, while keeping blitz samples in the
   pool.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
