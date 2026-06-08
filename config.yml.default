@@ -69,6 +69,10 @@ engine:                            # Engine settings.
     equal_simplified_piece_threshold: 0 # Maximum pieces on board for the equal simplified cap.
     equal_simplified_clock_threshold_ms: 0 # Bot clock threshold for the equal simplified cap.
     equal_simplified_clock_ms: 0       # Movetime cap for stable equal simplified fast-game positions.
+    clock_pressure_own_clock_threshold_ms: 0 # If positive, trigger exact movetime when bot clock is at least this high and the opponent is low.
+    clock_pressure_opponent_clock_threshold_ms: 0 # Opponent clock threshold for the clock-pressure movetime rule.
+    clock_pressure_min_ply: 0          # Minimum ply before the clock-pressure movetime rule can trigger.
+    clock_pressure_movetime_ms: 0      # Exact movetime while the bot is clock-rich and the opponent is low on time.
 
   blitz_time_management:              # Optional blitz-only override for Lc0-style engines that can over-spend after book exit.
     enabled: false
@@ -95,6 +99,10 @@ engine:                            # Engine settings.
     equal_simplified_piece_threshold: 12
     equal_simplified_clock_threshold_ms: 600000
     equal_simplified_clock_ms: 5000
+    clock_pressure_own_clock_threshold_ms: 0
+    clock_pressure_opponent_clock_threshold_ms: 0
+    clock_pressure_min_ply: 0
+    clock_pressure_movetime_ms: 0
 
   rating_control:
     enabled: false                 # Allow trusted users to change UCI_LimitStrength/UCI_Elo during a game with !rating.

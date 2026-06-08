@@ -827,6 +827,49 @@ def test_apply_bullet_time_management__adds_hard_cap_while_preserving_clock_mana
     assert capped.black_inc == 2.0
 
 
+def test_apply_bullet_time_management__uses_exact_movetime_when_opponent_is_low_on_clock() -> None:
+    """When the opponent is nearly flagged and our clock is rich, spend enough time to avoid cheap tactical losses."""
+    game = fast_game("bullet", 120000, 80000)
+    game.state["btime"] = 5000
+    game.state["winc"] = 1000
+    game.state["binc"] = 1000
+    engine_cfg = Configuration({
+        "bullet_time_management": {
+            "enabled": True,
+            "speeds": ["bullet"],
+            "force_movetime_caps": True,
+            "force_movetime_threshold_ms": 30000,
+            "hard_movetime_caps": True,
+            "max_clock_ms": 12000,
+            "high_clock_threshold_ms": 600000,
+            "high_clock_ms": 12000,
+            "low_clock_threshold_ms": 30000,
+            "low_clock_ms": 5000,
+            "critical_clock_threshold_ms": 5000,
+            "critical_clock_ms": 1000,
+            "emergency_clock_threshold_ms": 2500,
+            "emergency_clock_ms": 500,
+            "clock_pressure_own_clock_threshold_ms": 30000,
+            "clock_pressure_opponent_clock_threshold_ms": 10000,
+            "clock_pressure_min_ply": 20,
+            "clock_pressure_movetime_ms": 6000,
+        },
+    })
+    board = chess.Board()
+    for move in ["g1f3", "g8f6", "g2g3", "g7g6", "f1g2", "f8g7", "e1g1", "e8g8", "d2d3", "d7d6",
+                 "e2e4", "e7e5", "b1c3", "b8c6", "h2h3", "h7h6", "c1e3", "c8e6", "d1d2", "d8d7"]:
+        board.push_uci(move)
+
+    limit = chess.engine.Limit(white_clock=80.0, black_clock=5.0, white_inc=1.0, black_inc=1.0)
+    capped = apply_bullet_time_management(board, game, limit, engine_cfg)
+
+    assert capped.time == 6.0
+    assert capped.white_clock is None
+    assert capped.black_clock is None
+    assert capped.white_inc is None
+    assert capped.black_inc is None
+
+
 def test_apply_bullet_time_management__forces_movetime_under_threshold() -> None:
     """Once the bot clock is low, cap the move with exact movetime."""
     game = fast_game("blitz", 300000, 29000)

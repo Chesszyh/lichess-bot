@@ -939,10 +939,12 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
 
     side = wbtime(board)
     clock = time_limit.white_clock if side == "wtime" else time_limit.black_clock
+    opponent_clock = time_limit.black_clock if side == "wtime" else time_limit.white_clock
     if clock is None:
         return time_limit
 
     clock_ms = round(clock * 1000)
+    opponent_clock_ms = round(opponent_clock * 1000) if opponent_clock is not None else None
     if game.speed != "bullet" and clock_ms > bullet_time_management.high_clock_threshold_ms:
         return time_limit
 
@@ -986,11 +988,35 @@ def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limi
             and clock_ms <= equal_simplified_clock_threshold_ms):
         clock_cap_ms = min(clock_cap_ms, equal_simplified_clock_ms)
 
+    clock_pressure_movetime: datetime.timedelta | None = None
+    clock_pressure_own_clock_threshold_ms = bullet_time_management.lookup("clock_pressure_own_clock_threshold_ms") or 0
+    clock_pressure_opponent_clock_threshold_ms = (
+        bullet_time_management.lookup("clock_pressure_opponent_clock_threshold_ms") or 0
+    )
+    clock_pressure_min_ply = bullet_time_management.lookup("clock_pressure_min_ply") or 0
+    clock_pressure_movetime_ms = bullet_time_management.lookup("clock_pressure_movetime_ms") or 0
+    if (opponent_clock_ms is not None
+            and clock_pressure_movetime_ms > 0
+            and clock_ms >= clock_pressure_own_clock_threshold_ms
+            and opponent_clock_ms <= clock_pressure_opponent_clock_threshold_ms
+            and len(board.move_stack) >= clock_pressure_min_ply):
+        clock_pressure_movetime = max(msec(1), min(msec(clock_ms), msec(clock_pressure_movetime_ms)))
+
     capped_clock = max(msec(1), min(msec(clock_ms), msec(clock_cap_ms)))
     if side == "wtime":
         time_limit.white_clock = to_seconds(capped_clock)
     else:
         time_limit.black_clock = to_seconds(capped_clock)
+
+    if clock_pressure_movetime is not None:
+        time_limit.time = to_seconds(clock_pressure_movetime)
+        time_limit.white_clock = None
+        time_limit.black_clock = None
+        time_limit.white_inc = None
+        time_limit.black_inc = None
+        logger.info(f"Using exact clock-pressure movetime of {msec_str(clock_pressure_movetime)} for game {game.id} "
+                    f"with {side} {clock_ms} ms and opponent {opponent_clock_ms} ms")
+        return time_limit
 
     if to_msec(capped_clock) < clock_ms:
         logger.info(f"Capping {game.speed} {side} from {clock_ms} ms to {msec_str(capped_clock)} ms for game {game.id}")
