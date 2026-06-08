@@ -70,3 +70,9 @@ This change required a safe idle restart before affecting new games.
 - Post-restart startup log showed the bot reconnected and scheduled matchmaking.
 - Post-restart matchmaking selected `blitz_probe` at `04:15:54`, challenged `BlueMoonBot` for rated `240+3`, then canceled after no acceptance.
 - Post-restart `/api/account/playing` check at `04:16:56`: `active_count=0`.
+
+## Post-Restart Follow-Up
+
+- At `04:26:30`, accepted rated `240+3` blitz as black against `Void_Bot` in game `7VSZodDh`.
+- The game was aborted for lack of White activity before any move, so it gives no evidence for the bot-white book change.
+- No config change was made from this sample.
