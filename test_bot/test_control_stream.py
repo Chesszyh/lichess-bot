@@ -1,6 +1,8 @@
 """Tests for control stream resilience."""
 
 import json
+from queue import Empty
+from typing import NoReturn
 
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
@@ -30,6 +32,19 @@ class _FakeQueue:
         self.events.append(event)
         if event.get("type") == "challenge":
             lichess_bot.stop.terminated = True
+
+
+class _EmptyQueue:
+    def __init__(self) -> None:
+        self.timeout: float | None = None
+        self.task_done_called = False
+
+    def get(self, timeout: float | None = None) -> NoReturn:
+        self.timeout = timeout
+        raise Empty
+
+    def task_done(self) -> None:
+        self.task_done_called = True
 
 
 class _FakeLichess:
@@ -92,6 +107,26 @@ def test_watch_control_stream__reconnects_after_transient_error(monkeypatch) -> 
 
     assert queue.events[0]["type"] == "challenge"
     assert li.calls == 2
+
+
+def test_next_event__wakes_main_loop_when_control_queue_is_quiet() -> None:
+    """The main loop should not rely only on a helper process to wake stale-stream checks."""
+    queue = _EmptyQueue()
+
+    event = lichess_bot.next_event(queue)
+
+    assert event["type"] == "watchdog_tick"
+    assert queue.timeout == lichess_bot.CONTROL_STREAM_WATCHDOG_PERIOD.total_seconds()
+    assert queue.task_done_called is False
+
+
+def test_complete_control_queue_task__skips_synthetic_wakeup() -> None:
+    """Synthetic wakeups are not real queue items and must not decrement unfinished task count."""
+    queue = _EmptyQueue()
+
+    lichess_bot.complete_control_queue_task(queue, {"type": "watchdog_tick", "synthetic": True})
+
+    assert queue.task_done_called is False
 
 
 def test_ensure_control_stream_live__restarts_stale_process(monkeypatch) -> None:

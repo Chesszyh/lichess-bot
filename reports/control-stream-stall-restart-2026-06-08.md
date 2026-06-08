@@ -79,3 +79,32 @@ Add lightweight runtime stall detection before future manual intervention:
 4. Record the stale PID, last log timestamp, and next scheduled challenge time in a report before restarting.
 
 This should stay conservative: no restart during an active game, and no restart merely because a challenge was unanswered or the bot is waiting normally.
+
+## Code Follow-Up
+
+After the manual recovery, the main loop was hardened so it no longer relies only on the helper watchdog process to wake stale-stream checks:
+
+- `next_event()` now waits on the control queue with `CONTROL_STREAM_WATCHDOG_PERIOD` as a timeout.
+- If no event arrives before that timeout, it returns a synthetic `watchdog_tick`.
+- This lets the main loop call `ensure_control_stream_live()` even if the control-stream worker is quiet and the helper tick process fails to wake it.
+- The fix preserves the existing challenge cadence; it only changes how the idle main loop wakes up.
+
+Verification:
+
+- RED: `test_next_event__wakes_main_loop_when_control_queue_is_quiet` failed because `next_event()` called `get()` without a timeout and propagated `queue.Empty`.
+- GREEN: `pytest test_bot/test_control_stream.py::test_next_event__wakes_main_loop_when_control_queue_is_quiet -q` passed.
+- RED: the first deployment attempt exposed that synthetic wakeups were not real queue items; calling `task_done()` on them caused `ValueError: task_done() called too many times`.
+- GREEN: `test_complete_control_queue_task__skips_synthetic_wakeup` passed after routing queue completion through `complete_control_queue_task()`.
+- `pytest test_bot/test_control_stream.py test_bot/test_main_loop.py -q`: `12 passed`.
+- `ruff check --config test_bot/ruff.toml lib/lichess_bot.py lib/lichess_types.py test_bot/test_control_stream.py --select E,F`: passed.
+- `git diff --check -- lib/lichess_bot.py test_bot/test_control_stream.py`: passed.
+
+The broader strict type and full lint commands still report pre-existing unrelated issues in `lib/resource_monitor.py`, `lib/engine_wrapper.py`, `homemade.py`, and older test helper annotations. Those were not changed as part of this targeted runtime-stall fix.
+
+Deployment notes:
+
+- `/api/account/playing` returned `ongoing_games 0` before the restart that loaded the first fix.
+- The first restart preserved challenge cadence but exited with `ValueError: task_done() called too many times` on a synthetic wakeup.
+- The follow-up fix was written at `23:54:20 CST`; launchd started PID `26159` at `23:54:25 CST`, so the running process loaded the corrected code.
+- The corrected process continued logging watchdog ticks through at least `23:55:22 CST` without another `task_done` crash.
+- The next outgoing challenge remained scheduled for `2026-06-09 00:03:15 CST`.

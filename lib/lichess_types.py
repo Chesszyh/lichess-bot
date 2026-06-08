@@ -205,6 +205,7 @@ class EventType(TypedDict, total=False):
     game: GameType
     challenge: ChallengeType
     error: str | None
+    synthetic: bool
 
 
 class GameStateType(TypedDict, total=False):

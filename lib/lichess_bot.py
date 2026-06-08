@@ -520,7 +520,7 @@ def lichess_bot_main(li: lichess.Lichess,
             ensure_control_stream_live(control_stream_state, control_queue, li)
             sync_resource_active_games(resource_active_games, active_games)
 
-            control_queue.task_done()
+            complete_control_queue_task(control_queue, event)
 
         close_pool(pool, active_games, config)
 
@@ -542,9 +542,11 @@ def close_pool(pool: POOL_TYPE, active_games: set[str], config: Configuration) -
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
     """Get the next event from the control queue."""
     try:
-        event = control_queue.get()
+        event = control_queue.get(timeout=to_seconds(CONTROL_STREAM_WATCHDOG_PERIOD))
         if event is None:
             return {}
+    except Empty:
+        return {"type": "watchdog_tick", "synthetic": True}
     except InterruptedError:
         return {}
 
@@ -558,6 +560,14 @@ def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
         logger.debug(f"Event: {event}")
 
     return event
+
+
+def complete_control_queue_task(control_queue: CONTROL_QUEUE_TYPE, event: EventType) -> None:
+    """Mark real control-queue items done while ignoring synthetic wakeups."""
+    if event.get("synthetic"):
+        return
+
+    control_queue.task_done()
 
 
 correspondence_games_to_start = 0
