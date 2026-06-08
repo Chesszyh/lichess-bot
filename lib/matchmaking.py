@@ -519,7 +519,9 @@ class Matchmaking:
         if not challenge.from_self:
             return
 
-        self.cool_down_outgoing_challenge_cadence()
+        reason_key = event["challenge"]["declineReasonKey"].lower()
+        if reason_key != "generic":
+            self.cool_down_outgoing_challenge_cadence()
         if self.challenge_filter == FilterType.NONE:
             self.show_earliest_challenge_time()
             return
@@ -536,7 +538,6 @@ class Matchmaking:
                                            "standard": challenge.variant,
                                            "variant": challenge.variant}
 
-        reason_key = event["challenge"]["declineReasonKey"].lower()
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         if reason_key == "nobot":

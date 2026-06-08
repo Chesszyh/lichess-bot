@@ -429,6 +429,49 @@ def test_declined_challenge__uses_configured_challenge_cadence(monkeypatch: Monk
     assert not matchmaking.should_create_challenge()
 
 
+def test_declined_challenge__generic_decline_uses_minimum_retry_cadence(monkeypatch: MonkeyPatch) -> None:
+    """Generic immediate declines should not waste a full matchmaking cycle."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.challenge_id = "abc123"
+    matchmaking.challenge_targets["abc123"] = "BusyBot"
+    matchmaking.last_game_ended_delay.starting_time -= minutes(16).total_seconds()
+    monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 1},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 2874},
+            "destUser": {"name": "BusyBot", "title": "BOT", "rating": 3100},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "I do not accept challenges right now.",
+            "declineReasonKey": "generic",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.should_create_challenge()
+
+
 def test_declined_challenge__rated_decline_blocks_opponent_when_only_rated_is_configured(monkeypatch) -> None:
     """Rated-only matchmaking should not keep challenging an opponent that asks for casual games."""
     mock_li = Mock()
