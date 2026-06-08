@@ -336,6 +336,7 @@ class Matchmaking:
     def game_done(self) -> None:
         """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
         self.last_game_ended_delay.reset()
+        self.save_state()
         self.show_earliest_challenge_time()
 
     def show_earliest_challenge_time(self) -> None:
@@ -401,6 +402,11 @@ class Matchmaking:
             return None
         return Timer(remaining)
 
+    def timer_expires_at_including_expired(self, timer: Timer) -> str:
+        """Return a wall-clock expiry timestamp, preserving already-expired timers as expired."""
+        remaining = timer.time_until_expiration()
+        return (datetime.datetime.now(datetime.timezone.utc) + remaining).isoformat()
+
     def save_state(self) -> None:
         """Persist matchmaking cooldowns and rate-limit backoff across process restarts."""
         cooldowns = []
@@ -411,6 +417,7 @@ class Matchmaking:
 
         state: dict[str, int | str | list[dict[str, str]] | None] = {
             "cooldowns": cooldowns,
+            "last_game_ended_expires_at": self.timer_expires_at_including_expired(self.last_game_ended_delay),
             "plain_rate_limit_failures": self.plain_rate_limit_failures,
             "rate_limit_expires_at": self.timer_expires_at(self.rate_limit_timer),
         }
@@ -444,6 +451,9 @@ class Matchmaking:
         if rate_limit_timer:
             self.rate_limit_timer = rate_limit_timer
             self.plain_rate_limit_failures = int(state.get("plain_rate_limit_failures") or 0)
+        last_game_ended_expires_at = state.get("last_game_ended_expires_at")
+        if last_game_ended_expires_at:
+            self.last_game_ended_delay = self.timer_from_expires_at(last_game_ended_expires_at) or Timer()
         self.save_state()
 
     def cool_down_challenge_target(self, challenge_id: str, fallback_username: str | None = None) -> None:
@@ -461,6 +471,7 @@ class Matchmaking:
     def cool_down_outgoing_challenge_cadence(self) -> None:
         """Apply the configured global cadence after an outgoing challenge does not become a game."""
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
+        self.save_state()
 
     def accepted_challenge(self, event: EventType) -> None:
         """

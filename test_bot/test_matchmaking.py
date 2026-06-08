@@ -1,6 +1,7 @@
 """Test functions for matchmaking module."""
 from unittest.mock import Mock
 from pytest import MonkeyPatch
+from pathlib import Path
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
@@ -1113,3 +1114,33 @@ def test_matchmaking_state__persists_plain_rate_limit_backoff_across_restart(tmp
 
     assert not restarted.rate_limit_timer.is_expired()
     assert restarted.plain_rate_limit_failures == 1
+
+
+def test_matchmaking_state__persists_outgoing_challenge_cadence_across_restart(tmp_path: Path,
+                                                                              monkeypatch: MonkeyPatch) -> None:
+    """A restart should not reset the configured wait after a failed outgoing challenge."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.cool_down_outgoing_challenge_cadence()
+    first.last_game_ended_delay.starting_time -= minutes(16).total_seconds()
+    first.save_state()
+
+    restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
+    monkeypatch.setattr(restarted.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    assert restarted.should_create_challenge()
