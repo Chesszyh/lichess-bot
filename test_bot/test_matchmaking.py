@@ -839,6 +839,29 @@ def test_handle_challenge_error_response__cools_down_target_on_plain_too_many_re
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == days(1)
 
 
+def test_handle_challenge_error_response__long_blocks_friend_only_bot() -> None:
+    """Bots that only accept friend challenges should not be retried after a short cooldown."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.handle_challenge_error_response({"error": "BOT Classic_BOT-v2 只接受来自好友的挑战"},
+                                                "Classic_BOT-v2")
+
+    assert not matchmaking.should_accept_challenge("Classic_BOT-v2", "")
+    assert matchmaking.challenge_type_acceptable[("Classic_BOT-v2", "")].duration == years(10)
+
+
 def test_handle_challenge_error_response__increases_plain_rate_limit_backoff() -> None:
     """Repeated plain challenge rate limits should cool down instead of retrying frequently."""
     mock_li = Mock()
