@@ -38,6 +38,10 @@ Effective private config intent:
 
 The refreshed bot-game report now tracks loss terminations. Across `2354` fast bot-vs-bot games, `132` losses were by `Time forfeit`, with historical clusters concentrated in no-increment blitz, especially `180+0` (`49` losses split across both colors). The current private config already mitigates that cluster by requiring incoming bot games to have at least `1` second increment and by issuing outgoing challenges only with `+1` or `+2` increments.
 
+## Speed Split Evidence
+
+The refreshed bot-game report now splits results by Lichess speed bucket and exact time control. Historical bullet bot games show `242` wins, `269` draws, and `79` losses, while blitz shows `205` wins, `1128` draws, and `386` losses. This supports keeping the outgoing matchmaking bias toward increment bullet while treating blitz as the weaker pool to diagnose rather than increasing blitz volume.
+
 ## Why This Is Safer
 
 The previous live config had `challenge_timeout: 1`, which validates but triggers the repository warning about potentially using the 100 bot-vs-bot games/day allowance quickly. The revised config encourages more games through broader incoming acceptance and better time-control coverage, without increasing outgoing challenge frequency.
