@@ -9,11 +9,11 @@ import logging
 import chess.engine
 from datetime import timedelta
 from copy import deepcopy
-from types import SimpleNamespace
+from types import SimpleNamespace, TracebackType
 from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.lichess_types import OnlineType, GameEventType
-from typing import cast
+from typing import Literal, cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
@@ -333,7 +333,7 @@ class TestExternalMoveHelpers:
             assert not is_op1_position(chess.Board(fen))
 
 
-def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> None:
+def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     """Human and bot opponents should use different polyglot settings."""
     human_game = get_human_game()
     bot_game = get_game()
@@ -364,25 +364,38 @@ def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> 
         def __init__(self, book_name: str) -> None:
             self.book_name = book_name
 
-        def __enter__(self) -> "FakeReader":
+        def __enter__(self) -> "FakeReader":  # noqa: PYI034 - Keep tests compatible with Python 3.10.
             return self
 
-        def __exit__(self, exc_type, exc, tb) -> bool:
+        def __exit__(self,
+                     exc_type: type[BaseException] | None,
+                     exc: BaseException | None,
+                     tb: TracebackType | None) -> Literal[False]:
+            del exc_type, exc, tb
             return False
 
-        def find_all(self, board: chess.Board):
+        def find_all(self, board: chess.Board) -> list[SimpleNamespace]:
+            del board
             return [SimpleNamespace(weight=100), SimpleNamespace(weight=60)]
 
         def choice(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            del board
             calls.append((self.book_name, "choice", minimum_weight))
             return SimpleNamespace(move=chess.Move.from_uci("g1f3"))
 
         def find(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            del board
             calls.append((self.book_name, "find", minimum_weight))
             return SimpleNamespace(move=chess.Move.from_uci("e2e4"))
 
-    monkeypatch.setattr("chess.polyglot.open_reader", lambda book: FakeReader(book))
-    monkeypatch.setattr("random.shuffle", lambda books: None)
+    def open_fake_reader(book: str) -> FakeReader:
+        return FakeReader(book)
+
+    def keep_book_order(books: list[str]) -> None:
+        del books
+
+    monkeypatch.setattr("chess.polyglot.open_reader", open_fake_reader)
+    monkeypatch.setattr("random.shuffle", keep_book_order)
 
     human_move = get_book_move(board, human_game, polyglot_cfg)
     bot_move = get_book_move(board, bot_game, polyglot_cfg)
@@ -390,3 +403,62 @@ def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> 
     assert human_move.move == chess.Move.from_uci("g1f3")
     assert bot_move.move == chess.Move.from_uci("e2e4")
     assert calls == [("human.bin", "choice", 25.0), ("bot.bin", "find", 40.0)]
+
+
+def test_get_book_move__weighted_random_respects_min_weight(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Weighted book randomization should not include very low-weight sidelines."""
+    board = chess.Board()
+    game = get_game()
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["book.bin"]},
+        "min_weight": 50,
+        "selection": "weighted_random",
+        "max_depth": 10,
+        "normalization": "max",
+    })
+    high_weight_entry = SimpleNamespace(move=chess.Move.from_uci("e2e4"), weight=100)
+    low_weight_entry = SimpleNamespace(move=chess.Move.from_uci("g1f3"), weight=40)
+    find_all_calls: list[float] = []
+    weighted_choices_calls: list[tuple[list[chess.Move], list[int], int]] = []
+
+    class FakeReader:
+        def __enter__(self) -> "FakeReader":  # noqa: PYI034 - Keep tests compatible with Python 3.10.
+            return self
+
+        def __exit__(self,
+                     exc_type: type[BaseException] | None,
+                     exc: BaseException | None,
+                     tb: TracebackType | None) -> Literal[False]:
+            del exc_type, exc, tb
+            return False
+
+        def find_all(self, board: chess.Board, minimum_weight: float = 1) -> list[SimpleNamespace]:
+            del board
+            find_all_calls.append(minimum_weight)
+            return [entry for entry in [high_weight_entry, low_weight_entry] if entry.weight >= minimum_weight]
+
+        def weighted_choice(self, board: chess.Board) -> SimpleNamespace:
+            del board
+            raise AssertionError("weighted_random must filter entries before choosing")
+
+    def fake_choices(population: list[SimpleNamespace], weights: list[int], k: int) -> list[SimpleNamespace]:
+        weighted_choices_calls.append(([entry.move for entry in population], list(weights), k))
+        return [population[0]]
+
+    def open_fake_reader(book: str) -> FakeReader:
+        del book
+        return FakeReader()
+
+    def keep_book_order(books: list[str]) -> None:
+        del books
+
+    monkeypatch.setattr("chess.polyglot.open_reader", open_fake_reader)
+    monkeypatch.setattr("random.shuffle", keep_book_order)
+    monkeypatch.setattr("random.choices", fake_choices)
+
+    move = get_book_move(board, game, polyglot_cfg)
+
+    assert move.move == chess.Move.from_uci("e2e4")
+    assert find_all_calls == [1, 50.0]
+    assert weighted_choices_calls == [([chess.Move.from_uci("e2e4")], [100], 1)]

@@ -1081,7 +1081,9 @@ def get_book_move(board: chess.Board, game: model.Game,
                 min_weight = min_weight * scalar / 100
 
                 if selection == "weighted_random":
-                    move = reader.weighted_choice(board).move
+                    entries = list(reader.find_all(board, minimum_weight=min_weight))
+                    weights = [entry.weight for entry in entries]
+                    move = random.choices(entries, weights=weights, k=1)[0].move
                 elif selection == "uniform_random":
                     move = reader.choice(board, minimum_weight=min_weight).move
                 elif selection == "best_move":
