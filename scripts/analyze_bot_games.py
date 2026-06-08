@@ -87,6 +87,8 @@ class GameSummary:
     rating_impact_by_time_control: list[tuple[str, int, int]]
     rating_impact_by_opening: list[tuple[str, int, int]]
     rating_impact_by_opening_context: list[tuple[str, int, int]]
+    rating_impact_by_opponent: list[tuple[str, int, int]]
+    score_by_opponent: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_time_control: list[tuple[str, int, int]]
     focused_score_by_time_control: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
@@ -486,6 +488,14 @@ def summarize_records(records_dir: Path,
         records,
         lambda record: f"{record.opening} | {record.bot_color} | {record.speed}",
     )
+    rating_impact_by_opponent = rating_impact_by_group(
+        records,
+        lambda record: f"{record.opponent} | {record.speed} | {record.time_control}",
+    )
+    score_by_opponent = score_by_group(
+        records,
+        lambda record: f"{record.opponent} | {record.speed} | {record.time_control}",
+    )
     focus_records = [record for record in records if focus_time_controls and record.time_control in focus_time_controls]
     focused_rating_impact_by_time_control = rating_impact_by_group(
         focus_records,
@@ -622,6 +632,8 @@ def summarize_records(records_dir: Path,
         rating_impact_by_time_control=rating_impact_by_time_control,
         rating_impact_by_opening=rating_impact_by_opening,
         rating_impact_by_opening_context=rating_impact_by_opening_context,
+        rating_impact_by_opponent=rating_impact_by_opponent,
+        score_by_opponent=score_by_opponent,
         focused_rating_impact_by_time_control=focused_rating_impact_by_time_control,
         focused_score_by_time_control=focused_score_by_time_control,
         focused_rating_impact_by_opening_context=focused_rating_impact_by_opening_context,
@@ -974,6 +986,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     append_rating_impact_section(lines, "Rating Impact by Time Control", summary.rating_impact_by_time_control)
     append_rating_impact_section(lines, "Rating Impact by Opening", summary.rating_impact_by_opening)
     append_rating_impact_section(lines, "Rating Impact by Opening Context", summary.rating_impact_by_opening_context)
+    append_rating_impact_section(lines, "Rating Impact by Opponent", summary.rating_impact_by_opponent)
+    append_score_section(lines, "Score by Opponent", summary.score_by_opponent)
     append_rating_impact_section(lines, "Focused Rating Impact by Time Control", summary.focused_rating_impact_by_time_control)
     append_score_section(lines, "Focused Score by Time Control", summary.focused_score_by_time_control)
     append_rating_impact_section(

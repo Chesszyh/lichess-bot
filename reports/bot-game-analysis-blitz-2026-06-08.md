@@ -96,6 +96,32 @@
 - `Ruy Lopez: Closed, Karpov Variation | white | blitz`: `-13` rating over `2` games
 - `Sicilian Defense: Richter-Rauzer Variation, Neo-Modern Variation | black | blitz`: `-12` rating over `5` games
 
+## Rating Impact by Opponent
+
+- `ToromBot | blitz | 180+0`: `-64` rating over `75` games
+- `Mariobonc | blitz | 180+0`: `-33` rating over `11` games
+- `European_Chess_Bot | blitz | 180+0`: `-31` rating over `33` games
+- `Not_So_Strong_Vit_C | blitz | 180+0`: `-26` rating over `8` games
+- `bot64jaques | blitz | 240+2`: `-22` rating over `2` games
+- `PeachFruit | blitz | 240+0`: `-21` rating over `3` games
+- `SoloBot | blitz | 240+2`: `-20` rating over `2` games
+- `bot_adario | blitz | 240+1`: `-19` rating over `2` games
+- `Cheszter | blitz | 240+2`: `-17` rating over `5` games
+- `TakticproChess | blitz | 240+2`: `-16` rating over `8` games
+
+## Score by Opponent
+
+- `Not_So_Strong_Vit_C | blitz | 180+0`: W-D-L `0-0-8`, score `0.0%` over `8` games
+- `BlueMoonBot | blitz | 300+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `Meccedo | blitz | 120+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `TakticproChess | blitz | 300+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `ChessatronBot | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `CloudNetBot | blitz | 300+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `KillSquare | blitz | 180+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `LeelaChessTest | blitz | 180+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `LeelaChessTest | blitz | 240+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `LeelaChessTest | blitz | 240+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+
 ## Focused Rating Impact by Time Control
 
 - No rating-diff tags found.

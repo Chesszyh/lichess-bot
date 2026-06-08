@@ -51,6 +51,16 @@
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-5` rating over `1` games
 - `Queen's Pawn Game: London System | black | bullet`: `+1` rating over `1` games
 
+## Rating Impact by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
+- `CloudNetBot | bullet | 90+1`: `+1` rating over `1` games
+
+## Score by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `CloudNetBot | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
+
 ## Focused Rating Impact by Time Control
 
 - `90+1`: `-4` rating over `2` games

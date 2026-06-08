@@ -92,6 +92,32 @@
 - `Scandinavian Defense: Modern Variation | black | bullet`: `-4` rating over `1` games
 - `Sicilian Defense: Scheveningen Variation, Keres Attack | black | bullet`: `-4` rating over `1` games
 
+## Rating Impact by Opponent
+
+- `abcd_engine | bullet | 60+1`: `-10` rating over `2` games
+- `ToromBot | bullet | 90+1`: `-9` rating over `3` games
+- `grail-bot | bullet | 120+1`: `-8` rating over `2` games
+- `MDBOT | bullet | 60+1`: `-7` rating over `4` games
+- `duchessAI | bullet | 60+1`: `-6` rating over `6` games
+- `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
+- `abhisun_bot | bullet | 120+1`: `-4` rating over `2` games
+- `TakticproChess | bullet | 120+1`: `-4` rating over `1` games
+- `DarkOnBot | bullet | 90+1`: `-3` rating over `2` games
+
+## Score by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `TakticproChess | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `bot1e | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `ToromBot | bullet | 90+1`: W-D-L `0-1-2`, score `16.7%` over `3` games
+- `MDBOT | bullet | 60+1`: W-D-L `0-2-3`, score `20.0%` over `5` games
+- `abcd_engine | bullet | 60+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
+- `DarkOnBot | bullet | 90+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
+- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
+- `DarkOnBot | bullet | 60+1`: W-D-L `0-7-1`, score `43.8%` over `8` games
+
 ## Focused Rating Impact by Time Control
 
 - `90+1`: `+25` rating over `44` games

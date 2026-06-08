@@ -27,6 +27,12 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 - `reports/bot-game-analysis-active-controls-since-2026-06-08-2016.md` isolates the post-block window: `1` rated `90+1` bullet draw, net `+1`.
 - `reports/active-control-loss-clusters-2026-06-08.md` separates stale April active-control losses from the three June 8
   active-control losses, avoiding a broad opening/config change from historical data.
+- The refreshed analyzer now ranks opponent impact across any filtered report, not only exact focused controls. In the
+  active-control report, the strongest confirmed opponent leaks remain the already-blocked `abcd_engine` at `60+1`
+  (`-10` over `2` rated-diff games) and `MEGA-NOOB-BOT` at `60+1`/`90+1` (`-11` over `2` rated-diff games).
+- The blitz-only report shows large historical opponent leaks concentrated in controls the current config excludes,
+  especially `180+0` and longer blitz pools. This is evidence against reintroducing broad blitz matchmaking before the
+  active `+1` bullet envelope has a larger fresh sample.
 
 ## Decision
 
@@ -34,3 +40,5 @@ Keep the active rated controls at `60+1`, `90+1`, and `120+1`, but collect more 
 outgoing `60+1` and `90+1` weights. The repeated recent loss source, `MEGA-NOOB-BOT`, is already blocked in private
 config, and the only post-block active-control game is rating-positive. Also block `abcd_engine` as a narrow
 mitigation for the June 8 `60+1` time-forfeit loss. Do not broaden controls or change openings from this sample.
+Do not add a new block for `ToromBot`, `MDBOT`, `duchessAI`, or `TakticproChess` yet: their active-control evidence is
+either stale, low-sample, or already mitigated by the current control envelope. Re-evaluate after fresh post-block games.

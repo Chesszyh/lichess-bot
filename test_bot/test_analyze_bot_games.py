@@ -628,6 +628,47 @@ def test_render_markdown__shows_focused_opponent_impact(tmp_path: Path) -> None:
     assert "300+2" not in focused_section
 
 
+def test_render_markdown__shows_speed_filtered_opponent_impact(tmp_path: Path) -> None:
+    """Blitz-only reports should rank opponent leaks without requiring exact-control focus."""
+    for index in range(2):
+        loss_headers = base_headers("1-0", "Najdorf English Attack", f"LeakBot{index}", "ilovecatgirl")
+        loss_headers["White"] = "TakticproChess"
+        loss_headers["TimeControl"] = "180+2"
+        loss_headers["WhiteRatingDiff"] = "+6"
+        loss_headers["BlackRatingDiff"] = "-6"
+        write_pgn(tmp_path, f"blitz-opponent-loss-{index}.pgn", loss_headers, "1. e4 c5 1-0")
+    draw_headers = base_headers("1/2-1/2", "London System", "CloudNetBot", "ilovecatgirl")
+    draw_headers["TimeControl"] = "180+2"
+    draw_headers["WhiteRatingDiff"] = "-1"
+    draw_headers["BlackRatingDiff"] = "+1"
+    write_pgn(tmp_path, "blitz-opponent-draw.pgn", draw_headers, "1. d4 d5 1/2-1/2")
+    bullet_headers = base_headers("1-0", "Old Bullet Leak", "BulletBot", "ilovecatgirl")
+    bullet_headers["TimeControl"] = "60+1"
+    bullet_headers["WhiteRatingDiff"] = "+20"
+    bullet_headers["BlackRatingDiff"] = "-20"
+    write_pgn(tmp_path, "bullet-opponent-loss.pgn", bullet_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", speeds={"blitz"})
+    markdown = render_markdown(summary)
+
+    assert summary.rating_impact_by_opponent == [
+        ("TakticproChess | blitz | 180+2", 2, -12),
+        ("CloudNetBot | blitz | 180+2", 1, 1),
+    ]
+    assert summary.score_by_opponent == [
+        ("TakticproChess | blitz | 180+2", 0, 0, 2, 2, 0.0),
+        ("CloudNetBot | blitz | 180+2", 0, 1, 0, 1, 50.0),
+    ]
+    assert "Rating Impact by Opponent" in markdown
+    assert "`TakticproChess | blitz | 180+2`: `-12` rating over `2` games" in markdown
+    assert "Score by Opponent" in markdown
+    assert "`TakticproChess | blitz | 180+2`: W-D-L `0-0-2`, score `0.0%` over `2` games" in markdown
+    opponent_section = markdown.split("## Rating Impact by Opponent", maxsplit=1)[1].split(
+        "## Score by Opponent",
+    )[0]
+    assert "BulletBot" not in opponent_section
+
+
 def test_render_markdown__shows_focused_time_control_score_and_rating(tmp_path: Path) -> None:
     """Active-control tuning should compare exact controls directly before changing weights."""
     loss_headers = base_headers("1-0", "Ruy Lopez: Open", "LossBot", "ilovecatgirl")
