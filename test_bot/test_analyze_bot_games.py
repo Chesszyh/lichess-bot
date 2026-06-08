@@ -765,6 +765,28 @@ def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     assert "Lower-rated draws found: `2`" in markdown
 
 
+def test_render_markdown__clusters_lower_rated_draw_opponents(tmp_path: Path) -> None:
+    """Repeated lower-rated draw opponents should be visible as matchmaking evidence."""
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "duchessAI", "ilovecatgirl")
+        draw_headers["WhiteElo"] = str(2800 + index)
+        draw_headers["BlackElo"] = "2940"
+        draw_headers["TimeControl"] = "60+1"
+        write_pgn(tmp_path, f"duchess-lower-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    singleton_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "ilovecatgirl", "OneOffBot")
+    singleton_headers["WhiteElo"] = "2940"
+    singleton_headers["BlackElo"] = "2860"
+    singleton_headers["TimeControl"] = "90+1"
+    write_pgn(tmp_path, "one-off-lower-draw.pgn", singleton_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.lower_rated_draws_by_opponent[0] == ("duchessAI | bullet | 60+1", 2)
+    assert "Lower-Rated Draw Opponents" in markdown
+    assert "`2` x `duchessAI | bullet | 60+1`" in markdown
+
+
 def test_render_markdown__clusters_lower_rated_draw_openings_and_prefixes(tmp_path: Path) -> None:
     """Repeated lower-rated draw openings should be visible as actionable clusters."""
     for index in range(2):

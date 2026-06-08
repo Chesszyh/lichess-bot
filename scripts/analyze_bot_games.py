@@ -105,6 +105,7 @@ class GameSummary:
     loss_prefixes: list[tuple[str, int]]
     loss_prefix_contexts: list[tuple[str, int]]
     lower_rated_draw_count: int
+    lower_rated_draws_by_opponent: list[tuple[str, int]]
     lower_rated_draws_by_opening: list[tuple[str, int]]
     lower_rated_draws_by_termination: list[tuple[str, int]]
     lower_rated_draw_prefixes: list[tuple[str, int]]
@@ -545,6 +546,9 @@ def summarize_records(records_dir: Path,
         record for record in records
         if record.bot_result == "draw" and record.rating_gap is not None and record.rating_gap >= lower_rated_draw_gap
     ]
+    lower_rated_draws_by_opponent = Counter(
+        f"{record.opponent} | {record.speed} | {record.time_control}" for record in lower_rated_draws
+    ).most_common()
     lower_rated_draws_by_opening = Counter(record.opening for record in lower_rated_draws).most_common()
     lower_rated_draws_by_termination = Counter(record.termination for record in lower_rated_draws).most_common()
     lower_rated_draw_prefixes = Counter(record.move_prefix for record in lower_rated_draws if record.move_prefix).most_common()
@@ -650,6 +654,7 @@ def summarize_records(records_dir: Path,
         loss_prefixes=loss_prefixes,
         loss_prefix_contexts=loss_prefix_contexts,
         lower_rated_draw_count=len(lower_rated_draws),
+        lower_rated_draws_by_opponent=lower_rated_draws_by_opponent,
         lower_rated_draws_by_opening=lower_rated_draws_by_opening,
         lower_rated_draws_by_termination=lower_rated_draws_by_termination,
         lower_rated_draw_prefixes=lower_rated_draw_prefixes,
@@ -882,6 +887,13 @@ def append_lower_rated_draw_sections(lines: list[str], summary: GameSummary) -> 
     """Append sections for draws against lower-rated opponents."""
     lines.extend(["", "## Lower-Rated Draws", ""])
     lines.append(f"- Lower-rated draws found: `{summary.lower_rated_draw_count}`")
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Opponents",
+        summary.lower_rated_draws_by_opponent,
+        empty_text="No lower-rated draw opponent clusters found.",
+        quote_item=True,
+    )
     append_count_section(
         lines,
         "Lower-Rated Draw Openings",

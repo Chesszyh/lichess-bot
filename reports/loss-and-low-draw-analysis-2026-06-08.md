@@ -17,8 +17,8 @@ Scope:
 
 ## Active-Control Refresh
 
-Current active rated controls are `60+1`, `90+1`, and `120+1`. The filtered active-control report has `259` games, with
-`109` wins, `120` draws, `20` losses, and `10` unknown results. The pool is still rating-positive at `+221` over `216`
+Current active rated controls are `60+1`, `90+1`, and `120+1`. The filtered active-control report has `260` games, with
+`109` wins, `121` draws, `20` losses, and `10` unknown results. The pool is still rating-positive at `+221` over `217`
 rated-diff games, so broad time-control changes are not justified by the latest evidence.
 
 The lower-rated draw signal is narrower than the full historical report implied. `duchessAI` accounts for `6` lower-rated
@@ -26,6 +26,11 @@ draws in active controls, but the bot is still `+16` over `15` rated-diff games 
 for now. The stronger active-control rating leaks are opponent-specific: `MEGA-NOOB-BOT` is already blocked after two
 recent active-control losses, and `abcd_engine` is now blocked after W-D-L `0-3-1`, net `-10`, including the
 2026-06-08 `60+1` white loss where `ilovecatgirl` was higher-rated by `23`.
+
+The refreshed active-control report now ranks lower-rated draw opponents directly. The largest lower-rated draw cluster
+is `duchessAI | bullet | 60+1` with `5` draws, plus one `duchessAI | bullet | 90+1` draw. The post-19:36, post-20:16,
+and post-21:20 CST active-control windows have no lower-rated draw leaks, so this remains a watch item rather than a new
+block.
 
 `ToromBot` and `MDBOT` remain on watch rather than being blocked in this turn. Their active-control losses are from
 April 2026, before the current Black fast-book and active-control restrictions, and both are strong `3060+` opponents;

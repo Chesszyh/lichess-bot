@@ -137,6 +137,10 @@
 
 - Lower-rated draws found: `0`
 
+## Lower-Rated Draw Opponents
+
+- No lower-rated draw opponent clusters found.
+
 ## Lower-Rated Draw Openings
 
 - No lower-rated draw opening clusters found.

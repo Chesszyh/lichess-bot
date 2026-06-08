@@ -6,10 +6,10 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 ## Current State
 
 - Latest local PGN is `game_records/ilovecatgirl vs CupchessBot - WOIHrVov.pgn` at 2026-06-08 21:27 CST.
-- The running bot was safely restarted at 2026-06-08 21:31 CST after `/api/account/playing` returned `0` active games
-  and all game engine child processes from `WOIHrVov` had exited. One supervisor-managed bot process remains.
-- The restarted bot scheduled its next outgoing challenge after 2026-06-08 21:46:08 CST, preserving the configured
-  `15` minute outgoing cadence.
+- The running bot was safely restarted again at 2026-06-08 21:41 CST after `/api/account/playing` returned `0` active
+  games. One supervisor-managed bot process remains, PID `2657`.
+- The restarted bot scheduled its next outgoing challenge after 2026-06-08 21:56:05 CST, preserving the configured
+  `15` minute outgoing cadence after the endpoint-failure cadence fix.
 - No local engine experiment was initiated for this review.
 - Outgoing active-control sampling is now `60+1:90+1:120+1 = 3:6:9`, up from `1:4:9`. `challenge_timeout`
   remains `15` minutes, so this changes control selection only, not active-challenge frequency.
@@ -30,6 +30,9 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
   draws, net `+1`, with no losses and no lower-rated draw leaks.
 - `reports/bot-game-analysis-active-controls-since-2026-06-08-2120.md` isolates the post-cadence-fix runtime window:
   one rated `120+1` draw against `CupchessBot`, net `+0`, no losses, and no clock leak.
+- The active-control analyzer now ranks lower-rated draw opponents directly. The largest historical active-control
+  lower-rated draw cluster is `duchessAI | bullet | 60+1` with `5` draws; the same report shows that exact `60+1`
+  sub-sample is `-6` over `6` rated-diff games, while the post-block windows have no lower-rated draw leaks.
 - `reports/active-control-loss-clusters-2026-06-08.md` separates stale April active-control losses from the three June 8
   active-control losses, avoiding a broad opening/config change from historical data.
 - The refreshed analyzer now ranks opponent impact across any filtered report, not only exact focused controls. In the

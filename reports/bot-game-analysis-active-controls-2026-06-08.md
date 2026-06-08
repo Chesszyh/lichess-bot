@@ -250,6 +250,19 @@
 
 - Lower-rated draws found: `17`
 
+## Lower-Rated Draw Opponents
+
+- `5` x `duchessAI | bullet | 60+1`
+- `2` x `Valhalla-Bot | bullet | 120+1`
+- `1` x `AggressiveStockfish | bullet | 120+1`
+- `1` x `AggressiveStockfish | bullet | 90+1`
+- `1` x `DefenchessOfficial | bullet | 90+1`
+- `1` x `Worst-ai | bullet | 120+1`
+- `1` x `duchessAI | bullet | 90+1`
+- `1` x `friendlybot_1700 | bullet | 60+1`
+- `1` x `friendlybot_1700 | bullet | 90+1`
+- `1` x `BorkaTower | bullet | 60+1`
+
 ## Lower-Rated Draw Openings
 
 - `2` x Sicilian Defense: Najdorf Variation, English Attack
