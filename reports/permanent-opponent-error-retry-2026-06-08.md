@@ -37,3 +37,11 @@ Before the fix, this fell through to the generic decline filter path, cooled dow
 - `mypy --strict lib/matchmaking.py`: no issues.
 - Scoped `ruff` check passed.
 - Runtime restarted safely after `/api/account/playing` returned `active_count=0`; new PID `54614`.
+
+## Live Follow-Up
+
+- Runtime/private config was restarted again after adding `PZChessBot`; the startup log includes `PZChessBot` in both block lists.
+- The next scheduled matchmaking cycle at `2026-06-08 23:47:48 CST` selected `RecklessEngine`, not `PZChessBot`.
+- Lichess accepted the outgoing `120+1` rated bullet challenge and created challenge `B0IiP6yC`.
+- `RecklessEngine` did not answer; the bot cancelled the challenge and applied the normal 12-hour target cooldown.
+- The next outgoing challenge was scheduled for `2026-06-09 00:03:15 CST`, preserving the 15-minute cadence.
