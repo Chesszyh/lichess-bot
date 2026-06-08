@@ -24,7 +24,8 @@ The existing code already cooled down the target for six hours, but did not retr
 
 ## Verification
 
-- Watched `test_challenge__retries_next_candidate_when_challenge_response_has_no_id` fail before the implementation.
 - `pytest test_bot/test_matchmaking.py -q`: `44 passed`.
 - `mypy --strict lib/matchmaking.py`: success.
+- `py_compile lib/matchmaking.py test_bot/test_matchmaking.py`: success.
+- `ruff check --config test_bot/ruff.toml --select RUF034 test_bot/test_matchmaking.py`: success.
 - `ruff check --config test_bot/ruff.toml lib/matchmaking.py`: still fails on pre-existing `choose_opponent` complexity (`C901`, `PLR0912`), unrelated to this change.
