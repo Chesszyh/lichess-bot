@@ -97,6 +97,24 @@ def repetition_draw_board() -> chess.Board:
     return board
 
 
+def mzn_bgmqz_depth_eleven_miss_board() -> chess.Board:
+    """Recreate the MznBGMQZ position before 35.Rd2 was accepted at shallow depth."""
+    board = chess.Board()
+    for move in [
+        "d2d4", "g8f6", "c2c4", "e7e6", "b1c3", "f8b4", "e2e3", "e8g8",
+        "f1d3", "d7d5", "a2a3", "d5c4", "d3c4", "b4c3", "b2c3", "c7c5",
+        "c4d3", "d8c7", "g1e2", "b8c6", "e1g1", "e6e5", "e2g3", "c8e6",
+        "f2f4", "e5d4", "c3d4", "a8d8", "a1b1", "a7a6", "h2h3", "h7h6",
+        "c1b2", "c5d4", "e3e4", "f6d7", "d1c2", "d8c8", "e4e5", "c7a5",
+        "c2e2", "d7c5", "g3h5", "c5d3", "e2d3", "g8h8", "d3g3", "f8g8",
+        "f4f5", "e6c4", "f1e1", "a5d2", "b2a1", "c6e7", "g3g4", "d4d3",
+        "g1h2", "b7b5", "b1d1", "d2f2", "e5e6", "f7f6", "e1f1", "f2e2",
+        "f1e1", "e2c2", "g4f4", "c4d5",
+    ]:
+        board.push_uci(move)
+    return board
+
+
 class FakeEngine:
     """Engine protocol that returns predetermined depths."""
 
@@ -173,6 +191,36 @@ class WorseFollowUpFakeEngine:
              ponder: bool = False,
              draw_offered: bool = False,
              root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        self.calls.append(limit)
+        return self._results.pop(0)
+
+
+class DepthElevenThenThirteenFakeEngine:
+    """Engine protocol that reproduces a high-rated bot tactical miss depth pattern."""
+
+    id = {"name": "DepthElevenThenThirteenFakeEngine"}
+
+    def __init__(self) -> None:
+        self.calls: list[chess.engine.Limit] = []
+        self._results = [
+            chess.engine.PlayResult(chess.Move.from_uci("d1d2"), None, {
+                "depth": 11,
+                "score": chess.engine.PovScore(chess.engine.Cp(-21), chess.WHITE),
+            }),
+            chess.engine.PlayResult(chess.Move.from_uci("f4d2"), None, {
+                "depth": 13,
+                "score": chess.engine.PovScore(chess.engine.Cp(-5), chess.WHITE),
+            }),
+        ]
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        _ = board, info, ponder, draw_offered, root_moves
         self.calls.append(limit)
         return self._results.pop(0)
 
@@ -970,6 +1018,45 @@ def test_search__keeps_original_result_when_shallow_extension_is_worse() -> None
     assert result.move == chess.Move.from_uci("e2e4")
     assert result.info["depth"] == 8
     assert len(fake_engine.calls) == 2
+
+
+def test_search__extends_depth_eleven_result_against_higher_rated_bot() -> None:
+    """A depth-11 bullet result against a stronger bot should get a tactical follow-up search."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    fake_engine = DepthElevenThenThirteenFakeEngine()
+    wrapper.engine = fake_engine
+    game = fast_game("bullet", 60000, 38000)
+    game.me.rating = 3034
+    game.opponent.rating = 3139
+    game.opponent.title = "BOT"
+    game.opponent.is_bot = True
+    game.state["wtime"] = 38000
+    game.state["btime"] = 28000
+    engine_cfg = Configuration({
+        "shallow_search_guard": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "min_depth": 6,
+            "high_rated_bot_min_depth": 12,
+            "high_rated_bot_min_rating": 3000,
+            "extra_movetime_ms": 1500,
+            "min_clock_ms": 30000,
+            "min_ply": 10,
+        },
+    })
+
+    result = wrapper.search(mzn_bgmqz_depth_eleven_miss_board(),
+                            chess.engine.Limit(white_clock=38, black_clock=28),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=engine_cfg)
+
+    assert result.move == chess.Move.from_uci("f4d2")
+    assert result.info["depth"] == 13
+    assert len(fake_engine.calls) == 2
+    assert fake_engine.calls[1].time == 1.5
 
 
 def test_apply_bullet_time_management__keeps_high_clock_blitz_uncapped() -> None:

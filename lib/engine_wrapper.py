@@ -544,13 +544,38 @@ class EngineWrapper:
             return False
 
         depth = result.info.get("depth") if result.info else None
-        if not isinstance(depth, int) or depth >= shallow_search_guard.min_depth:
+        min_depth = self.shallow_search_guard_min_depth(game, shallow_search_guard)
+        if not isinstance(depth, int) or depth >= min_depth:
             return False
 
         if to_msec(game.my_remaining_time()) < shallow_search_guard.min_clock_ms:
             return False
 
         return result.move is not None
+
+    def shallow_search_guard_min_depth(self, game: model.Game, shallow_search_guard: Configuration) -> int:
+        """Get the effective shallow-search depth threshold for this opponent."""
+        configured_min_depth = shallow_search_guard.lookup("min_depth")
+        min_depth = configured_min_depth if isinstance(configured_min_depth, int) else 0
+        high_rated_bot_min_depth = shallow_search_guard.lookup("high_rated_bot_min_depth")
+        if (self.is_high_rated_bot_shallow_search(game, shallow_search_guard)
+                and isinstance(high_rated_bot_min_depth, int)):
+            return max(min_depth, high_rated_bot_min_depth)
+
+        return min_depth
+
+    def is_high_rated_bot_shallow_search(self, game: model.Game, shallow_search_guard: Configuration) -> bool:
+        """Whether this search is against a higher-rated BOT opponent worth extra depth."""
+        high_rated_bot_min_rating = shallow_search_guard.lookup("high_rated_bot_min_rating")
+        own_rating = game.me.rating
+        opponent_rating = game.opponent.rating
+        return (game.mode == "rated"
+                and game.opponent.is_bot
+                and isinstance(own_rating, int)
+                and isinstance(opponent_rating, int)
+                and isinstance(high_rated_bot_min_rating, int)
+                and opponent_rating > own_rating
+                and opponent_rating >= high_rated_bot_min_rating)
 
     def record_search_result(self, result: chess.engine.PlayResult, board: chess.Board) -> None:
         """Record final search score for draw/resign decisions."""

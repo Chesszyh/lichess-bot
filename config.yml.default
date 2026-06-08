@@ -55,6 +55,10 @@ engine:                            # Engine settings.
     speeds:
       - bullet
     min_depth: 10
+    # Depth threshold to use instead of min_depth for rated games vs stronger BOT opponents
+    # at or above high_rated_bot_min_rating.
+    high_rated_bot_min_depth: 10
+    high_rated_bot_min_rating: 3000
     extra_movetime_ms: 500
     min_clock_ms: 15000
     min_ply: 8

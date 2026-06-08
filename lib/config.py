@@ -301,6 +301,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="speeds", default=["bullet"], force_empty_values=True)
     change_value_to_list(CONFIG, "engine", "shallow_search_guard", key="speeds")
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_depth", default=10)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="high_rated_bot_min_depth", default=10)
+    set_config_default(CONFIG, "engine", "shallow_search_guard", key="high_rated_bot_min_rating", default=3000)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="extra_movetime_ms", default=500)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_clock_ms", default=15000)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_ply", default=8)
@@ -612,7 +614,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     shallow_search_guard = CONFIG["engine"].get("shallow_search_guard") or {}
     config_assert(all(speed in VALID_SPEEDS for speed in shallow_search_guard.get("speeds", [])),
                   f"`engine:shallow_search_guard:speeds` must only contain {VALID_SPEEDS}.")
-    for key in ["min_depth", "extra_movetime_ms", "min_clock_ms", "min_ply"]:
+    shallow_search_guard_numeric_keys = [
+        "min_depth", "high_rated_bot_min_depth", "high_rated_bot_min_rating",
+        "extra_movetime_ms", "min_clock_ms", "min_ply",
+    ]
+    for key in shallow_search_guard_numeric_keys:
         config_assert(shallow_search_guard.get(key, 0) >= 0,
                       f"`engine:shallow_search_guard:{key}` must be non-negative.")
 
