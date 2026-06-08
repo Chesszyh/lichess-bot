@@ -381,6 +381,10 @@ class EngineWrapper:
         if game and engine_cfg:
             result = self.extend_shallow_search(active_engine, board, game, result, draw_offered,
                                                 search_root_moves, engine_cfg)
+        if search_root_moves and not result.resigned and result.move not in search_root_moves:
+            replacement = search_root_moves[0]
+            logger.warning(f"Engine returned {result.move} outside root moves; using {replacement} instead.")
+            result.move = replacement
         self.record_search_result(result, board)
         return self.offer_draw_or_resign(result, board, draw_offered, game)
 
