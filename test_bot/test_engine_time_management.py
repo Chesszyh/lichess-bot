@@ -470,6 +470,30 @@ def test_search__disables_ponder_for_fast_exact_movetime() -> None:
     assert engine.ponder_calls == [False]
 
 
+def test_search__keeps_ponder_for_fast_hard_movetime_watchdog() -> None:
+    """A watchdog movetime with live clock data can still use ponder safely."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    engine = PonderRecordingFakeEngine()
+    wrapper.engine = engine
+    board = chess.Board()
+    game = bullet_game(clock_ms=120_000)
+
+    wrapper.search(board,
+                   chess.engine.Limit(white_clock=120.0,
+                                      black_clock=12.0,
+                                      white_inc=1.0,
+                                      black_inc=1.0,
+                                      time=12.0,
+                                      clock_id="bullet hard watchdog"),
+                   ponder=True,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None),
+                   game=game,
+                   engine_cfg=disabled_external_move_cfg())
+
+    assert engine.ponder_calls == [True]
+
+
 def test_search__records_forcing_mate_for_fast_win_time_management() -> None:
     """A positive mate score should make the next fast-game move eligible for the quick win cap."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())
