@@ -191,6 +191,40 @@ def test_render_markdown__shows_rating_impact_by_speed_and_time_control(tmp_path
     assert "`60+1 white`: `-5` rating over `2` games" in markdown
 
 
+def test_render_markdown__shows_rating_impact_by_opening_and_context(tmp_path: Path) -> None:
+    """Opening rating impact should expose which color and speed contexts are costing rating."""
+    for index in range(2):
+        najdorf_headers = base_headers(
+            "1-0",
+            "Sicilian Defense: Najdorf Variation, English Attack",
+            f"NajdorfBot{index}",
+            "ilovecatgirl",
+        )
+        najdorf_headers["TimeControl"] = "60+1"
+        najdorf_headers["WhiteRatingDiff"] = "+7"
+        najdorf_headers["BlackRatingDiff"] = "-7"
+        write_pgn(tmp_path, f"black-bullet-najdorf-loss-{index}.pgn", najdorf_headers, "1. e4 c5 1-0")
+    win_headers = base_headers("0-1", "Caro-Kann Defense", "CaroBot", "ilovecatgirl")
+    win_headers["TimeControl"] = "180+2"
+    win_headers["WhiteRatingDiff"] = "-3"
+    win_headers["BlackRatingDiff"] = "+3"
+    write_pgn(tmp_path, "black-blitz-caro-win.pgn", win_headers, "1. e4 c6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.rating_impact_by_opening[0] == ("Sicilian Defense: Najdorf Variation, English Attack", 2, -14)
+    assert summary.rating_impact_by_opening_context[0] == (
+        "Sicilian Defense: Najdorf Variation, English Attack | black | bullet",
+        2,
+        -14,
+    )
+    assert "Rating Impact by Opening" in markdown
+    assert "`Sicilian Defense: Najdorf Variation, English Attack`: `-14` rating over `2` games" in markdown
+    assert "Rating Impact by Opening Context" in markdown
+    assert "`Sicilian Defense: Najdorf Variation, English Attack | black | bullet`: `-14` rating over `2` games" in markdown
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")

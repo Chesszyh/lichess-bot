@@ -62,6 +62,32 @@
 - `120+2 black`: `-17` rating over `16` games
 - `180+3 black`: `-15` rating over `41` games
 
+## Rating Impact by Opening
+
+- `Caro-Kann Defense: Advance Variation, Short Variation`: `-38` rating over `32` games
+- `Sicilian Defense: Modern Variations`: `-24` rating over `19` games
+- `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack`: `-22` rating over `7` games
+- `Caro-Kann Defense`: `-16` rating over `6` games
+- `Indian Defense`: `-14` rating over `5` games
+- `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation`: `-13` rating over `3` games
+- `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit`: `-13` rating over `3` games
+- `Ruy Lopez: Closed, Karpov Variation`: `-13` rating over `2` games
+- `Ruy Lopez: Marshall Attack, Modern Main Line`: `-12` rating over `14` games
+- `Caro-Kann Defense: Advance Variation`: `-12` rating over `8` games
+
+## Rating Impact by Opening Context
+
+- `Sicilian Defense: Najdorf Variation, English Attack | black | blitz`: `-38` rating over `71` games
+- `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz`: `-35` rating over `16` games
+- `Ruy Lopez: Marshall Attack | white | blitz`: `-24` rating over `5` games
+- `Sicilian Defense: Moscow Variation, Main Line | black | bullet`: `-22` rating over `15` games
+- `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack | black | blitz`: `-22` rating over `7` games
+- `Sicilian Defense: Modern Variations | black | bullet`: `-19` rating over `11` games
+- `Sicilian Defense: Closed | black | blitz`: `-18` rating over `9` games
+- `French Defense: Steinitz Variation, Boleslavsky Variation | black | blitz`: `-17` rating over `4` games
+- `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation | black | blitz`: `-13` rating over `3` games
+- `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit | black | blitz`: `-13` rating over `3` games
+
 ## Worst Scoring Controls
 
 - `180+0 black`: W-D-L `8-26-51`, score `24.7%` over `85` games

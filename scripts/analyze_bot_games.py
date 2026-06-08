@@ -51,6 +51,8 @@ class GameSummary:
     results_by_time_control: list[tuple[str, int]]
     rating_impact_by_speed: list[tuple[str, int, int]]
     rating_impact_by_time_control: list[tuple[str, int, int]]
+    rating_impact_by_opening: list[tuple[str, int, int]]
+    rating_impact_by_opening_context: list[tuple[str, int, int]]
     worst_scoring_controls: list[tuple[str, int, int, int, int, float]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
@@ -251,6 +253,11 @@ def summarize_records(records_dir: Path,
         records,
         lambda record: f"{record.time_control} {record.bot_color}",
     )
+    rating_impact_by_opening = rating_impact_by_group(records, lambda record: record.opening)
+    rating_impact_by_opening_context = rating_impact_by_group(
+        records,
+        lambda record: f"{record.opening} | {record.bot_color} | {record.speed}",
+    )
     control_results: dict[str, Counter[str]] = {}
     for record in records:
         if result_score(record.bot_result) is None:
@@ -306,6 +313,8 @@ def summarize_records(records_dir: Path,
         results_by_time_control=results_by_time_control,
         rating_impact_by_speed=rating_impact_by_speed,
         rating_impact_by_time_control=rating_impact_by_time_control,
+        rating_impact_by_opening=rating_impact_by_opening,
+        rating_impact_by_opening_context=rating_impact_by_opening_context,
         worst_scoring_controls=worst_scoring_controls,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
@@ -418,6 +427,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     )
     append_rating_impact_section(lines, "Rating Impact by Speed", summary.rating_impact_by_speed)
     append_rating_impact_section(lines, "Rating Impact by Time Control", summary.rating_impact_by_time_control)
+    append_rating_impact_section(lines, "Rating Impact by Opening", summary.rating_impact_by_opening)
+    append_rating_impact_section(lines, "Rating Impact by Opening Context", summary.rating_impact_by_opening_context)
     append_score_section(lines, "Worst Scoring Controls", summary.worst_scoring_controls)
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")
