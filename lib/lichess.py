@@ -48,6 +48,10 @@ ENDPOINTS = {
 logger = logging.getLogger(__name__)
 
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
+DEFAULT_POST_TIMEOUT_SECONDS = 2
+TOKEN_TEST_POST_TIMEOUT_SECONDS = 10
+MOVE_POST_TIMEOUT_SECONDS = 5
+MOVE_POST_RETRY_MAX_TIME_SECONDS = 8
 
 
 class Stop:
@@ -296,10 +300,49 @@ class Lichess:
         :param raise_for_status: Whether to raise an exception if the response contains an error code.
         :return: lichess.org's response in a dict.
         """
+        timeout = TOKEN_TEST_POST_TIMEOUT_SECONDS if endpoint_name == "token_test" else DEFAULT_POST_TIMEOUT_SECONDS
+        return self._api_post_once(endpoint_name,
+                                   *template_args,
+                                   data=data,
+                                   headers=headers,
+                                   params=params,
+                                   payload=payload,
+                                   raise_for_status=raise_for_status,
+                                   timeout=timeout)
+
+    @backoff.on_exception(backoff.constant,
+                          (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
+                          max_time=lambda: MOVE_POST_RETRY_MAX_TIME_SECONDS,
+                          interval=0.1,
+                          giveup=is_final,
+                          on_backoff=backoff_handler,
+                          backoff_log_level=logging.DEBUG,
+                          giveup_log_level=logging.DEBUG)
+    def api_post_move(self,
+                      game_id: str,
+                      move_uci: str,
+                      *,
+                      params: dict[str, str] | None = None) -> ChallengeType | TOKEN_TESTS_TYPE | None:
+        """Submit a move with a short retry budget so bullet clocks are not consumed by network stalls."""
+        return self._api_post_once("move",
+                                   game_id,
+                                   move_uci,
+                                   params=params,
+                                   timeout=MOVE_POST_TIMEOUT_SECONDS)
+
+    def _api_post_once(self,
+                       endpoint_name: str,
+                       *template_args: str,
+                       data: str | dict[str, str] | None = None,
+                       headers: dict[str, str] | None = None,
+                       params: dict[str, str] | None = None,
+                       payload: REQUESTS_PAYLOAD_TYPE | None = None,
+                       raise_for_status: bool = True,
+                       timeout: int = DEFAULT_POST_TIMEOUT_SECONDS) -> ChallengeType | TOKEN_TESTS_TYPE | None:
+        """Send one POST attempt to lichess.org."""
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
-        timeout = 10 if endpoint_name == "token_test" else 2
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=timeout)
 
         if endpoint_name == "challenge":
@@ -372,8 +415,8 @@ class Lichess:
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        self.api_post("move", game_id, str(move.move),
-                      params={"offeringDraw": str(move.draw_offered).lower()})
+        self.api_post_move(game_id, str(move.move),
+                           params={"offeringDraw": str(move.draw_offered).lower()})
 
     def accept_takeback(self, game_id: str, accept: bool) -> bool:
         """Answer an opponent's move takeback request."""

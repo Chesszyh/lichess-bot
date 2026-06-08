@@ -1,6 +1,37 @@
 """Tests for OAuth token validation fallbacks."""
 
+from collections import defaultdict
+
+import chess
+import chess.engine
+import pytest
+from requests.exceptions import ReadTimeout
+
 from lib import lichess
+from lib.timer import Timer
+
+
+class _TimeoutSession:
+    """Session that records POST timeouts and always times out."""
+
+    def __init__(self) -> None:
+        self.post_timeouts: list[int] = []
+
+    def post(self, url: str, *, data: object = None, headers: object = None,
+             params: object = None, json: object = None, timeout: int = 0) -> object:
+        del url, data, headers, params, json
+        self.post_timeouts.append(timeout)
+        raise ReadTimeout("move submit timeout")
+
+
+def make_lichess_with_session(session: object) -> lichess.Lichess:
+    """Create a Lichess object without token validation for API unit tests."""
+    li = lichess.Lichess.__new__(lichess.Lichess)
+    li.baseUrl = "https://lichess.org/"
+    li.session = session
+    li.logging_level = 20
+    li.rate_limit_timers = defaultdict(Timer)
+    return li
 
 
 def test_lichess_init__disables_system_proxy_inheritance(monkeypatch) -> None:
@@ -12,6 +43,37 @@ def test_lichess_init__disables_system_proxy_inheritance(monkeypatch) -> None:
 
     assert li.session.trust_env is False
     assert li.other_session.trust_env is False
+
+
+def test_make_move__uses_fast_move_post_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Move submission should use the dedicated fast retry budget."""
+    li = lichess.Lichess.__new__(lichess.Lichess)
+    calls: list[tuple[str, str, dict[str, str] | None]] = []
+
+    def api_post_move(game_id: str, move_uci: str, *, params: dict[str, str] | None = None) -> None:
+        calls.append((game_id, move_uci, params))
+
+    def api_post(*_: object, **__: object) -> None:
+        raise AssertionError("make_move should not use the generic POST retry budget")
+
+    monkeypatch.setattr(li, "api_post_move", api_post_move, raising=False)
+    monkeypatch.setattr(li, "api_post", api_post)
+
+    li.make_move("game-id", chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, draw_offered=True))
+
+    assert calls == [("game-id", "e2e4", {"offeringDraw": "true"})]
+
+
+def test_api_post_move__uses_short_timeout_and_retry_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Move POST retries should not consume a full bullet clock after read timeouts."""
+    session = _TimeoutSession()
+    li = make_lichess_with_session(session)
+    monkeypatch.setattr(lichess, "MOVE_POST_RETRY_MAX_TIME_SECONDS", 0)
+
+    with pytest.raises(ReadTimeout):
+        li.api_post_move("game-id", "e2e4", params={"offeringDraw": "false"})
+
+    assert session.post_timeouts == [lichess.MOVE_POST_TIMEOUT_SECONDS]
 
 
 def test_get_token_info__returns_direct_token_info(monkeypatch) -> None:
