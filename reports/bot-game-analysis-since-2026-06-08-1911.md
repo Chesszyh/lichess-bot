@@ -40,6 +40,10 @@
 
 - No rating-diff tags found.
 
+## Focused Score by Opening Context
+
+- No scored controls found.
+
 ## Worst Scoring Controls
 
 - No scored controls found.
@@ -75,6 +79,10 @@
 ## Lower-Rated Draw Prefixes
 
 - No lower-rated draw prefixes found.
+
+## Focused Lower-Rated Draw Contexts
+
+- No focused lower-rated draw contexts found.
 
 ## Lower-Rated Draw Contexts
 

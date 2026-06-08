@@ -90,16 +90,29 @@
 
 ## Focused Rating Impact by Opening Context
 
+- `Sicilian Defense: Najdorf Variation, Poisoned Pawn Variation | black | blitz | 120+2`: `-11` rating over `1` games
+- `Sicilian Defense: Smith-Morra Gambit Accepted, Scheveningen Formation | black | blitz | 120+2`: `-11` rating over `1` games
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-10` rating over `1` games
+- `Philidor Defense: Exchange Variation | white | blitz | 120+2`: `-10` rating over `1` games
+- `Caro-Kann Defense | black | bullet | 120+1`: `-9` rating over `1` games
 - `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
 - `Sicilian Defense: Modern Variations | black | bullet | 90+2`: `-7` rating over `4` games
 - `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: `-7` rating over `1` games
 - `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 60+2`: `-6` rating over `5` games
-- `Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation | white | bullet | 90+1`: `-5` rating over `3` games
-- `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 90+2`: `-5` rating over `3` games
-- `Indian Defense: Accelerated London System | black | bullet | 90+1`: `-5` rating over `1` games
-- `Queen's Pawn Game: London System | black | bullet | 90+1`: `-5` rating over `1` games
-- `Sicilian Defense: Modern Variations | black | bullet | 60+2`: `-5` rating over `1` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: `-6` rating over `1` games
+
+## Focused Score by Opening Context
+
+- `Caro-Kann Defense | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Carr Defense | white | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Indian Defense: Accelerated London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Philidor Defense: Exchange Variation | white | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
 ## Worst Scoring Controls
 
@@ -193,6 +206,19 @@
 - `3` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7`
 - `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6`
 
+## Focused Lower-Rated Draw Contexts
+
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+1`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Bd3 dxc4 | black | bullet | 90+2`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Be2 Bd6 | black | bullet | 120+1`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 | black | bullet | 90+1`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Bd3 dxc4 | black | bullet | 60+2`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5 | black | bullet | 60+2`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 g3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | bullet | 90+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+2`
+- `1` x `e4 c5 Nf3 d6 b4 cxb4 Bb5+ Bd7 Qe2 g6 d4 Bg7 | black | bullet | 120+1`
+- `1` x `e4 Nc6 Nf3 g6 d4 Bg7 c3 d6 h3 e5 dxe5 Nxe5 | black | bullet | 120+1`
+
 ## Lower-Rated Draw Contexts
 
 - `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5 | black | blitz | 180+2`
@@ -221,7 +247,10 @@
 
 ## Focused High-Clock Normal Loss Contexts
 
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 120+1`
 - `1` x `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`
+- `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
 - `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 60+1`
 - `1` x `Scotch Game: Mieses Variation | white | bullet | 60+1`
 

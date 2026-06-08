@@ -342,6 +342,36 @@ def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_pat
     assert "300+2" not in focused_section
 
 
+def test_render_markdown__shows_focused_score_by_opening_context(tmp_path: Path) -> None:
+    """Focused score rates should rank active-control opening contexts by game result."""
+    for index in range(2):
+        loss_headers = base_headers("1-0", "Sicilian Defense: Modern Variations", f"ModernBot{index}", "ilovecatgirl")
+        loss_headers["TimeControl"] = "60+2"
+        write_pgn(tmp_path, f"modern-active-loss-{index}.pgn", loss_headers, "1. e4 c5 1-0")
+    draw_headers = base_headers("1/2-1/2", "Sicilian Defense: Modern Variations", "DrawBot", "ilovecatgirl")
+    draw_headers["TimeControl"] = "60+2"
+    write_pgn(tmp_path, "modern-active-draw.pgn", draw_headers, "1. e4 c5 1/2-1/2")
+    abandoned_headers = base_headers("1-0", "Caro-Kann Defense", "SlowBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "300+2"
+    write_pgn(tmp_path, "abandoned-control-loss.pgn", abandoned_headers, "1. e4 c6 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", focus_time_controls={"60+2"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_score_by_opening_context == [
+        ("Sicilian Defense: Modern Variations | black | bullet | 60+2", 0, 1, 2, 3, 16.7),
+    ]
+    assert "Focused Score by Opening Context" in markdown
+    assert (
+        "`Sicilian Defense: Modern Variations | black | bullet | 60+2`: "
+        "W-D-L `0-1-2`, score `16.7%` over `3` games"
+    ) in markdown
+    focused_section = markdown.split("## Focused Score by Opening Context", maxsplit=1)[1].split(
+        "## Worst Scoring Controls",
+    )[0]
+    assert "300+2" not in focused_section
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")
@@ -443,3 +473,28 @@ def test_render_markdown__clusters_lower_rated_draw_contexts(tmp_path: Path) -> 
     assert summary.lower_rated_draw_contexts[0] == ("e4 e6 d4 d5 | white | bullet | 60+1", 2)
     assert "Lower-Rated Draw Contexts" in markdown
     assert "`2` x `e4 e6 d4 d5 | white | bullet | 60+1`" in markdown
+
+
+def test_render_markdown__shows_focused_lower_rated_draw_contexts(tmp_path: Path) -> None:
+    """Focused lower-rated draws should expose active-control draw leaks."""
+    current_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", "LowerBot")
+    current_headers["WhiteElo"] = "2940"
+    current_headers["BlackElo"] = "2800"
+    current_headers["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "current-lower-draw.pgn", current_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    abandoned_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "ilovecatgirl", "OldLowerBot")
+    abandoned_headers["WhiteElo"] = "2940"
+    abandoned_headers["BlackElo"] = "2700"
+    abandoned_headers["TimeControl"] = "300+2"
+    write_pgn(tmp_path, "abandoned-lower-draw.pgn", abandoned_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", max_prefix_plies=4, focus_time_controls={"60+1"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_lower_rated_draw_contexts == [("e4 e6 d4 d5 | white | bullet | 60+1", 1)]
+    assert "Focused Lower-Rated Draw Contexts" in markdown
+    assert "`1` x `e4 e6 d4 d5 | white | bullet | 60+1`" in markdown
+    focused_section = markdown.split("## Focused Lower-Rated Draw Contexts", maxsplit=1)[1].split(
+        "## Lower-Rated Draw Contexts",
+    )[0]
+    assert "300+2" not in focused_section

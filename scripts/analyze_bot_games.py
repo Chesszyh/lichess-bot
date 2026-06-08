@@ -56,6 +56,7 @@ class GameSummary:
     rating_impact_by_opening: list[tuple[str, int, int]]
     rating_impact_by_opening_context: list[tuple[str, int, int]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
+    focused_score_by_opening_context: list[tuple[str, int, int, int, int, float]]
     worst_scoring_controls: list[tuple[str, int, int, int, int, float]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
@@ -66,6 +67,7 @@ class GameSummary:
     lower_rated_draw_count: int
     lower_rated_draws_by_opening: list[tuple[str, int]]
     lower_rated_draw_prefixes: list[tuple[str, int]]
+    focused_lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
     high_clock_normal_losses: list[GameRecord]
@@ -299,6 +301,10 @@ def summarize_records(records_dir: Path,
         focus_records,
         lambda record: f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}",
     )
+    focused_score_by_opening_context = score_by_group(
+        focus_records,
+        lambda record: f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}",
+    )
     control_results: dict[str, Counter[str]] = {}
     for record in records:
         if result_score(record.bot_result) is None:
@@ -339,6 +345,11 @@ def summarize_records(records_dir: Path,
         for record in lower_rated_draws
         if record.move_prefix
     ).most_common()
+    focused_lower_rated_draw_contexts = Counter(
+        f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in lower_rated_draws
+        if record.move_prefix and focus_time_controls and record.time_control in focus_time_controls
+    ).most_common()
     lower_rated_draws.sort(key=lambda record: record.rating_gap or 0, reverse=True)
     recent_losses = sorted(
         losses,
@@ -377,6 +388,7 @@ def summarize_records(records_dir: Path,
         rating_impact_by_opening=rating_impact_by_opening,
         rating_impact_by_opening_context=rating_impact_by_opening_context,
         focused_rating_impact_by_opening_context=focused_rating_impact_by_opening_context,
+        focused_score_by_opening_context=focused_score_by_opening_context,
         worst_scoring_controls=worst_scoring_controls,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
@@ -387,6 +399,7 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_count=len(lower_rated_draws),
         lower_rated_draws_by_opening=lower_rated_draws_by_opening,
         lower_rated_draw_prefixes=lower_rated_draw_prefixes,
+        focused_lower_rated_draw_contexts=focused_lower_rated_draw_contexts,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
         high_clock_normal_losses=high_clock_normal_losses[:10],
@@ -410,6 +423,27 @@ def rating_impact_by_group(records: list[GameRecord],
         ((label, games, rating_diff) for label, (games, rating_diff) in totals.items()),
         key=lambda item: (item[2], -item[1], item[0]),
     )
+
+
+def score_by_group(records: list[GameRecord],
+                   label_for_record: Callable[[GameRecord], str]) -> list[tuple[str, int, int, int, int, float]]:
+    """Return W-D-L score rates grouped by a record label."""
+    grouped_results: dict[str, Counter[str]] = {}
+    for record in records:
+        if result_score(record.bot_result) is None:
+            continue
+        grouped_results.setdefault(label_for_record(record), Counter())[record.bot_result] += 1
+
+    scores = []
+    for label, result_counter in grouped_results.items():
+        wins = result_counter["win"]
+        draws = result_counter["draw"]
+        losses_count = result_counter["loss"]
+        total = wins + draws + losses_count
+        score_percent = round((wins + 0.5 * draws) * 100 / total, 1)
+        scores.append((label, wins, draws, losses_count, total, score_percent))
+
+    return sorted(scores, key=lambda item: (item[5], -item[4], item[0]))
 
 
 def game_link(record: GameRecord) -> str:
@@ -506,6 +540,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "Focused Rating Impact by Opening Context",
         summary.focused_rating_impact_by_opening_context,
     )
+    append_score_section(lines, "Focused Score by Opening Context", summary.focused_score_by_opening_context)
     append_score_section(lines, "Worst Scoring Controls", summary.worst_scoring_controls)
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")
@@ -543,6 +578,13 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "Lower-Rated Draw Prefixes",
         summary.lower_rated_draw_prefixes,
         empty_text="No lower-rated draw prefixes found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Focused Lower-Rated Draw Contexts",
+        summary.focused_lower_rated_draw_contexts,
+        empty_text="No focused lower-rated draw contexts found.",
         quote_item=True,
     )
     append_count_section(
