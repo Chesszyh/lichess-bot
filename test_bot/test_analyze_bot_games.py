@@ -104,6 +104,23 @@ def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
     assert "`1` x white" in markdown
 
 
+def test_render_markdown__shows_loss_termination_distribution(tmp_path: Path) -> None:
+    """Clock and network-adjacent losses should be visible apart from opening clusters."""
+    time_loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "abcd_engine")
+    time_loss_headers["Termination"] = "Time forfeit"
+    write_pgn(tmp_path, "time-loss.pgn", time_loss_headers, "1. d4 Nf6 0-1")
+    normal_loss_headers = base_headers("1-0", "Sicilian Defense", "StrongBot", "ilovecatgirl")
+    normal_loss_headers["Termination"] = "Normal"
+    write_pgn(tmp_path, "normal-loss.pgn", normal_loss_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.losses_by_termination == [("Normal", 1), ("Time forfeit", 1)]
+    assert "Loss Terminations" in markdown
+    assert "`1` x Time forfeit" in markdown
+
+
 def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     """The report should expose the total lower-rated draw count, not only the top examples."""
     for index in range(2):
