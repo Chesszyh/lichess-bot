@@ -286,9 +286,12 @@ class EngineWrapper:
         draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
-        if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:
-            if recent_scores_near_draw(draw_offer_moves, draw_score_range):
-                result.draw_offered = True
+        if (not draw_offered
+                and can_offer_draw
+                and len(self.scores) >= draw_offer_moves
+                and enough_pieces_captured
+                and recent_scores_near_draw(draw_offer_moves, draw_score_range)):
+            result.draw_offered = True
 
         accept_elite_draw = self.draw_or_resign.lookup("high_rated_accept_draw_enabled")
         if draw_offered and accept_elite_draw and game:
