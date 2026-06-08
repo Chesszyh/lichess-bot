@@ -27,6 +27,7 @@ Recorded in local config history:
 - `.config-history` commit `47a1379`: block `MEGA-NOOB-BOT` active controls.
 - `.config-history` commit `287090c`: increase short bullet matchmaking weights.
 - `.config-history` commit `f1051ef`: block `abcd_engine` active-control leak.
+- `.config-history` commit `6db5b41`: increase the shortest outgoing increment-bullet samples without changing outgoing cadence.
 
 Effective private config intent:
 
@@ -39,8 +40,9 @@ Effective private config intent:
 - Arena selection now uses the same `120` second base cap and avoids `+2/+3` arenas, keeping arena pairings aligned with
   the active `+1` evidence window.
 - Outgoing matchmaking can choose `60`, `90`, or `120` second base times, always with `1` second increment.
-- Outgoing matchmaking is still fully increment bullet. The active-control weights are now `60+1` at `3/18`, `90+1` at
-  `6/18`, and `120+1` at `9/18`, increasing short active-control sampling without reintroducing abandoned blitz controls.
+- Outgoing matchmaking is still fully increment bullet. The active-control weights are now `60+1` at `5/18`, `90+1` at
+  `7/18`, and `120+1` at `6/18`, increasing short active-control sampling without reintroducing abandoned blitz controls
+  or changing the Lichess challenge cadence.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - `MEGA-NOOB-BOT` is blocked for both incoming challenges and outgoing matchmaking after two active-control losses,
