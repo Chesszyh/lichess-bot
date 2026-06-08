@@ -2,10 +2,10 @@
 
 ## Scope
 
-- Games analyzed: `259`
+- Games analyzed: `260`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
-- Results: `{'draw': 120, 'loss': 20, 'unknown': 10, 'win': 109}`
+- Results: `{'draw': 121, 'loss': 20, 'unknown': 10, 'win': 109}`
 - Opening risk gate: FAILED (4 >= 3)
 - No local engine analysis was run.
 
@@ -24,14 +24,14 @@
 
 ## Results by Mode
 
-- `120` x rated draw
+- `121` x rated draw
 - `109` x rated win
 - `20` x rated loss
 - `10` x rated unknown
 
 ## Results by Speed
 
-- `120` x bullet draw
+- `121` x bullet draw
 - `109` x bullet win
 - `20` x bullet loss
 - `10` x bullet unknown
@@ -40,7 +40,7 @@
 
 - `52` x 60+1 draw
 - `50` x 60+1 win
-- `44` x 120+1 draw
+- `45` x 120+1 draw
 - `37` x 120+1 win
 - `24` x 90+1 draw
 - `22` x 90+1 win
@@ -51,17 +51,17 @@
 
 ## Rating Impact by Mode
 
-- `rated`: `+221` rating over `216` games
+- `rated`: `+221` rating over `217` games
 
 ## Rating Impact by Speed
 
-- `bullet`: `+221` rating over `216` games
+- `bullet`: `+221` rating over `217` games
 
 ## Rating Impact by Time Control
 
 - `90+1 black`: `+10` rating over `28` games
 - `90+1 white`: `+15` rating over `16` games
-- `120+1 white`: `+33` rating over `34` games
+- `120+1 white`: `+33` rating over `35` games
 - `60+1 black`: `+39` rating over `45` games
 - `60+1 white`: `+60` rating over `49` games
 - `120+1 black`: `+64` rating over `44` games
@@ -121,12 +121,12 @@
 ## Focused Rating Impact by Time Control
 
 - `90+1`: `+25` rating over `44` games
-- `120+1`: `+97` rating over `78` games
+- `120+1`: `+97` rating over `79` games
 - `60+1`: `+99` rating over `94` games
 
 ## Focused Score by Time Control
 
-- `120+1`: W-D-L `37-44-6`, score `67.8%` over `87` games
+- `120+1`: W-D-L `37-45-6`, score `67.6%` over `88` games
 - `60+1`: W-D-L `50-52-10`, score `67.9%` over `112` games
 - `90+1`: W-D-L `22-24-4`, score `68.0%` over `50` games
 
@@ -184,8 +184,8 @@
 
 ## Worst Scoring Controls
 
+- `120+1 white`: W-D-L `15-22-3`, score `65.0%` over `40` games
 - `60+1 black`: W-D-L `22-25-6`, score `65.1%` over `53` games
-- `120+1 white`: W-D-L `15-21-3`, score `65.4%` over `39` games
 - `90+1 black`: W-D-L `14-16-3`, score `66.7%` over `33` games
 - `120+1 black`: W-D-L `22-23-3`, score `69.8%` over `48` games
 - `60+1 white`: W-D-L `28-27-4`, score `70.3%` over `59` games

@@ -5,9 +5,11 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 
 ## Current State
 
-- Latest local PGN remains `game_records/CloudNetBot vs ilovecatgirl - X4YQN6x8.pgn` at 2026-06-08 20:20 CST.
-- The running bot is idle and, after a 20:56 CST process restart, scheduled its next outgoing challenge after 2026-06-08
-  21:11:46 CST.
+- Latest local PGN is `game_records/ilovecatgirl vs CupchessBot - WOIHrVov.pgn` at 2026-06-08 21:27 CST.
+- The running bot was safely restarted at 2026-06-08 21:31 CST after `/api/account/playing` returned `0` active games
+  and all game engine child processes from `WOIHrVov` had exited. One supervisor-managed bot process remains.
+- The restarted bot scheduled its next outgoing challenge after 2026-06-08 21:46:08 CST, preserving the configured
+  `15` minute outgoing cadence.
 - No local engine experiment was initiated for this review.
 - Outgoing active-control sampling is now `60+1:90+1:120+1 = 3:6:9`, up from `1:4:9`. `challenge_timeout`
   remains `15` minutes, so this changes control selection only, not active-challenge frequency.
@@ -17,14 +19,17 @@ Scope: rated bullet controls currently active in private config: `60+1`, `90+1`,
 ## Evidence
 
 - `reports/bot-game-analysis-active-controls-2026-06-08.md` now filters to the active rated controls only:
-  `259` games across `60+1`, `90+1`, and `120+1`.
-- The active-only historical pool is rating-positive: `+221` rating over `216` rated-diff games, with `109` wins,
-  `120` draws, `20` losses, and `10` unknown results.
+  `260` games across `60+1`, `90+1`, and `120+1`.
+- The active-only historical pool is rating-positive: `+221` rating over `217` rated-diff games, with `109` wins,
+  `121` draws, `20` losses, and `10` unknown results.
 - Exact active-control rating impact remains positive by side: `90+1 black` `+10`, `90+1 white` `+15`, `120+1 white`
   `+33`, `60+1 black` `+39`, `60+1 white` `+60`, and `120+1 black` `+64`.
 - `reports/bot-game-analysis-active-controls-since-2026-06-08-1936.md` isolates the post-19:36 CST active-control window: `2` rated `90+1` bullet games, net `-4`.
 - The post-19:36 CST window contains one high-clock normal loss to `MEGA-NOOB-BOT` and one rating-positive draw against `CloudNetBot`.
-- `reports/bot-game-analysis-active-controls-since-2026-06-08-2016.md` isolates the post-block window: `1` rated `90+1` bullet draw, net `+1`.
+- `reports/bot-game-analysis-active-controls-since-2026-06-08-2016.md` isolates the post-block window: `2` rated bullet
+  draws, net `+1`, with no losses and no lower-rated draw leaks.
+- `reports/bot-game-analysis-active-controls-since-2026-06-08-2120.md` isolates the post-cadence-fix runtime window:
+  one rated `120+1` draw against `CupchessBot`, net `+0`, no losses, and no clock leak.
 - `reports/active-control-loss-clusters-2026-06-08.md` separates stale April active-control losses from the three June 8
   active-control losses, avoiding a broad opening/config change from historical data.
 - The refreshed analyzer now ranks opponent impact across any filtered report, not only exact focused controls. In the
@@ -42,3 +47,5 @@ config, and the only post-block active-control game is rating-positive. Also blo
 mitigation for the June 8 `60+1` time-forfeit loss. Do not broaden controls or change openings from this sample.
 Do not add a new block for `ToromBot`, `MDBOT`, `duchessAI`, or `TakticproChess` yet: their active-control evidence is
 either stale, low-sample, or already mitigated by the current control envelope. Re-evaluate after fresh post-block games.
+The `CupchessBot` `120+1` draw was a normal threefold repetition with final eval `0.00`, `103` seconds left, and no
+negative rating impact, so it is not evidence for a new opening, time-management, or opponent block change.

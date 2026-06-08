@@ -22,7 +22,10 @@ hard minimum `60` second API wait.
   respect the configured timeout.
 - Incoming challenge declines are unchanged.
 
-## Deployment Note
+## Post-Deploy Evidence
 
-This code change does not affect the already-running process until the next safe restart. Do not restart during an active
-game; apply it only after confirming no active game or engine child process is running.
+- The bot was safely restarted only after `GET /api/account/playing` returned no active games.
+- After the restart, `WOIHrVov` finished as a rated `120+1` bullet draw against `CupchessBot` with rating diff `0`.
+- The next outgoing challenge was scheduled for 2026-06-08 21:42:28 CST, 15 minutes after the local game-done event.
+- A later clean startup with no active game scheduled the next outgoing challenge for 2026-06-08 21:46:08 CST, again
+  matching `matchmaking.challenge_timeout: 15`.
