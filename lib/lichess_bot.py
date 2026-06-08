@@ -46,6 +46,7 @@ from types import FrameType
 from dataclasses import dataclass
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
 RESOURCE_ACTIVE_GAMES_TYPE: TypeAlias = MutableSequence[str]
+FINISHED_GAMES_TYPE: TypeAlias = MutableSequence[str]
 POOL_TYPE: TypeAlias = Pool
 
 
@@ -54,6 +55,7 @@ class PlayGameArgsType(TypedDict, total=False):
 
     li: lichess.Lichess
     control_queue: CONTROL_QUEUE_TYPE
+    finished_game_ids: FINISHED_GAMES_TYPE
     user_profile: UserProfileType
     config: Configuration
     challenge_queue: MULTIPROCESSING_LIST_TYPE
@@ -318,6 +320,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
     manager = multiprocessing.Manager()
     challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()
     control_queue: CONTROL_QUEUE_TYPE = manager.Queue()
+    finished_game_ids: FINISHED_GAMES_TYPE = manager.list()
     control_stream_state = ControlStreamState(spawn_control_stream(control_queue, li),
                                               Timer(CONTROL_STREAM_STALL_TIMEOUT))
     control_stream_watchdog = multiprocessing.Process(target=do_control_stream_watchdog_tick,
@@ -359,6 +362,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
                          control_queue,
                          control_stream_state,
                          resource_active_games,
+                         finished_game_ids,
                          correspondence_queue,
                          logging_queue,
                          pgn_queue,
@@ -392,6 +396,18 @@ def log_proc_count(change: str, active_games: set[str]) -> None:
     logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
 
+def mark_game_finished(finished_game_ids: FINISHED_GAMES_TYPE, game_id: str) -> None:
+    """Record a gameFinish event seen by the account-level control stream."""
+    if game_id not in finished_game_ids:
+        finished_game_ids.append(game_id)
+
+
+def clear_finished_game(finished_game_ids: FINISHED_GAMES_TYPE, game_id: str) -> None:
+    """Clear stale finish state when a worker exits or a new game with the same id starts."""
+    with contextlib.suppress(ValueError):
+        finished_game_ids.remove(game_id)
+
+
 def lichess_bot_main(li: lichess.Lichess,
                      user_profile: UserProfileType,
                      config: Configuration,
@@ -399,6 +415,7 @@ def lichess_bot_main(li: lichess.Lichess,
                      control_queue: CONTROL_QUEUE_TYPE,
                      control_stream_state: ControlStreamState,
                      resource_active_games: RESOURCE_ACTIVE_GAMES_TYPE,
+                     finished_game_ids: FINISHED_GAMES_TYPE,
                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                      logging_queue: LOGGING_QUEUE_TYPE,
                      pgn_queue: PGN_QUEUE_TYPE,
@@ -440,8 +457,8 @@ def lichess_bot_main(li: lichess.Lichess,
     arena_manager = arena.ArenaManager(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
-    play_game_args = PlayGameArgsType(li=li, control_queue=control_queue, user_profile=user_profile,
-                                      config=config, challenge_queue=challenge_queue,
+    play_game_args = PlayGameArgsType(li=li, control_queue=control_queue, finished_game_ids=finished_game_ids,
+                                      user_profile=user_profile, config=config, challenge_queue=challenge_queue,
                                       correspondence_queue=correspondence_queue, logging_queue=logging_queue,
                                       pgn_queue=pgn_queue)
 
@@ -471,9 +488,12 @@ def lichess_bot_main(li: lichess.Lichess,
                 active_games.discard(event["game"]["id"])
                 started_games.discard(event["game"]["id"])
                 pending_games.discard(event["game"]["id"])
+                clear_finished_game(play_game_args["finished_game_ids"], event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
+            elif event["type"] == "gameFinish":
+                mark_game_finished(play_game_args["finished_game_ids"], event["game"]["id"])
             elif event["type"] == "challenge":
                 handle_challenge(event,
                                  li,
@@ -679,6 +699,7 @@ def start_game_thread(active_games: set[str], started_games: set[str], game_id: 
     """Start a game thread."""
     active_games.add(game_id)
     started_games.add(game_id)
+    clear_finished_game(play_game_args["finished_game_ids"], game_id)
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
 
@@ -780,6 +801,7 @@ def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MUL
 def play_game(li: lichess.Lichess,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,
+              finished_game_ids: FINISHED_GAMES_TYPE,
               user_profile: UserProfileType,
               config: Configuration,
               challenge_queue: MULTIPROCESSING_LIST_TYPE,
@@ -898,7 +920,8 @@ def play_game(li: lichess.Lichess,
                                              is_correspondence,
                                              correspondence_move_time,
                                              engine_cfg,
-                                             fake_think_time(config, board, game))
+                                             fake_think_time(config, board, game),
+                                             finished_game_ids)
                             time.sleep(to_seconds(delay))
                         elif is_game_over(game):
                             tell_user_game_result(game, board)

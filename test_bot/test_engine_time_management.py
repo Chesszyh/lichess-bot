@@ -394,6 +394,22 @@ def test_play_move__does_not_send_move_after_game_finishes_during_search() -> No
     assert lichess.resigns == 0
 
 
+def test_submit_move__does_not_send_move_after_control_stream_finish() -> None:
+    """A gameFinish seen by the account stream must suppress stale move POSTs."""
+    game = bullet_game()
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    lichess = MoveRecordingLichess()
+
+    wrapper.submit_move(chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None),
+                        chess.Board(),
+                        game,
+                        lichess,
+                        finished_game_ids=[game.id])
+
+    assert lichess.moves_made == []
+    assert lichess.resigns == 0
+
+
 def test_search__uses_endgame_engine_under_piece_threshold() -> None:
     """Configured endgames should be searched by the secondary engine."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

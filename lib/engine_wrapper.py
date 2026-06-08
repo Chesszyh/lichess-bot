@@ -14,7 +14,7 @@ import random
 import math
 import contextlib
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from lib import model, lichess
 from lib.config import Configuration, change_value_to_list
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds, to_msec
@@ -179,7 +179,8 @@ class EngineWrapper:
                   is_correspondence: bool,
                   correspondence_move_time: datetime.timedelta,
                   engine_cfg: Configuration,
-                  min_time: datetime.timedelta) -> None:
+                  min_time: datetime.timedelta,
+                  finished_game_ids: Collection[str] = frozenset()) -> None:
         """
         Play a move.
 
@@ -246,12 +247,16 @@ class EngineWrapper:
         if elapsed < min_time:
             time.sleep(to_seconds(min_time - elapsed))
 
-        self.submit_move(best_move, board, game, li)
+        self.submit_move(best_move, board, game, li, finished_game_ids)
 
-    def submit_move(self, best_move: MOVE, board: chess.Board, game: model.Game, li: lichess.Lichess) -> None:
+    def submit_move(self, best_move: MOVE, board: chess.Board, game: model.Game, li: lichess.Lichess,
+                    finished_game_ids: Collection[str] = frozenset()) -> None:
         """Submit an engine result to Lichess if the game is still active."""
         if game.state.get("status") != "started":
             logger.info(f"Skipping move submission because game {game.id} already finished.")
+            return
+        if game.id in finished_game_ids:
+            logger.info(f"Skipping move submission because control stream already finished game {game.id}.")
             return
 
         self.add_comment(best_move, board)

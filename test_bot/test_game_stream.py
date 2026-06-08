@@ -159,7 +159,7 @@ class _FakeEngine:
         return "123"
 
     def play_move(self, board, game, li, setup_timer, move_overhead, can_ponder, is_correspondence,
-                  correspondence_move_time, engine_cfg, min_time) -> None:
+                  correspondence_move_time, engine_cfg, min_time, finished_game_ids) -> None:
         move = chess.Move.from_uci(next(self._moves))
         self.played.append(move.uci())
         if self.fail_after_inactive_move:
@@ -212,6 +212,7 @@ def test_play_game__reconnects_after_midgame_stream_drop(monkeypatch, failure: E
             li=li,
             game_id=GAME_ID,
             control_queue=Queue(),
+            finished_game_ids=[],
             user_profile={"username": BOT_NAME},
             config=config,
             challenge_queue=[],
@@ -252,6 +253,7 @@ def test_play_game__does_not_reconnect_after_inactive_move_post_fails(monkeypatc
             li=li,
             game_id=GAME_ID,
             control_queue=Queue(),
+            finished_game_ids=[],
             user_profile={"username": BOT_NAME},
             config=config,
             challenge_queue=[],
@@ -291,6 +293,7 @@ def test_play_game__rechecks_activity_before_reconnecting_after_move_post_fails(
             li=li,
             game_id=GAME_ID,
             control_queue=Queue(),
+            finished_game_ids=[],
             user_profile={"username": BOT_NAME},
             config=config,
             challenge_queue=[],

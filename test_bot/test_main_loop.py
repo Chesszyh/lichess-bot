@@ -64,6 +64,21 @@ def test_start_game__starts_reserved_accepted_challenge(monkeypatch) -> None:
     assert started == ["reserved123"]
 
 
+def test_finished_game_tracking__marks_once_and_clears() -> None:
+    """The account stream finish marker should be idempotent and removable."""
+    finished_game_ids: list[str] = []
+
+    lichess_bot.mark_game_finished(finished_game_ids, "done123")
+    lichess_bot.mark_game_finished(finished_game_ids, "done123")
+
+    assert finished_game_ids == ["done123"]
+
+    lichess_bot.clear_finished_game(finished_game_ids, "done123")
+    lichess_bot.clear_finished_game(finished_game_ids, "done123")
+
+    assert finished_game_ids == []
+
+
 class FakeQueue:
     """Small queue stub for correspondence start tests."""
 
