@@ -24,6 +24,7 @@ class GameRecord:
     black: str
     result: str
     time_control: str
+    speed: str
     opening: str
     termination: str
     white_elo: int | None
@@ -45,6 +46,8 @@ class GameSummary:
     bot_name: str
     total_games: int
     result_counts: dict[str, int]
+    results_by_speed: list[tuple[str, int]]
+    results_by_time_control: list[tuple[str, int]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
     losses_by_termination: list[tuple[str, int]]
@@ -90,6 +93,34 @@ def time_control_base_seconds(time_control: str) -> int | None:
     """Return the base seconds from a PGN TimeControl tag."""
     base_seconds = time_control.split("+", maxsplit=1)[0]
     return parse_int(base_seconds)
+
+
+def time_control_parts(time_control: str) -> tuple[int, int] | None:
+    """Return base and increment seconds from a PGN TimeControl tag."""
+    base_seconds, separator, increment_seconds = time_control.partition("+")
+    if not separator:
+        return None
+    base = parse_int(base_seconds)
+    increment = parse_int(increment_seconds)
+    if base is None or increment is None:
+        return None
+    return base, increment
+
+
+def time_control_speed(time_control: str) -> str:
+    """Return the Lichess speed bucket for a standard clock time control."""
+    parts = time_control_parts(time_control)
+    if parts is None:
+        return "unknown"
+    base, increment = parts
+    game_duration = base + increment * 40
+    if game_duration < 179:
+        return "bullet"
+    if game_duration < 479:
+        return "blitz"
+    if game_duration < 1499:
+        return "rapid"
+    return "classical"
 
 
 def is_fast_time_control(time_control: str, max_base_seconds: int) -> bool:
@@ -153,6 +184,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
         black=black,
         result=headers.get("Result", "*"),
         time_control=headers.get("TimeControl", ""),
+        speed=time_control_speed(headers.get("TimeControl", "")),
         opening=headers.get("Opening", "Unknown"),
         termination=headers.get("Termination", ""),
         white_elo=white_elo,
@@ -188,6 +220,10 @@ def summarize_records(records_dir: Path,
         records.append(record)
 
     result_counts = Counter(record.bot_result for record in records)
+    results_by_speed = Counter(f"{record.speed} {record.bot_result}" for record in records).most_common()
+    results_by_time_control = Counter(
+        f"{record.time_control} {record.bot_result}" for record in records
+    ).most_common()
     losses = [record for record in records if record.bot_result == "loss"]
     losses_by_opening = Counter(record.opening for record in losses).most_common()
     losses_by_color = Counter(record.bot_color for record in losses).most_common()
@@ -213,6 +249,8 @@ def summarize_records(records_dir: Path,
         bot_name=bot_name,
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
+        results_by_speed=results_by_speed,
+        results_by_time_control=results_by_time_control,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
         losses_by_termination=losses_by_termination,
@@ -271,6 +309,13 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "- No local engine analysis was run.",
     ]
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
+    append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")
+    append_count_section(
+        lines,
+        "Results by Time Control",
+        summary.results_by_time_control,
+        empty_text="No games found.",
+    )
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")
     append_count_section(

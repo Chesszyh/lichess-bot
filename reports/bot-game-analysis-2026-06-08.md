@@ -20,6 +20,30 @@
 - `7` x Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
 - `7` x Sicilian Defense: Najdorf Variation
 
+## Results by Speed
+
+- `1128` x blitz draw
+- `386` x blitz loss
+- `269` x bullet draw
+- `242` x bullet win
+- `205` x blitz win
+- `79` x bullet loss
+- `31` x blitz unknown
+- `14` x bullet unknown
+
+## Results by Time Control
+
+- `197` x 180+2 draw
+- `161` x 240+2 draw
+- `143` x 300+2 draw
+- `113` x 300+3 draw
+- `103` x 180+3 draw
+- `100` x 240+3 draw
+- `96` x 180+0 loss
+- `90` x 180+1 draw
+- `58` x 180+0 draw
+- `57` x 180+2 loss
+
 ## Loss Colors
 
 - `330` x black

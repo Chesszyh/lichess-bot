@@ -141,6 +141,25 @@ def test_render_markdown__clusters_time_forfeit_losses_by_time_control_and_color
     assert "`2` x 180+0 white" in markdown
 
 
+def test_render_markdown__clusters_results_by_speed_and_time_control(tmp_path: Path) -> None:
+    """Bullet weighting needs a visible result split by speed and exact clock."""
+    for index in range(2):
+        loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", f"BulletBot{index}")
+        loss_headers["TimeControl"] = "60+1"
+        write_pgn(tmp_path, f"bullet-loss-{index}.pgn", loss_headers, "1. d4 Nf6 0-1")
+    win_headers = base_headers("1-0", "Sicilian Defense", "ilovecatgirl", "BlitzBot")
+    win_headers["TimeControl"] = "180+2"
+    write_pgn(tmp_path, "blitz-win.pgn", win_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.results_by_speed[0] == ("bullet loss", 2)
+    assert ("blitz win", 1) in summary.results_by_speed
+    assert "Results by Speed" in markdown
+    assert "`2` x 60+1 loss" in markdown
+
+
 def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     """The report should expose the total lower-rated draw count, not only the top examples."""
     for index in range(2):
