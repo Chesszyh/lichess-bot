@@ -235,6 +235,21 @@ Related commits:
 
 Operational note: after this change, a draw by repetition is still acceptable when every non-repeating alternative is materially worse. The desired next improvement is not to force bad endgame moves, but to avoid entering dead-equal structures too early.
 
+### Draw Offers: Avoid Locking In Below-Target Results
+
+Evidence game: `dzsQr4Rh`, a bullet draw by agreement as white against `CupchessBot`.
+
+The bot repeatedly evaluated the simplified endgame as `0.00` and then offered a draw. The opponent was rated above the bot, so the current lower-rated-draw protection did not block the offer. For a deployment trying to stabilize near 3080, this is still a weak practical outcome when the opponent is below that target band: the bot locks in no meaningful rating progress instead of continuing to test the opponent's conversion and clock handling.
+
+No code change was committed for this yet. The next focused change should be:
+
+- Add a normal draw-offer floor such as `draw_or_resign.offer_draw_min_rating`.
+- Set the live private Stockfish config to `offer_draw_min_rating: 3080`.
+- Keep elite incoming draw acceptance separate from bot-initiated normal equality draw offers.
+- Add regression coverage proving that a drawish position against an opponent below the floor does not set `draw_offered`, while the same position against an opponent at or above the floor still may offer a draw.
+
+Operational note: this should be implemented as a narrow draw-offer policy, not as a blanket refusal to accept every high-rated draw offer. The aim is to stop the bot from voluntarily ending playable equal games below the target rating band.
+
 ### Verification From This Pass
 
 Commands that passed:
@@ -271,5 +286,6 @@ Prioritize these directions before adding heavier local experiments:
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
 - Make repetition avoidance time-aware. When the opponent is very low on time, allow slightly more score loss to keep the game alive; when both sides have enough time, keep the current conservative threshold.
+- Add an opponent-rating floor for bot-initiated normal draw offers, then validate it against games like `dzsQr4Rh`.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.
 - Clean up `engine_wrapper.py` complexity and test fake-engine typing before larger strategy changes, so future regressions are easier to isolate.
