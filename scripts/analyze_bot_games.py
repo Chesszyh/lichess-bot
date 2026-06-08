@@ -89,7 +89,7 @@ class GameSummary:
     rating_impact_by_opening_context: list[tuple[str, int, int]]
     rating_impact_by_opponent: list[tuple[str, int, int]]
     score_by_opponent: list[tuple[str, int, int, int, int, float]]
-    opponent_leak_watchlist: list[tuple[str, int, int, int, int, int]]
+    opponent_leak_watchlist: list[tuple[str, int, int, int, int, int, datetime | None]]
     focused_rating_impact_by_time_control: list[tuple[str, int, int]]
     focused_score_by_time_control: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
@@ -746,21 +746,28 @@ def opponent_leak_watchlist_for_records(
     losses: list[GameRecord],
     lower_rated_draws: list[GameRecord],
     rating_negative_draws: list[GameRecord],
-) -> list[tuple[str, int, int, int, int, int]]:
+) -> list[tuple[str, int, int, int, int, int, datetime | None]]:
     """Return opponent-control clusters combining losses and costly draw leaks."""
     implicated_records = [*losses, *lower_rated_draws, *rating_negative_draws]
-    labels = {record.path: f"{record.opponent} | {record.speed} | {record.time_control}" for record in implicated_records}
+    labels = {
+        record.path: f"{record.opponent} | {record.speed} | {record.time_control}"
+        for record in implicated_records
+    }
     loss_counts = Counter(labels[record.path] for record in losses)
     lower_draw_counts = Counter(labels[record.path] for record in lower_rated_draws)
     negative_draw_counts = Counter(labels[record.path] for record in rating_negative_draws)
 
     rating_diffs: dict[str, int] = {}
+    latest_games: dict[str, datetime] = {}
     unique_records = {record.path: record for record in implicated_records}
     for path, record in unique_records.items():
-        if record.bot_rating_diff is None:
-            continue
         label = labels[path]
-        rating_diffs[label] = rating_diffs.get(label, 0) + record.bot_rating_diff
+        if record.bot_rating_diff is None:
+            rating_diffs.setdefault(label, 0)
+        else:
+            rating_diffs[label] = rating_diffs.get(label, 0) + record.bot_rating_diff
+        if record.utc_started is not None:
+            latest_games[label] = max(latest_games.get(label, record.utc_started), record.utc_started)
 
     watchlist = []
     for label in sorted(set(labels.values())):
@@ -776,6 +783,7 @@ def opponent_leak_watchlist_for_records(
                 negative_draws_count,
                 rating_diffs.get(label, 0),
                 risk_score,
+                latest_games.get(label),
             ),
         )
 
@@ -885,7 +893,7 @@ def append_rating_impact_section(lines: list[str], title: str, impacts: list[tup
 
 def append_opponent_leak_watchlist_section(
     lines: list[str],
-    watchlist: list[tuple[str, int, int, int, int, int]],
+    watchlist: list[tuple[str, int, int, int, int, int, datetime | None]],
 ) -> None:
     """Append the combined opponent risk watchlist."""
     lines.extend(["", "## Opponent Leak Watchlist", ""])
@@ -895,8 +903,16 @@ def append_opponent_leak_watchlist_section(
     lines.extend(
         f"- `{label}`: risk `{risk_score}`, losses `{losses_count}`, "
         f"lower-rated draws `{lower_draws_count}`, rating-negative draws `{negative_draws_count}`, "
-        f"rating `{rating_diff:+d}`"
-        for label, losses_count, lower_draws_count, negative_draws_count, rating_diff, risk_score in watchlist[:10]
+        f"rating `{rating_diff:+d}`, latest `{latest_game.isoformat() if latest_game else 'unknown'}`"
+        for (
+            label,
+            losses_count,
+            lower_draws_count,
+            negative_draws_count,
+            rating_diff,
+            risk_score,
+            latest_game,
+        ) in watchlist[:10]
     )
 
 

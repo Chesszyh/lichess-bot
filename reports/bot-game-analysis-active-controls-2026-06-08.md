@@ -11,16 +11,16 @@
 
 ## Opponent Leak Watchlist
 
-- `duchessAI | bullet | 60+1`: risk `10`, losses `0`, lower-rated draws `5`, rating-negative draws `5`, rating `-10`
-- `MDBOT | bullet | 60+1`: risk `9`, losses `3`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`
-- `ToromBot | bullet | 90+1`: risk `6`, losses `2`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`
-- `BorkaTower | bullet | 60+1`: risk `4`, losses `1`, lower-rated draws `1`, rating-negative draws `0`, rating `-3`
-- `Valhalla-Bot | bullet | 120+1`: risk `4`, losses `0`, lower-rated draws `2`, rating-negative draws `2`, rating `-2`
-- `abcd_engine | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`
-- `grail-bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`
-- `abhisun_bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-9`
-- `RockingSuperstars | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`
-- `DarkOnBot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`
+- `duchessAI | bullet | 60+1`: risk `10`, losses `0`, lower-rated draws `5`, rating-negative draws `5`, rating `-10`, latest `2026-04-29T09:36:44+00:00`
+- `MDBOT | bullet | 60+1`: risk `9`, losses `3`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`, latest `2026-04-25T21:41:39+00:00`
+- `ToromBot | bullet | 90+1`: risk `6`, losses `2`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-04-28T11:53:54+00:00`
+- `BorkaTower | bullet | 60+1`: risk `4`, losses `1`, lower-rated draws `1`, rating-negative draws `0`, rating `-3`, latest `2026-04-25T10:56:32+00:00`
+- `Valhalla-Bot | bullet | 120+1`: risk `4`, losses `0`, lower-rated draws `2`, rating-negative draws `2`, rating `-2`, latest `2026-04-17T06:48:24+00:00`
+- `abcd_engine | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-06-08T10:16:53+00:00`
+- `grail-bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-10`, latest `2026-04-25T11:21:16+00:00`
+- `abhisun_bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-9`, latest `2026-04-15T15:43:47+00:00`
+- `RockingSuperstars | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-8`, latest `2026-04-15T14:32:05+00:00`
+- `DarkOnBot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`, latest `2026-04-14T10:06:52+00:00`
 
 ## Loss Openings
 

@@ -590,17 +590,17 @@ def test_render_markdown__ranks_combined_opponent_leaks(tmp_path: Path) -> None:
     markdown = render_markdown(summary)
 
     assert summary.opponent_leak_watchlist == [
-        ("duchessAI | bullet | 60+1", 0, 2, 2, -4, 4),
-        ("MEGA-NOOB-BOT | bullet | 90+1", 1, 0, 0, -5, 3),
+        ("duchessAI | bullet | 60+1", 0, 2, 2, -4, 4, datetime(2026, 6, 8, 10, 0, tzinfo=UTC)),
+        ("MEGA-NOOB-BOT | bullet | 90+1", 1, 0, 0, -5, 3, datetime(2026, 6, 8, 10, 0, tzinfo=UTC)),
     ]
     assert "Opponent Leak Watchlist" in markdown
     duchess_line = (
         "`duchessAI | bullet | 60+1`: risk `4`, losses `0`, lower-rated draws `2`, "
-        "rating-negative draws `2`, rating `-4`"
+        "rating-negative draws `2`, rating `-4`, latest `2026-06-08T10:00:00+00:00`"
     )
     mega_line = (
         "`MEGA-NOOB-BOT | bullet | 90+1`: risk `3`, losses `1`, lower-rated draws `0`, "
-        "rating-negative draws `0`, rating `-5`"
+        "rating-negative draws `0`, rating `-5`, latest `2026-06-08T10:00:00+00:00`"
     )
     assert duchess_line in markdown
     assert mega_line in markdown
