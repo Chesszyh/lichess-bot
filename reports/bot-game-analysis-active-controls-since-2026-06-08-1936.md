@@ -3,6 +3,7 @@
 ## Scope
 
 - Games analyzed: `2`
+- Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T11:36:38+00:00`
 - Results: `{'draw': 1, 'loss': 1}`
@@ -49,6 +50,14 @@
 
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-5` rating over `1` games
 - `Queen's Pawn Game: London System | black | bullet`: `+1` rating over `1` games
+
+## Focused Rating Impact by Time Control
+
+- `90+1`: `-4` rating over `2` games
+
+## Focused Score by Time Control
+
+- `90+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
 
 ## Focused Rating Impact by Opening Context
 

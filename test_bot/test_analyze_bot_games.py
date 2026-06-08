@@ -146,6 +146,29 @@ def test_summarize_records__can_filter_to_rated_games(tmp_path: Path) -> None:
     assert "casual" not in markdown
 
 
+def test_summarize_records__can_filter_to_exact_time_controls(tmp_path: Path) -> None:
+    """Active-control reports should be able to exclude abandoned historical controls."""
+    active_headers = base_headers("1-0", "Active Opening", "ilovecatgirl", "ActiveBot")
+    active_headers["TimeControl"] = "90+1"
+    active_headers["WhiteRatingDiff"] = "+4"
+    write_pgn(tmp_path, "active-win.pgn", active_headers, "1. e4 c5 1-0")
+    abandoned_headers = base_headers("0-1", "Abandoned Opening", "ilovecatgirl", "OldBot")
+    abandoned_headers["TimeControl"] = "180+2"
+    abandoned_headers["WhiteRatingDiff"] = "-6"
+    write_pgn(tmp_path, "abandoned-loss.pgn", abandoned_headers, "1. d4 Nf6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", time_controls={"90+1"})
+    markdown = render_markdown(summary)
+
+    assert parse_args(["--time-controls", "90+1"]).time_controls == "90+1"
+    assert summary.total_games == 1
+    assert summary.time_controls == {"90+1"}
+    assert summary.results_by_time_control == [("90+1 win", 1)]
+    assert summary.rating_impact_by_time_control == [("90+1 white", 1, 4)]
+    assert "Time controls: `90+1`" in markdown
+    assert "180+2" not in markdown
+
+
 def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
     """Black-loss concentration should be visible in the lightweight report."""
     write_pgn(
@@ -555,6 +578,44 @@ def test_render_markdown__shows_focused_opponent_impact(tmp_path: Path) -> None:
     assert "`MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-2`, score `0.0%` over `2` games" in markdown
     focused_section = markdown.split("## Focused Rating Impact by Opponent", maxsplit=1)[1].split(
         "## Focused Score by Opponent",
+    )[0]
+    assert "300+2" not in focused_section
+
+
+def test_render_markdown__shows_focused_time_control_score_and_rating(tmp_path: Path) -> None:
+    """Active-control tuning should compare exact controls directly before changing weights."""
+    loss_headers = base_headers("1-0", "Ruy Lopez: Open", "LossBot", "ilovecatgirl")
+    loss_headers["TimeControl"] = "90+1"
+    loss_headers["WhiteRatingDiff"] = "+5"
+    loss_headers["BlackRatingDiff"] = "-5"
+    write_pgn(tmp_path, "ninety-loss.pgn", loss_headers, "1. e4 e5 1-0")
+    draw_headers = base_headers("1/2-1/2", "Queen's Pawn Game", "DrawBot", "ilovecatgirl")
+    draw_headers["TimeControl"] = "90+1"
+    draw_headers["WhiteRatingDiff"] = "-1"
+    draw_headers["BlackRatingDiff"] = "+1"
+    write_pgn(tmp_path, "ninety-draw.pgn", draw_headers, "1. d4 d5 1/2-1/2")
+    win_headers = base_headers("0-1", "Caro-Kann Defense", "WinBot", "ilovecatgirl")
+    win_headers["TimeControl"] = "120+1"
+    win_headers["WhiteRatingDiff"] = "-4"
+    win_headers["BlackRatingDiff"] = "+4"
+    write_pgn(tmp_path, "one-twenty-win.pgn", win_headers, "1. e4 c6 0-1")
+    abandoned_headers = base_headers("1-0", "Semi-Slav Defense", "OldBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "300+2"
+    abandoned_headers["WhiteRatingDiff"] = "+20"
+    abandoned_headers["BlackRatingDiff"] = "-20"
+    write_pgn(tmp_path, "abandoned-loss.pgn", abandoned_headers, "1. d4 d5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", focus_time_controls={"90+1", "120+1"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_rating_impact_by_time_control == [("90+1", 2, -4), ("120+1", 1, 4)]
+    assert summary.focused_score_by_time_control == [("90+1", 0, 1, 1, 2, 25.0), ("120+1", 1, 0, 0, 1, 100.0)]
+    assert "Focused Rating Impact by Time Control" in markdown
+    assert "`90+1`: `-4` rating over `2` games" in markdown
+    assert "Focused Score by Time Control" in markdown
+    assert "`90+1`: W-D-L `0-1-1`, score `25.0%` over `2` games" in markdown
+    focused_section = markdown.split("## Focused Rating Impact by Time Control", maxsplit=1)[1].split(
+        "## Focused Rating Impact by Opening Context",
     )[0]
     assert "300+2" not in focused_section
 

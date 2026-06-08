@@ -75,6 +75,7 @@ class GameSummary:
     bot_name: str
     since_utc: datetime | None
     modes: set[str]
+    time_controls: set[str]
     total_games: int
     result_counts: dict[str, int]
     results_by_mode: list[tuple[str, int]]
@@ -85,6 +86,8 @@ class GameSummary:
     rating_impact_by_time_control: list[tuple[str, int, int]]
     rating_impact_by_opening: list[tuple[str, int, int]]
     rating_impact_by_opening_context: list[tuple[str, int, int]]
+    focused_rating_impact_by_time_control: list[tuple[str, int, int]]
+    focused_score_by_time_control: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
     focused_score_by_opening_context: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_opponent: list[tuple[str, int, int]]
@@ -428,6 +431,7 @@ def summarize_records(records_dir: Path,
                       clock_rich_loss_base_fraction: float = 0.35,
                       eval_drop_recent_loss_limit: int = 50,
                       focus_time_controls: set[str] | None = None,
+                      time_controls: set[str] | None = None,
                       modes: set[str] | None = None,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
@@ -445,6 +449,8 @@ def summarize_records(records_dir: Path,
         if not is_fast_time_control(record.time_control, max_base_seconds):
             continue
         if since_utc is not None and (record.utc_started is None or record.utc_started < since_utc):
+            continue
+        if time_controls and record.time_control not in time_controls:
             continue
         if modes and record.mode not in modes:
             continue
@@ -468,6 +474,14 @@ def summarize_records(records_dir: Path,
         lambda record: f"{record.opening} | {record.bot_color} | {record.speed}",
     )
     focus_records = [record for record in records if focus_time_controls and record.time_control in focus_time_controls]
+    focused_rating_impact_by_time_control = rating_impact_by_group(
+        focus_records,
+        lambda record: record.time_control,
+    )
+    focused_score_by_time_control = score_by_group(
+        focus_records,
+        lambda record: record.time_control,
+    )
     focused_rating_impact_by_opening_context = rating_impact_by_group(
         focus_records,
         lambda record: f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}",
@@ -484,22 +498,7 @@ def summarize_records(records_dir: Path,
         focus_records,
         lambda record: f"{record.opponent} | {record.speed} | {record.time_control}",
     )
-    control_results: dict[str, Counter[str]] = {}
-    for record in records:
-        if result_score(record.bot_result) is None:
-            continue
-        control_results.setdefault(f"{record.time_control} {record.bot_color}", Counter())[record.bot_result] += 1
-    worst_scoring_controls = []
-    for control, result_counter in control_results.items():
-        wins = result_counter["win"]
-        draws = result_counter["draw"]
-        losses_count = result_counter["loss"]
-        total = wins + draws + losses_count
-        if total < control_min_games:
-            continue
-        score_percent = round((wins + 0.5 * draws) * 100 / total, 1)
-        worst_scoring_controls.append((control, wins, draws, losses_count, total, score_percent))
-    worst_scoring_controls.sort(key=lambda item: (item[5], -item[4], item[0]))
+    worst_scoring_controls = score_by_control(records, control_min_games)
     losses = [record for record in records if record.bot_result == "loss"]
     losses_by_opening = Counter(record.opening for record in losses).most_common()
     losses_by_color = Counter(record.bot_color for record in losses).most_common()
@@ -592,6 +591,7 @@ def summarize_records(records_dir: Path,
         bot_name=bot_name,
         since_utc=since_utc,
         modes=modes or set(),
+        time_controls=time_controls or set(),
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
         results_by_mode=results_by_mode,
@@ -602,6 +602,8 @@ def summarize_records(records_dir: Path,
         rating_impact_by_time_control=rating_impact_by_time_control,
         rating_impact_by_opening=rating_impact_by_opening,
         rating_impact_by_opening_context=rating_impact_by_opening_context,
+        focused_rating_impact_by_time_control=focused_rating_impact_by_time_control,
+        focused_score_by_time_control=focused_score_by_time_control,
         focused_rating_impact_by_opening_context=focused_rating_impact_by_opening_context,
         focused_score_by_opening_context=focused_score_by_opening_context,
         focused_rating_impact_by_opponent=focused_rating_impact_by_opponent,
@@ -667,6 +669,28 @@ def score_by_group(records: list[GameRecord],
         total = wins + draws + losses_count
         score_percent = round((wins + 0.5 * draws) * 100 / total, 1)
         scores.append((label, wins, draws, losses_count, total, score_percent))
+
+    return sorted(scores, key=lambda item: (item[5], -item[4], item[0]))
+
+
+def score_by_control(records: list[GameRecord], min_games: int) -> list[tuple[str, int, int, int, int, float]]:
+    """Return weakest score rates by exact clock and bot color."""
+    control_results: dict[str, Counter[str]] = {}
+    for record in records:
+        if result_score(record.bot_result) is None:
+            continue
+        control_results.setdefault(f"{record.time_control} {record.bot_color}", Counter())[record.bot_result] += 1
+
+    scores = []
+    for control, result_counter in control_results.items():
+        wins = result_counter["win"]
+        draws = result_counter["draw"]
+        losses_count = result_counter["loss"]
+        total = wins + draws + losses_count
+        if total < min_games:
+            continue
+        score_percent = round((wins + 0.5 * draws) * 100 / total, 1)
+        scores.append((control, wins, draws, losses_count, total, score_percent))
 
     return sorted(scores, key=lambda item: (item[5], -item[4], item[0]))
 
@@ -908,6 +932,9 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     if summary.modes:
         modes = ", ".join(sorted(summary.modes))
         lines.insert(5, f"- Modes: `{modes}`")
+    if summary.time_controls:
+        time_controls = ", ".join(sorted(summary.time_controls))
+        lines.insert(5, f"- Time controls: `{time_controls}`")
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Results by Mode", summary.results_by_mode, empty_text="No games found.")
     append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")
@@ -922,6 +949,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     append_rating_impact_section(lines, "Rating Impact by Time Control", summary.rating_impact_by_time_control)
     append_rating_impact_section(lines, "Rating Impact by Opening", summary.rating_impact_by_opening)
     append_rating_impact_section(lines, "Rating Impact by Opening Context", summary.rating_impact_by_opening_context)
+    append_rating_impact_section(lines, "Focused Rating Impact by Time Control", summary.focused_rating_impact_by_time_control)
+    append_score_section(lines, "Focused Score by Time Control", summary.focused_score_by_time_control)
     append_rating_impact_section(
         lines,
         "Focused Rating Impact by Opening Context",
@@ -1016,6 +1045,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="Minimum remaining bot clock for non-time loss examples.")
     parser.add_argument("--focus-time-controls",
                         help="Comma-separated exact time controls to highlight in focused sections.")
+    parser.add_argument("--time-controls", help="Comma-separated exact time controls to include.")
     parser.add_argument("--modes", help="Comma-separated game modes to include, e.g. rated or rated,casual.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
@@ -1034,6 +1064,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         control_min_games=args.control_min_games,
         high_clock_loss_threshold_seconds=args.high_clock_loss_threshold_seconds,
         focus_time_controls=parse_focus_time_controls(args.focus_time_controls),
+        time_controls=parse_focus_time_controls(args.time_controls),
         modes=parse_modes(args.modes),
         since_utc=parse_since_utc(args.since_utc),
     )

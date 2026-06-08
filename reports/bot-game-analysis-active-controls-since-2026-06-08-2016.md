@@ -3,6 +3,7 @@
 ## Scope
 
 - Games analyzed: `1`
+- Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T12:16:00+00:00`
 - Results: `{'draw': 1}`
@@ -44,6 +45,14 @@
 ## Rating Impact by Opening Context
 
 - `Queen's Pawn Game: London System | black | bullet`: `+1` rating over `1` games
+
+## Focused Rating Impact by Time Control
+
+- `90+1`: `+1` rating over `1` games
+
+## Focused Score by Time Control
+
+- `90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opening Context
 
