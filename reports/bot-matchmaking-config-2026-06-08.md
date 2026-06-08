@@ -17,6 +17,7 @@ Recorded in local config history:
 - `.config-history` commit `a0ff1a0`: prefer `3000+` outgoing bot opponents when available.
 - `.config-history` commit `67e850e`: bias outgoing bot matchmaking toward bullet time controls.
 - `.config-history` commit `40bbf63`: disable the fast bot opening book when playing Black.
+- `.config-history` commit `7d5cf39`: avoid weak long blitz bot controls.
 - `.config-history` commit `7dfb401`: increase outgoing bullet matchmaking sample weight.
 
 Effective private config intent:
@@ -32,6 +33,7 @@ Effective private config intent:
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
+- Incoming and outgoing bot games now cap base time at `120` seconds. Outgoing samples keep the same bullet-heavy shape but replace `180` and `240` second bases with additional `120` second samples.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
 ## Time Forfeit Evidence
@@ -45,6 +47,8 @@ The refreshed bot-game report now splits results by Lichess speed bucket and exa
 ## Exact Clock Evidence
 
 The exact-clock score table shows `180+0 black` at `24.7%` and `180+0 white` at `31.5%`, the two weakest scored controls with at least ten games. The contextual loss-prefix table also keeps the Najdorf English Attack separated by color, speed, and termination, showing that the largest non-clock opening leak remains Black blitz Najdorf positions. This reinforces the current no-`+0` private matchmaking policy and the Black fast-bot book disable while collecting cleaner increment-only samples.
+
+The current outgoing controls before this change still included `180` and `240` second bases. Historical score rates for currently issued controls were strong at `60+1`, `90+1`, and `120+1`, but weak for Black at `180+1` (`39.9%`), `180+2` (`37.6%`), `240+1` (`44.7%`), and `240+2` (`38.3%`). Replacing the long blitz bases with additional `120` second samples avoids spending bot-game quota on the weakest clock pool while preserving short blitz coverage.
 
 ## Why This Is Safer
 
