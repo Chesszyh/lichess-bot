@@ -457,7 +457,7 @@ repetition_guard.clock_advantage_override_opponent_ms=40000
 repetition_guard.clock_advantage_override_min_ms=30000
 draw_or_resign.offer_draw_min_rating=3080
 draw_or_resign.offer_draw_clock_advantage_enabled=True
-draw_or_resign.offer_draw_clock_advantage_opponent_ms=15000
+draw_or_resign.offer_draw_clock_advantage_opponent_ms=45000
 draw_or_resign.offer_draw_clock_advantage_min_ms=60000
 challenge.min_rating=3080
 matchmaking.opponent_min_rating=3080
@@ -508,6 +508,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Below-target draw offers | `dzsQr4Rh` draw by agreement vs below-target opponent | Add `draw_or_resign.offer_draw_min_rating`; live floor `3080` | `test_search__does_not_offer_normal_draw_below_target_rating_floor`; `test_search__offers_normal_draw_at_target_rating_floor` | Active |
 | Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
 | Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s; `xzMGfX4n` proactively offered draw with about 92s vs 10s | Decline or skip normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`; `test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging` | Active |
+| Target-band mid-clock draw offers | `ol8VgVif` vs `Cheszter` (3102) was drawn by agreement after the bot declined Black's draw offer around 105s vs 46.7s, then proactively offered draw around 108.7s vs 42.5s | Raise live `offer_draw_clock_advantage_opponent_ms` from `15000` to `45000` while keeping `offer_draw_clock_advantage_min_ms: 60000` | Live config load check; existing clock-advantage draw-offer regression covers the code path | Active, watch whether target-band equal endings convert more often |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard; `xUcwqJsv` repeated with about 64s vs 24s because the bot allowed the opponent an immediate threefold claim | Add clock-edge override for repetition guard rating gate; lower live clock-edge threshold to 30s; add opt-in one-ply opponent-claim filtering while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`; `test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge` | Active |
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
@@ -526,7 +527,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `matchmaking.try_overrides_on_empty_pool: true`
 - `matchmaking.legacy_unknown_cooldown_max_minutes: 360`
 - `draw_or_resign.offer_draw_min_rating: 3080`
-- `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 15000`
+- `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 45000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 60000`
 - `repetition_guard.max_score_loss_cp: 150`
 - `repetition_guard.avoid_opponent_immediate_claim: true`
