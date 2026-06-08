@@ -4,7 +4,7 @@
 
 - Games analyzed: `2353`
 - Results: `{'draw': 1397, 'loss': 464, 'unknown': 45, 'win': 447}`
-- Opening risk gate: FAILED (66 >= 3)
+- Opening risk gate: not enabled
 - No local engine analysis was run.
 
 ## Loss Openings
@@ -19,6 +19,11 @@
 - `7` x Queen's Pawn Game: London System
 - `7` x Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
 - `7` x Sicilian Defense: Najdorf Variation
+
+## Loss Colors
+
+- `330` x black
+- `134` x white
 
 ## Loss Prefixes
 
@@ -35,6 +40,7 @@
 
 ## Lower-Rated Draws
 
+- Lower-rated draws found: `247`
 - gap `576` vs `GNUPassant` (2330) in `ilovecatgirl vs GNUPassant - Cdt4VUHk.pgn`: Caro-Kann Defense: Advance Variation, Short Variation
 - gap `561` vs `PeachFruit` (2381) in `ilovecatgirl vs PeachFruit - aD2Tfss0.pgn`: Sicilian Defense: Taimanov Variation, Bastrikov Variation
 - gap `528` vs `PeachFruit` (2360) in `PeachFruit vs ilovecatgirl - nWc2j90j.pgn`: Catalan Opening: Open Defense, Modern Sharp Variation

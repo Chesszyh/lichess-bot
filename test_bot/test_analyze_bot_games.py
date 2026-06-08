@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from scripts.analyze_bot_games import render_markdown, summarize_records
+from scripts.analyze_bot_games import parse_args, render_markdown, summarize_records
 
 
 def write_pgn(records_dir: Path, name: str, headers: dict[str, str], moves: str) -> None:
@@ -64,5 +64,54 @@ def test_summarize_records__clusters_losses_and_lower_rated_draws(tmp_path: Path
     assert summary.losses_by_opening[0][1] == 1
     assert summary.loss_prefixes[0][0] == "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6"
     assert summary.lower_rated_draws[0].path.name == "lower-draw.pgn"
+    assert summary.lower_rated_draw_count == 1
     assert "Opening risk gate: FAILED" in markdown
     assert "Lower-Rated Draws" in markdown
+
+
+def test_summarize_records__default_draw_gap_includes_any_lower_rated_bot(tmp_path: Path) -> None:
+    """The default lower-rated draw threshold should not hide small rating-gap draw leaks."""
+    draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", "SlightlyLowerBot")
+    draw_headers["WhiteElo"] = "2940"
+    draw_headers["BlackElo"] = "2939"
+    write_pgn(tmp_path, "slightly-lower-draw.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+
+    assert parse_args([]).lower_rated_draw_gap == 1
+    assert summary.lower_rated_draws[0].path.name == "slightly-lower-draw.pgn"
+
+
+def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
+    """Black-loss concentration should be visible in the lightweight report."""
+    write_pgn(
+        tmp_path,
+        "black-loss.pgn",
+        base_headers("1-0", "Sicilian Defense: Najdorf Variation", "StrongBot", "ilovecatgirl"),
+        "1. e4 c5 2. Nf3 d6 1-0",
+    )
+    write_pgn(
+        tmp_path,
+        "white-loss.pgn",
+        base_headers("0-1", "Caro-Kann Defense", "ilovecatgirl", "StrongBot"),
+        "1. e4 c6 2. d4 d5 0-1",
+    )
+
+    markdown = render_markdown(summarize_records(tmp_path, "ilovecatgirl"))
+
+    assert "Loss Colors" in markdown
+    assert "`1` x black" in markdown
+    assert "`1` x white" in markdown
+
+
+def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
+    """The report should expose the total lower-rated draw count, not only the top examples."""
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", f"LowerBot{index}")
+        draw_headers["WhiteElo"] = "2940"
+        draw_headers["BlackElo"] = str(2939 - index)
+        write_pgn(tmp_path, f"lower-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+
+    markdown = render_markdown(summarize_records(tmp_path, "ilovecatgirl"))
+
+    assert "Lower-rated draws found: `2`" in markdown

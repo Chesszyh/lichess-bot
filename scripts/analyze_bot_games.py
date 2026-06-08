@@ -30,6 +30,7 @@ class GameRecord:
     black_elo: int | None
     white_title: str
     black_title: str
+    bot_color: str
     bot_result: str
     opponent: str
     opponent_rating: int | None
@@ -45,7 +46,9 @@ class GameSummary:
     total_games: int
     result_counts: dict[str, int]
     losses_by_opening: list[tuple[str, int]]
+    losses_by_color: list[tuple[str, int]]
     loss_prefixes: list[tuple[str, int]]
+    lower_rated_draw_count: int
     lower_rated_draws: list[GameRecord]
     recent_losses: list[GameRecord]
 
@@ -152,6 +155,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
         black_elo=black_elo,
         white_title=white_title,
         black_title=black_title,
+        bot_color="white" if bot_is_white else "black",
         bot_result=bot_result(headers.get("Result", "*"), bot_is_white),
         opponent=opponent,
         opponent_rating=opponent_rating,
@@ -164,7 +168,7 @@ def summarize_records(records_dir: Path,
                       bot_name: str,
                       *,
                       max_prefix_plies: int = 12,
-                      lower_rated_draw_gap: int = 200,
+                      lower_rated_draw_gap: int = 1,
                       max_base_seconds: int = 300,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
@@ -182,6 +186,7 @@ def summarize_records(records_dir: Path,
     result_counts = Counter(record.bot_result for record in records)
     losses = [record for record in records if record.bot_result == "loss"]
     losses_by_opening = Counter(record.opening for record in losses).most_common()
+    losses_by_color = Counter(record.bot_color for record in losses).most_common()
     loss_prefixes = Counter(record.move_prefix for record in losses if record.move_prefix).most_common()
     lower_rated_draws = [
         record for record in records
@@ -199,7 +204,9 @@ def summarize_records(records_dir: Path,
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
         losses_by_opening=losses_by_opening,
+        losses_by_color=losses_by_color,
         loss_prefixes=loss_prefixes,
+        lower_rated_draw_count=len(lower_rated_draws),
         lower_rated_draws=lower_rated_draws[:10],
         recent_losses=recent_losses,
     )
@@ -240,6 +247,12 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     else:
         lines.append("- No losses found.")
 
+    lines.extend(["", "## Loss Colors", ""])
+    if summary.losses_by_color:
+        lines.extend(f"- `{count}` x {color}" for color, count in summary.losses_by_color)
+    else:
+        lines.append("- No losses found.")
+
     lines.extend(["", "## Loss Prefixes", ""])
     if summary.loss_prefixes:
         lines.extend(f"- `{count}` x `{prefix}`" for prefix, count in summary.loss_prefixes[:10])
@@ -247,6 +260,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         lines.append("- No loss prefixes found.")
 
     lines.extend(["", "## Lower-Rated Draws", ""])
+    lines.append(f"- Lower-rated draws found: `{summary.lower_rated_draw_count}`")
     if summary.lower_rated_draws:
         lines.extend(
                 f"- gap `{record.rating_gap}` vs `{record.opponent}` "
@@ -274,7 +288,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--bot", default="ilovecatgirl", help="Bot username to analyze.")
     parser.add_argument("--since-utc", help="Only include games at or after this UTC ISO timestamp.")
     parser.add_argument("--max-prefix-plies", type=int, default=12, help="Move-prefix length for loss clustering.")
-    parser.add_argument("--lower-rated-draw-gap", type=int, default=200, help="Rating gap threshold for draw leaks.")
+    parser.add_argument("--lower-rated-draw-gap", type=int, default=1, help="Rating gap threshold for draw leaks.")
     parser.add_argument("--max-base-seconds", type=int, default=300, help="Maximum base time to include.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
