@@ -460,6 +460,53 @@ def test_choose_opponent__logs_rejection_reason_counts(
             "rating_above_max=1, rating_below_min=1, self=1") in caplog.messages
 
 
+def test_choose_opponent__logs_target_band_cooldown_blockers(
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture) -> None:
+    """Sparse target pools should show which target-band bots are waiting on cooldown."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "cooldownbot", "perfs": {"bullet": {"rating": 3090, "games": 50}}},
+        {"username": "legacybot", "perfs": {"bullet": {"rating": 3100, "games": 50}}},
+        {"username": "lowcooldownbot", "perfs": {"bullet": {"rating": 3079, "games": 50}}},
+    ]
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 3080,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3060}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.add_challenge_filter("cooldownbot", "", hours(1), "decline")
+    matchmaking.add_challenge_filter("legacybot", "", hours(2), "unknown")
+    matchmaking.add_challenge_filter("lowcooldownbot", "", hours(1), "decline")
+
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    caplog.set_level(logging.INFO)
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent is None
+    assert ("Target-band cooldown blockers: cooldownbot(rating=3090, source=decline, remaining=60m), "
+            "legacybot(rating=3100, source=unknown, remaining=120m)") in caplog.messages
+    assert "lowcooldownbot" not in caplog.text
+
+
 def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:
     """Bots refusing bot challenges should be treated as permanently blocked for matchmaking."""
     mock_li = Mock()

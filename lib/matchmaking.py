@@ -4,6 +4,7 @@ import logging
 import datetime
 import contextlib
 import json
+import math
 from lib import model
 from lib.timer import Timer, days, seconds, minutes, hours, years
 from pathlib import Path
@@ -24,6 +25,7 @@ DEFAULT_DECLINE_COOLDOWN = hours(6)
 DEFAULT_DECLINE_COOLDOWN_MINUTES = 360
 DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES = 720
 NO_CANDIDATE_DELAY = minutes(15)
+MAX_TARGET_BAND_COOLDOWN_BLOCKERS = 5
 
 
 class Matchmaking:
@@ -222,16 +224,35 @@ class Matchmaking:
                                   max_rating: int) -> list[UserProfileType]:
         """Filter online bots and log aggregate rejection reasons for sparse-pool diagnosis."""
         rejection_counts: defaultdict[str, int] = defaultdict(int)
+        cooldown_blockers: list[tuple[int, int, str, int, str]] = []
         suitable_bots: list[UserProfileType] = []
         for bot in online_bots:
             rejection_reason = self.matchmaking_candidate_rejection_reason(bot, game_type, min_rating, max_rating)
             if rejection_reason:
                 rejection_counts[rejection_reason] += 1
+                if rejection_reason.startswith("global_cooldown_"):
+                    perf = bot.get("perfs", {}).get(game_type, {})
+                    rating = perf.get("rating", 0)
+                    if min_rating <= rating <= max_rating:
+                        username = bot["username"]
+                        remaining = self.challenge_type_acceptable[(username, "")].time_until_expiration()
+                        remaining_minutes = math.ceil(remaining.total_seconds() / 60)
+                        source = self.challenge_filter_source(username, "")
+                        cooldown_blockers.append((remaining_minutes, -rating, username, rating, source))
             else:
                 suitable_bots.append(bot)
         if rejection_counts:
             rejection_summary = ", ".join(f"{reason}={rejection_counts[reason]}" for reason in sorted(rejection_counts))
             logger.info(f"Rejected online bot candidates: {rejection_summary}")
+        if cooldown_blockers:
+            sorted_blockers = sorted(cooldown_blockers)[:MAX_TARGET_BAND_COOLDOWN_BLOCKERS]
+            cooldown_summary = ", ".join(
+                f"{username}(rating={rating}, source={source}, remaining={remaining_minutes}m)"
+                for remaining_minutes, _, username, rating, source in sorted_blockers)
+            extra_count = len(cooldown_blockers) - len(sorted_blockers)
+            if extra_count:
+                cooldown_summary += f", +{extra_count} more"
+            logger.info(f"Target-band cooldown blockers: {cooldown_summary}")
         return suitable_bots
 
     def cool_down_no_candidates(self) -> None:

@@ -342,6 +342,7 @@ Changes made:
 - Log online-bot rejection counts by reason so sparse pools can be diagnosed from normal runtime logs.
 - Persist cooldown source metadata so new cooldowns are distinguishable as ordinary declines, unanswered outgoing challenges, configured blocklist entries, or other known sources.
 - Preserve legacy cooldowns with source `unknown` rather than guessing. The current state contains mixed old causes, so bulk-deleting `unknown` would be unsafe.
+- Log the first few target-band bots blocked by global cooldown, including username, rating, cooldown source, and remaining minutes. This makes the next 3080+ pool decision inspectable without dumping the full online bot list.
 - Add `matchmaking.outgoing_challenge_cooldown_minutes`.
   - Default: `720` minutes.
   - Live private Stockfish config: `180` minutes.
@@ -357,6 +358,7 @@ Related commits:
 - `bae1148 Shorten unanswered challenge cooldowns by config`
 - `3d849d5 Track matchmaking cooldown sources`
 - `176e5b1 Shorten ordinary decline cooldowns by config`
+- This pass: log target-band cooldown blockers.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -434,7 +436,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
 | Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s | Decline normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging` | Active |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard | Add clock-edge override for repetition guard rating gate while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge` | Active |
-| Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs and cooldown source metadata | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, and self-filtering | Active, watch volume |
+| Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
 
@@ -455,8 +457,8 @@ Current private live thresholds worth preserving unless new games disprove them:
 
 Prioritize these directions before adding heavier local experiments:
 
-- Use the new source-specific rejection logs to watch whether `global_cooldown_unknown` shrinks as legacy cooldowns expire and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
-- Add a one-off diagnostic command or runtime log that lists the top target-band blocked candidates with source and remaining cooldown time.
+- Use the new source-specific rejection logs and target-band blocker details to watch whether `global_cooldown_unknown` shrinks as legacy cooldowns expire and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
+- If the blocker log is still too terse, add an explicit one-off diagnostic command that dumps the full target-band blocked candidate set with source and remaining cooldown time.
 - If migrating legacy `unknown` cooldowns, classify only entries with strong historical-log evidence. Do not bulk-delete or relabel unknown state.
 - If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
