@@ -234,6 +234,12 @@
 - `4` x Sicilian Defense: Closed
 - `4` x Catalan Opening: Open Defense, Classical Line
 
+## Lower-Rated Draw Terminations
+
+- `231` x Normal
+- `9` x Insufficient material
+- `7` x Time forfeit
+
 ## Lower-Rated Draw Prefixes
 
 - `22` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
@@ -285,6 +291,12 @@
 - gap `429` vs `prokopakop` (2510) in `ilovecatgirl vs prokopakop - FfzXRpyW.pgn`: Ruy Lopez: Closed, Smyslov Defense
 - gap `427` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - SO2bW34b.pgn`: Sicilian Defense: Najdorf Variation
 - gap `419` vs `prokopakop` (2511) in `prokopakop vs ilovecatgirl - ZnbOQOsf.pgn`: Sicilian Defense: Najdorf Variation
+
+## Rating-Negative Draw Terminations
+
+- `145` x Normal
+- `6` x Time forfeit
+- `4` x Insufficient material
 
 ## Focused Rating-Negative Draw Contexts
 

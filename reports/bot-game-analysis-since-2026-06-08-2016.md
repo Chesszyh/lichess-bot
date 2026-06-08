@@ -92,6 +92,10 @@
 
 - No lower-rated draw opening clusters found.
 
+## Lower-Rated Draw Terminations
+
+- No lower-rated draw terminations found.
+
 ## Lower-Rated Draw Prefixes
 
 - No lower-rated draw prefixes found.
@@ -107,6 +111,10 @@
 ## Largest Lower-Rated Draw Gaps
 
 - No lower-rated draw leaks found at the configured threshold.
+
+## Rating-Negative Draw Terminations
+
+- No rating-negative draw terminations found.
 
 ## Focused Rating-Negative Draw Contexts
 

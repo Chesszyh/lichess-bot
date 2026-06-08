@@ -640,6 +640,28 @@ def test_render_markdown__clusters_lower_rated_draw_contexts(tmp_path: Path) -> 
     assert "`2` x `e4 e6 d4 d5 | white | bullet | 60+1`" in markdown
 
 
+def test_render_markdown__clusters_lower_rated_draw_terminations(tmp_path: Path) -> None:
+    """Lower-rated draw leaks should show whether they came from agreement or clock-adjacent outcomes."""
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", f"LowerBot{index}")
+        draw_headers["WhiteElo"] = "2940"
+        draw_headers["BlackElo"] = str(2939 - index)
+        draw_headers["Termination"] = "Normal"
+        write_pgn(tmp_path, f"normal-lower-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    clock_draw_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "ilovecatgirl", "ClockLowerBot")
+    clock_draw_headers["WhiteElo"] = "2940"
+    clock_draw_headers["BlackElo"] = "2800"
+    clock_draw_headers["Termination"] = "Time forfeit"
+    write_pgn(tmp_path, "clock-lower-draw.pgn", clock_draw_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.lower_rated_draws_by_termination == [("Normal", 2), ("Time forfeit", 1)]
+    assert "Lower-Rated Draw Terminations" in markdown
+    assert "`2` x Normal" in markdown
+
+
 def test_render_markdown__shows_focused_lower_rated_draw_contexts(tmp_path: Path) -> None:
     """Focused lower-rated draws should expose active-control draw leaks."""
     current_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", "LowerBot")
@@ -663,3 +685,22 @@ def test_render_markdown__shows_focused_lower_rated_draw_contexts(tmp_path: Path
         "## Lower-Rated Draw Contexts",
     )[0]
     assert "300+2" not in focused_section
+
+
+def test_render_markdown__clusters_rating_negative_draw_terminations(tmp_path: Path) -> None:
+    """Rating-negative draws should show the terminal cause separately from opening context."""
+    normal_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", "LowerBot")
+    normal_headers["WhiteRatingDiff"] = "-4"
+    normal_headers["Termination"] = "Normal"
+    write_pgn(tmp_path, "normal-negative-draw.pgn", normal_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    time_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "ilovecatgirl", "ClockBot")
+    time_headers["WhiteRatingDiff"] = "-2"
+    time_headers["Termination"] = "Time forfeit"
+    write_pgn(tmp_path, "time-negative-draw.pgn", time_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.rating_negative_draws_by_termination == [("Normal", 1), ("Time forfeit", 1)]
+    assert "Rating-Negative Draw Terminations" in markdown
+    assert "`1` x Time forfeit" in markdown
