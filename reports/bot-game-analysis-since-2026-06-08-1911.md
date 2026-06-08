@@ -36,6 +36,10 @@
 
 - No rating-diff tags found.
 
+## Focused Rating Impact by Opening Context
+
+- No rating-diff tags found.
+
 ## Worst Scoring Controls
 
 - No scored controls found.
