@@ -6,9 +6,9 @@ This document summarizes the issues found while operating this fork and the impr
 
 Current optimization target: keep the Mac mini 10c/16G bot improving toward stable `3080` bullet and blitz ratings, using Lc0 as the main engine and Stockfish as an optional helper. Changes in this round prioritize public bot-vs-bot evidence. Avoid heavy local engine experiments while the bot is running, and never restart the process during an active game.
 
-Current public ratings at the end of this round:
+Current public ratings observed after the first post-clock-pressure game:
 
-- Bullet: `3024`
+- Bullet: `3026`
 - Blitz: `2946`
 
 ### Evidence Used
@@ -70,6 +70,14 @@ Current challenge block list:
 - `MEGA-NOOB-BOT`
 - `abcd_engine`
 - `Fischer_Bot`
+- `duchessAI`
+- `MDBOT`
+- `ToromBot`
+- `BorkaTower`
+- `Valhalla-Bot`
+- `grail-bot`
+- `abhisun_bot`
+- `RockingSuperstars`
 
 Current matchmaking block list also includes:
 
@@ -79,6 +87,14 @@ Current matchmaking block list also includes:
 - `MEGA-NOOB-BOT`
 - `abcd_engine`
 - `Fischer_Bot`
+- `duchessAI`
+- `MDBOT`
+- `ToromBot`
+- `BorkaTower`
+- `Valhalla-Bot`
+- `grail-bot`
+- `abhisun_bot`
+- `RockingSuperstars`
 
 ### Opponent Blocking Decisions
 
@@ -87,14 +103,13 @@ Blocking should be conservative and evidence-driven. In this round:
 - `MEGA-NOOB-BOT` remained blocked after active-control losses.
 - `abcd_engine` was blocked after an active-control leak.
 - `Fischer_Bot` was blocked after a fresh `120+1` bullet loss where the bot had a large remaining-clock advantage but still lost normally.
+- The remaining historical active-control leak clusters were later blocked as a conservative rating-protection step:
+  `duchessAI`, `MDBOT`, `ToromBot`, `BorkaTower`, `Valhalla-Bot`, `grail-bot`, `abhisun_bot`, and
+  `RockingSuperstars`.
 
-Watch, but do not block without fresher evidence:
+Relevant follow-up report:
 
-- `duchessAI`: repeated lower-rated and rating-negative draws.
-- `MDBOT`: repeated historical `60+1` losses.
-- `ToromBot`: historical `90+1` losses and clock-pressure misses.
-- `Valhalla-Bot`: lower-rated/rating-negative draw risk.
-- `grail-bot`, `abhisun_bot`, `RockingSuperstars`: historical rating-negative loss signals.
+- `reports/block-active-control-leak-opponents-2026-06-08.md`
 
 ### Bullet Time-Use Changes
 
@@ -177,7 +192,13 @@ Healthy restart evidence:
   - `Welcome ilovecatgirl!`
   - `You're now connected to https://lichess.org/ and awaiting challenges.`
 
-No clock-pressure PGN had landed yet at the time this note was written. The next evidence to inspect is whether logs contain:
+The first post-clock-pressure active-control PGN was `game_records/ilovecatgirl vs abdcebot - Zd5yy2Mj.pgn`.
+It was a rated `90+1` bullet draw against a `3144` opponent and gained `+2` rating. This was not a
+clock-pressure trigger case because the opponent remained clock-safe; the bot instead became the low-clock side in a drawn endgame.
+The game is useful positive evidence for the current opponent-selection policy, but not yet evidence that the new
+clock-pressure rule has fired.
+
+The next evidence to inspect is whether logs contain:
 
 ```text
 Using exact clock-pressure movetime
@@ -191,13 +212,13 @@ and whether the corresponding PGNs reduce the "bot kept a large time reserve whi
    - If `6000ms` causes self-inflicted time pressure, reduce it to `4000-5000ms`.
    - If tactical misses continue while the bot remains clock-rich, increase it toward `7000-8000ms`.
 
-2. Reduce lower-rated draw leakage.
-   - Focus first on `duchessAI` and `Valhalla-Bot`.
-   - Consider blocking repeat offenders or changing draw/position-simplification behavior against lower-rated bots.
+2. Monitor whether the expanded historical leak block list improves realized rating.
+   - The worst historical lower-rated draw and loss clusters are now blocked.
+   - If the pool becomes too sparse, adjust rating thresholds or challenge cadence carefully rather than unblocking leak opponents.
 
-3. Decide whether to block `MDBOT` or `ToromBot`.
-   - Historical risk is high.
-   - Prefer fresh active-control evidence before adding permanent blocks.
+3. Reduce lower-rated draw leakage in remaining eligible opponents.
+   - Watch for new lower-rated and rating-negative draws outside the current block list.
+   - Consider changing draw/position-simplification behavior only after fresh post-block evidence.
 
 4. Tune opening policy by bot-vs-bot loss context.
    - Reduce or avoid weak bullet branches in Nimzo-Indian Classical structures, black London systems, Semi-Slav Anti-Moscow, and poor Caro-Kann contexts.
