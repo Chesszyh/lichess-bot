@@ -286,7 +286,13 @@ class EngineWrapper:
         draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
+        lower_rated_bot = bool(game
+                               and game.opponent.is_bot
+                               and game.me.rating is not None
+                               and game.opponent.rating is not None
+                               and game.opponent.rating < game.me.rating)
         if (not draw_offered
+                and not lower_rated_bot
                 and can_offer_draw
                 and len(self.scores) >= draw_offer_moves
                 and enough_pieces_captured

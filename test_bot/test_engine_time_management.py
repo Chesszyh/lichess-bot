@@ -404,6 +404,40 @@ def test_search__does_not_accept_incoming_draw_via_generic_offer_rule() -> None:
     assert not result.draw_offered
 
 
+def test_search__does_not_offer_generic_draw_to_lower_rated_bot() -> None:
+    """The proactive draw rule should not give lower-rated bots easy draw exits."""
+    wrapper = EngineWrapper({}, generic_draw_offer_cfg())
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(opponent_rating=2700),
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
+
+
+def test_search__can_offer_generic_draw_to_higher_rated_bot() -> None:
+    """The proactive draw rule may still settle stable drawn games against stronger bots."""
+    wrapper = EngineWrapper({}, generic_draw_offer_cfg())
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=high_rated_blitz_game(opponent_rating=3060),
+                            engine_cfg=Configuration({}))
+
+    assert result.draw_offered
+
+
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:
     """Queenless technical positions can be handed to the secondary engine before low piece count."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())
