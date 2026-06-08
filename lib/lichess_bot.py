@@ -850,7 +850,6 @@ def play_game(li: lichess.Lichess,
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
             while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
-                move_attempted = False
                 try:
                     if game_stream is None:
                         response, lines, reconnected_state = open_game_stream()
@@ -871,7 +870,6 @@ def play_game(li: lichess.Lichess,
                             say_hello(conversation, hello, hello_spectators, board)
                             setup_timer = Timer()
                             print_move_number(board)
-                            move_attempted = True
                             engine.play_move(board,
                                              game,
                                              li,
@@ -904,7 +902,7 @@ def play_game(li: lichess.Lichess,
                         stay_in_game = False
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         StopIteration) as e:
-                    stream_still_needed = move_attempted or game_is_active(li, game.id)
+                    stream_still_needed = game_is_active(li, game.id)
                     stay_in_game = stream_still_needed
                     close_game_stream(response)
                     response = None

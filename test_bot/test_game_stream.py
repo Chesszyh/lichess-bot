@@ -7,7 +7,7 @@ import chess
 import chess.engine
 import pytest
 import yaml
-from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError
 
 from lib import config as config_lib
 from lib import lichess_bot
@@ -105,6 +105,7 @@ class _FakeLichess:
         self.moves_made: list[str] = []
         self.messages: list[tuple[str, str, str]] = []
         self.active = True
+        self.active_checks: list[bool] = []
         self.baseUrl = "https://lichess.org/"
 
     def get_game_stream(self, game_id: str) -> _FakeResponse:
@@ -124,6 +125,8 @@ class _FakeLichess:
         return False
 
     def get_ongoing_games(self) -> list[dict[str, str]]:
+        if self.active_checks:
+            self.active = self.active_checks.pop(0)
         return [{"gameId": GAME_ID}] if self.active else []
 
     def get_game_pgn(self, game_id: str) -> str:
@@ -137,10 +140,11 @@ class _FakeLichess:
 
 
 class _FakeEngine:
-    def __init__(self) -> None:
+    def __init__(self, fail_after_inactive_move: bool = False) -> None:
         self.played: list[str] = []
         self.result_sent = False
         self._moves = iter(["e7e5", "b8c6"])
+        self.fail_after_inactive_move = fail_after_inactive_move
 
     def __enter__(self) -> "_FakeEngine":
         return self
@@ -158,6 +162,9 @@ class _FakeEngine:
                   correspondence_move_time, engine_cfg, min_time) -> None:
         move = chess.Move.from_uci(next(self._moves))
         self.played.append(move.uci())
+        if self.fail_after_inactive_move:
+            li.active = False
+            raise HTTPError("game already finished")
         li.make_move(game.id, chess.engine.PlayResult(move, None))
 
     def send_game_result(self, game, board) -> None:
@@ -219,3 +226,80 @@ def test_play_game__reconnects_after_midgame_stream_drop(monkeypatch, failure: E
     assert li.moves_made == ["e7e5", "b8c6"]
     assert engine.played == ["e7e5", "b8c6"]
     assert engine.result_sent is True
+
+
+def test_play_game__does_not_reconnect_after_inactive_move_post_fails(monkeypatch) -> None:
+    """A move POST failure after game finish should not be treated as a stream drop."""
+    config = _config()
+    engine = _FakeEngine(fail_after_inactive_move=True)
+    li = _FakeLichess([])
+    li.responses = [
+        _FakeResponse(li, [_game_full(""), _game_state("e2e4")]),
+        _FakeResponse(li, [_game_full("e2e4")]),
+    ]
+
+    monkeypatch.setattr(lichess_bot, "thread_logging_configurer", lambda _: None)
+    monkeypatch.setattr(lichess_bot.time, "sleep", lambda _: None)
+    monkeypatch.setattr(lichess_bot.engine_wrapper, "create_engine", lambda cfg, game=None: engine)
+
+    state = (lichess_bot.stop.terminated, lichess_bot.stop.force_quit, lichess_bot.stop.restart)
+    lichess_bot.stop.terminated = False
+    lichess_bot.stop.force_quit = False
+    lichess_bot.stop.restart = False
+
+    try:
+        lichess_bot.play_game.__wrapped__(
+            li=li,
+            game_id=GAME_ID,
+            control_queue=Queue(),
+            user_profile={"username": BOT_NAME},
+            config=config,
+            challenge_queue=[],
+            correspondence_queue=Queue(),
+            logging_queue=Queue(),
+            pgn_queue=Queue(),
+        )
+    finally:
+        lichess_bot.stop.terminated, lichess_bot.stop.force_quit, lichess_bot.stop.restart = state
+
+    assert li.stream_calls == 1
+    assert engine.played == ["e7e5"]
+
+
+def test_play_game__rechecks_activity_before_reconnecting_after_move_post_fails(monkeypatch) -> None:
+    """A stale move POST can race with gameFinish before account/playing has caught up."""
+    config = _config()
+    engine = _FakeEngine(fail_after_inactive_move=True)
+    li = _FakeLichess([])
+    li.active_checks = [True, False]
+    li.responses = [
+        _FakeResponse(li, [_game_full(""), _game_state("e2e4")]),
+        _FakeResponse(li, [_game_full("e2e4")]),
+    ]
+
+    monkeypatch.setattr(lichess_bot, "thread_logging_configurer", lambda _: None)
+    monkeypatch.setattr(lichess_bot.time, "sleep", lambda _: None)
+    monkeypatch.setattr(lichess_bot.engine_wrapper, "create_engine", lambda cfg, game=None: engine)
+
+    state = (lichess_bot.stop.terminated, lichess_bot.stop.force_quit, lichess_bot.stop.restart)
+    lichess_bot.stop.terminated = False
+    lichess_bot.stop.force_quit = False
+    lichess_bot.stop.restart = False
+
+    try:
+        lichess_bot.play_game.__wrapped__(
+            li=li,
+            game_id=GAME_ID,
+            control_queue=Queue(),
+            user_profile={"username": BOT_NAME},
+            config=config,
+            challenge_queue=[],
+            correspondence_queue=Queue(),
+            logging_queue=Queue(),
+            pgn_queue=Queue(),
+        )
+    finally:
+        lichess_bot.stop.terminated, lichess_bot.stop.force_quit, lichess_bot.stop.restart = state
+
+    assert li.stream_calls == 1
+    assert engine.played == ["e7e5"]
