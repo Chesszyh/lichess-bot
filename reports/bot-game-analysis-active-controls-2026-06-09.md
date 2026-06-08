@@ -3,6 +3,7 @@
 ## Scope
 
 - Games analyzed: `264`
+- Speeds: `bullet`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
 - Results: `{'draw': 124, 'loss': 21, 'unknown': 10, 'win': 109}`
