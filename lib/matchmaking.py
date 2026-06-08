@@ -23,6 +23,7 @@ PLAIN_RATE_LIMIT_TARGET_COOLDOWN = days(1)
 DEFAULT_DECLINE_COOLDOWN = hours(6)
 OUTGOING_CHALLENGE_COOLDOWN = hours(12)
 NO_CANDIDATE_DELAY = minutes(15)
+MAX_OPPONENT_RATE_LIMIT_RETRIES = 3
 
 
 class Matchmaking:
@@ -41,6 +42,7 @@ class Matchmaking:
         self.rate_limit_timer = Timer()
         self.no_candidate_timer = Timer()
         self.plain_rate_limit_failures = 0
+        self.retryable_challenge_error = False
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
@@ -99,6 +101,7 @@ class Matchmaking:
             return ""
 
         try:
+            self.retryable_challenge_error = False
             self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
             challenge_id = response.get("id", "")
@@ -123,12 +126,14 @@ class Matchmaking:
     def handle_challenge_error_response(self, response: ChallengeType, username: str) -> None:
         """If a challenge fails, print the error and adjust the challenge requirements in response."""
         logger.error(response)
+        self.retryable_challenge_error = False
         self.cool_down_outgoing_challenge_cadence()
         if response.get("bot_is_rate_limited"):
             timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
             self.rate_limit_timer = Timer(timeout)
         elif response.get("opponent_is_rate_limited"):
             self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
+            self.retryable_challenge_error = True
         elif self.is_plain_rate_limit_response(response):
             delay = self.next_plain_rate_limit_delay()
             self.rate_limit_timer = Timer(delay)
@@ -299,17 +304,23 @@ class Matchmaking:
 
         logger.info("Challenging a random bot")
         self.update_user_profile()
-        bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
-        if not bot_username:
-            logger.info("No challenge will be created.")
-            self.challenge_id = ""
-            self.rate_limit_timer = Timer(seconds(60))
-            return
+        for _attempt in range(MAX_OPPONENT_RATE_LIMIT_RETRIES):
+            bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
+            if not bot_username:
+                logger.info("No challenge will be created.")
+                self.challenge_id = ""
+                self.rate_limit_timer = Timer(seconds(60))
+                return
 
-        logger.info(f"Will challenge {bot_username} for a {variant} game.")
-        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)
-        logger.info(f"Challenge id is {challenge_id or 'None'}.")
-        self.challenge_id = challenge_id
+            logger.info(f"Will challenge {bot_username} for a {variant} game.")
+            challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)
+            logger.info(f"Challenge id is {challenge_id or 'None'}.")
+            self.challenge_id = challenge_id
+            if challenge_id or not self.retryable_challenge_error:
+                return
+            logger.info("Retrying matchmaking after opponent-side rate limit.")
+
+        self.retryable_challenge_error = False
 
     def discard_challenge(self, challenge_id: str) -> None:
         """
