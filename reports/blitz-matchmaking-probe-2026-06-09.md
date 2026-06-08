@@ -53,3 +53,16 @@ Because `config.yml` is ignored and read at startup, the LaunchAgent must be res
 - no active game in `/api/account/playing`,
 - no mid-game log tail,
 - LaunchAgent process is running and idle.
+
+## Post-Restart Samples
+
+- `04:15:54`: `blitz_probe` selected rated `240+3` as black against `BlueMoonBot`; the outgoing challenge was not accepted and was canceled.
+- `04:26:30`: `blitz_probe` selected rated `240+3` as black against `Void_Bot`; the game was aborted before any move because White was inactive, so it gives no playing-strength evidence.
+- `04:36:56`: `blitz_probe` selected rated `180+2` as white against `CupchessBot` (`3025`); game `Q3bzjLhX` ended as a normal draw by agreement with bot rating diff `+1`.
+- The refreshed fast aggregate now has blitz at `+0` rating over `13` scored games, while bullet remains `-37` over `21` scored games.
+
+## Current Decision
+
+- No runtime config change from these samples.
+- The `180+2` draw is positive evidence for keeping the blitz probe active.
+- The sample is not enough to drop bullet probing yet, because the separate white-book mitigation still needs fresh post-restart bullet games.

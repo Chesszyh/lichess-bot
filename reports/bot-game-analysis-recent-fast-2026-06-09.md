@@ -2,12 +2,12 @@
 
 ## Scope
 
-- Games analyzed: `39`
+- Games analyzed: `40`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 26, 'loss': 11, 'unknown': 1, 'win': 1}`
+- Results: `{'draw': 27, 'loss': 11, 'unknown': 1, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -48,14 +48,14 @@
 
 ## Results by Mode
 
-- `26` x rated draw
+- `27` x rated draw
 - `11` x rated loss
 - `1` x rated unknown
 - `1` x rated win
 
 ## Results by Speed
 
-- `14` x blitz draw
+- `15` x blitz draw
 - `12` x bullet draw
 - `9` x bullet loss
 - `2` x blitz loss
@@ -67,22 +67,22 @@
 - `5` x 60+1 draw
 - `4` x 60+1 loss
 - `4` x 90+1 draw
+- `4` x 180+2 draw
 - `3` x 120+1 draw
 - `3` x 300+3 draw
 - `3` x 300+2 draw
-- `3` x 180+2 draw
 - `2` x 240+2 draw
 - `2` x 90+1 loss
 - `2` x 120+1 loss
 
 ## Rating Impact by Mode
 
-- `rated`: `-38` rating over `33` games
+- `rated`: `-37` rating over `34` games
 
 ## Rating Impact by Speed
 
 - `bullet`: `-37` rating over `21` games
-- `blitz`: `-1` rating over `12` games
+- `blitz`: `+0` rating over `13` games
 
 ## Rating Impact by Time Control
 
@@ -95,7 +95,7 @@
 - `240+2 black`: `-2` rating over `3` games
 - `180+2 black`: `+0` rating over `1` games
 - `300+2 white`: `+0` rating over `1` games
-- `180+2 white`: `+1` rating over `2` games
+- `180+3 white`: `+1` rating over `1` games
 
 ## Rating Impact by Opening
 
@@ -156,9 +156,9 @@
 - `180+3`: `-4` rating over `2` games
 - `120+1`: `-2` rating over `6` games
 - `240+2`: `-2` rating over `3` games
-- `180+2`: `+1` rating over `3` games
 - `240+3`: `+1` rating over `1` games
 - `300+3`: `+1` rating over `1` games
+- `180+2`: `+2` rating over `4` games
 - `300+2`: `+2` rating over `2` games
 
 ## Focused Score by Time Control
@@ -168,7 +168,7 @@
 - `180+3`: W-D-L `0-2-1`, score `33.3%` over `3` games
 - `240+2`: W-D-L `0-2-1`, score `33.3%` over `3` games
 - `120+1`: W-D-L `1-3-2`, score `41.7%` over `6` games
-- `180+2`: W-D-L `0-3-0`, score `50.0%` over `3` games
+- `180+2`: W-D-L `0-4-0`, score `50.0%` over `4` games
 - `300+2`: W-D-L `0-3-0`, score `50.0%` over `3` games
 - `300+3`: W-D-L `0-3-0`, score `50.0%` over `3` games
 - `240+3`: W-D-L `0-1-0`, score `50.0%` over `1` games
