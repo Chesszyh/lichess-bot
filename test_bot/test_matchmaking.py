@@ -456,7 +456,7 @@ def test_choose_opponent__logs_rejection_reason_counts(
     opponent, *_ = matchmaking.choose_opponent()
 
     assert opponent == "readybot"
-    assert ("Rejected online bot candidates: global_cooldown=1, no_bullet_games=1, "
+    assert ("Rejected online bot candidates: global_cooldown_decline=1, no_bullet_games=1, "
             "rating_above_max=1, rating_below_min=1, self=1") in caplog.messages
 
 
@@ -891,6 +891,7 @@ def test_handle_challenge_error_response__cools_down_target_on_plain_too_many_re
 
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == days(1)
+    assert matchmaking.challenge_filter_sources[("BusyBot", "")] == "plain_rate_limit"
 
 
 def test_handle_challenge_error_response__long_blocks_friend_only_bot() -> None:
@@ -998,6 +999,7 @@ def test_cancelled_challenge__blocks_opponent_after_outgoing_challenge_cancellat
     assert matchmaking.challenge_id == ""
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+    assert matchmaking.challenge_filter_sources[("BusyBot", "")] == "unanswered_outgoing_challenge"
 
 
 def test_cancelled_challenge__handles_minimal_cancel_event() -> None:
@@ -1046,6 +1048,7 @@ def test_cancelled_challenge__uses_configured_outgoing_cooldown() -> None:
     matchmaking.cancelled_challenge({"challenge": {"id": "abc123"}})
 
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(3)
+    assert matchmaking.challenge_filter_sources[("BusyBot", "")] == "unanswered_outgoing_challenge"
 
 
 def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expires(monkeypatch) -> None:
@@ -1076,6 +1079,7 @@ def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expire
     assert matchmaking.challenge_id == ""
     assert not matchmaking.should_accept_challenge("BusyBot", "")
     assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(12)
+    assert matchmaking.challenge_filter_sources[("BusyBot", "")] == "unanswered_outgoing_challenge"
 
 
 def test_matchmaking_state__persists_decline_filters_across_restart(tmp_path) -> None:
@@ -1100,6 +1104,33 @@ def test_matchmaking_state__persists_decline_filters_across_restart(tmp_path) ->
     restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
 
     assert not restarted.should_accept_challenge("ResoluteBot", "")
+    assert restarted.challenge_filter_sources[("ResoluteBot", "")] == "decline"
+
+
+def test_matchmaking_state__loads_legacy_cooldowns_with_unknown_source(tmp_path) -> None:
+    """Cooldowns persisted before source tracking should remain active but identifiable."""
+    state_file = tmp_path / "matchmaking_state.json"
+    state_file.write_text(
+        '{"cooldowns": [{"username": "LegacyBot", "aspect": "", '
+        '"expires_at": "2036-01-01T00:00:00+00:00"}]}',
+        encoding="utf-8")
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not matchmaking.should_accept_challenge("LegacyBot", "")
+    assert matchmaking.challenge_filter_sources[("LegacyBot", "")] == "unknown"
 
 
 def test_add_challenge_filter__uses_short_default_decline_cooldown() -> None:

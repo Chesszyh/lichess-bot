@@ -56,6 +56,7 @@ class Matchmaking:
         #   - casual/rated
         #   - empty string (if no other reason is given or self.filter_type is COARSE)
         self.challenge_type_acceptable: defaultdict[tuple[str, str], Timer] = defaultdict(Timer)
+        self.challenge_filter_sources: dict[tuple[str, str], str] = {}
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
         state_file = self.matchmaking_cfg.lookup("state_file")
         self.state_file = Path(state_file) if state_file else None
@@ -126,18 +127,18 @@ class Matchmaking:
             timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
             self.rate_limit_timer = Timer(timeout)
         elif response.get("opponent_is_rate_limited"):
-            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
+            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"), "opponent_rate_limit")
         elif self.is_plain_rate_limit_response(response):
             delay = self.next_plain_rate_limit_delay()
             self.rate_limit_timer = Timer(delay)
-            self.add_challenge_filter(username, "", PLAIN_RATE_LIMIT_TARGET_COOLDOWN)
+            self.add_challenge_filter(username, "", PLAIN_RATE_LIMIT_TARGET_COOLDOWN, "plain_rate_limit")
             logger.info(f"Will not challenge {username} again today after challenge endpoint rate limiting.")
             logger.info(f"Challenge endpoint is rate limited; backing off for {delay.total_seconds() / 60:.0f} minutes.")
         elif self.is_friend_only_response(response):
-            self.add_to_block_list(username)
+            self.add_to_block_list(username, "friend_only")
             logger.info(f"Will not challenge {username} again because it only accepts challenges from friends.")
         else:
-            self.add_challenge_filter(username, "")
+            self.add_challenge_filter(username, "", source="challenge_error")
         self.save_state()
         self.show_earliest_challenge_time()
 
@@ -207,7 +208,7 @@ class Matchmaking:
         elif bot["username"] in self.online_block_list:
             reason = "online_blocklist"
         elif not self.should_accept_challenge(bot["username"], ""):
-            reason = "global_cooldown"
+            reason = f"global_cooldown_{self.challenge_filter_source(bot['username'], '')}"
         elif perf.get("games", 0) <= 0:
             reason = f"no_{game_type}_games"
         elif rating < min_rating:
@@ -406,15 +407,16 @@ class Matchmaking:
             earliest_challenge_time = datetime.datetime.now() + time_left
             logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%c')}")
 
-    def add_to_block_list(self, username: str) -> None:
+    def add_to_block_list(self, username: str, source: str = "configured_blocklist") -> None:
         """Add a bot to the blocklist."""
-        self.add_challenge_filter(username, "", years(10))
+        self.add_challenge_filter(username, "", years(10), source)
 
     def in_block_list(self, username: str) -> bool:
         """Check if an opponent is in the block list to prevent future challenges."""
         return (not self.should_accept_challenge(username, "")) or username in self.online_block_list
 
-    def add_challenge_filter(self, username: str, game_aspect: str, timeout: datetime.timedelta | None = None) -> None:
+    def add_challenge_filter(self, username: str, game_aspect: str, timeout: datetime.timedelta | None = None,
+                             source: str = "decline") -> None:
         """
         Prevent creating another challenge for a timeout when an opponent has declined a challenge.
 
@@ -424,6 +426,7 @@ class Matchmaking:
         :param timeout: The amount of time to not challenge an opponent. If None, the default is six hours.
         """
         self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or DEFAULT_DECLINE_COOLDOWN)
+        self.challenge_filter_sources[(username, game_aspect)] = source
         self.save_state()
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
@@ -435,6 +438,10 @@ class Matchmaking:
         If game_aspect is empty, this is equivalent to checking if the opponent is in the block list.
         """
         return self.challenge_type_acceptable[(username, game_aspect)].is_expired()
+
+    def challenge_filter_source(self, username: str, game_aspect: str) -> str:
+        """Return why an opponent cooldown exists."""
+        return self.challenge_filter_sources.get((username, game_aspect), "unknown")
 
     def timer_expires_at(self, timer: Timer) -> str | None:
         """Return a wall-clock expiry timestamp for a non-expired timer."""
@@ -464,7 +471,12 @@ class Matchmaking:
         for (username, aspect), timer in self.challenge_type_acceptable.items():
             expires_at = self.timer_expires_at(timer)
             if expires_at:
-                cooldowns.append({"username": username, "aspect": aspect, "expires_at": expires_at})
+                cooldowns.append({
+                    "username": username,
+                    "aspect": aspect,
+                    "expires_at": expires_at,
+                    "source": self.challenge_filter_source(username, aspect),
+                })
 
         state: dict[str, int | str | list[dict[str, str]] | None] = {
             "cooldowns": cooldowns,
@@ -496,6 +508,7 @@ class Matchmaking:
             timer = self.timer_from_expires_at(expires_at)
             if timer:
                 self.challenge_type_acceptable[(username, aspect)] = timer
+                self.challenge_filter_sources[(username, aspect)] = cooldown.get("source") or "unknown"
 
         rate_limit_timer = self.timer_from_expires_at(state.get("rate_limit_expires_at", ""))
         if rate_limit_timer:
@@ -514,7 +527,7 @@ class Matchmaking:
 
         cooldown = minutes(self.matchmaking_cfg.lookup("outgoing_challenge_cooldown_minutes")
                            or DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES)
-        self.add_challenge_filter(opponent, "", cooldown)
+        self.add_challenge_filter(opponent, "", cooldown, "unanswered_outgoing_challenge")
         cooldown_minutes = int(cooldown.total_seconds() / 60)
         logger.info(f"Will not challenge {opponent} again for {cooldown_minutes} minutes "
                     "after an unanswered outgoing challenge.")
@@ -568,7 +581,7 @@ class Matchmaking:
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         if reason_key == "nobot":
-            self.add_to_block_list(opponent.name)
+            self.add_to_block_list(opponent.name, "nobot")
             logger.info(f"Added {opponent} to the matchmaking block list.")
             self.show_earliest_challenge_time()
             return
@@ -576,7 +589,7 @@ class Matchmaking:
         self.add_challenge_filter(opponent.name, game_problem)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game for 6 hours.")
         if reason_key in {"rated", "casual"} and challenge_mode != "random":
-            self.add_challenge_filter(opponent.name, "")
+            self.add_challenge_filter(opponent.name, "", source="mode_decline")
             logger.info(f"Will not challenge {opponent} again for 6 hours because only "
                         f"{challenge_mode} matchmaking is configured.")
 
