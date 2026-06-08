@@ -65,6 +65,40 @@ def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypat
         config.validate_config(raw_config)
 
 
+@pytest.mark.parametrize("max_depth_by_speed", [
+    {"rapid": -1},
+    {"not-a-speed": 8},
+])
+def test_validate_config__invalid_opponent_specific_polyglot_speed_depths(
+        monkeypatch: pytest.MonkeyPatch, max_depth_by_speed: dict[str, int]) -> None:
+    """Speed-specific polyglot depths should reject invalid fast-game tuning."""
+    raw_config = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {
+            "dir": ".",
+            "name": "engine",
+            "protocol": "uci",
+            "polyglot": {
+                "enabled": True,
+                "book": {"standard": ["book.bin"]},
+                "opponent_selection": {
+                    "bot": {"max_depth_by_speed": max_depth_by_speed},
+                },
+            },
+        },
+        "challenge": {},
+        "matchmaking": {},
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(config.os, "access", lambda *_: True)
+
+    with pytest.raises(Exception, match="max_depth_by_speed"):
+        config.validate_config(raw_config)
+
+
 def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_period() -> None:
     """Idle resource sampling should preserve legacy sample cadence unless configured."""
     raw_config = {

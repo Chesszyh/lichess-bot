@@ -425,3 +425,32 @@ def test_get_book_move__uses_speed_specific_max_depth_for_bots(monkeypatch: pyte
     move = get_book_move(board, bot_game, polyglot_cfg)
 
     assert move.move is None
+
+
+def test_get_book_move__honors_zero_speed_specific_max_depth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A speed-specific depth of zero should disable sharp books for that speed."""
+    bot_game = get_game()
+    bot_game.speed = "blitz"
+    board = chess.Board()
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["bot.bin"]},
+        "min_weight": 0,
+        "selection": "best_move",
+        "max_depth": 10,
+        "normalization": "max",
+        "opponent_selection": {
+            "bot": {
+                "max_depth_by_speed": {"blitz": 0},
+            },
+        },
+    })
+
+    def fail_if_book_is_opened(book: str) -> None:
+        raise AssertionError(f"book should be skipped, got {book}")
+
+    monkeypatch.setattr("chess.polyglot.open_reader", fail_if_book_is_opened)
+
+    move = get_book_move(board, bot_game, polyglot_cfg)
+
+    assert move.move is None

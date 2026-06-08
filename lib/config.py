@@ -76,6 +76,21 @@ def config_warn(assertion: bool, warning_message: str) -> None:
         logger.warning(warning_message)
 
 
+VALID_SPEEDS = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
+
+
+def validate_polyglot_max_depth_by_speed(section: CONFIG_DICT_TYPE, path: str) -> None:
+    """Validate optional speed-specific polyglot depth overrides."""
+    max_depth_by_speed = section.get("max_depth_by_speed") or {}
+    config_assert(isinstance(max_depth_by_speed, dict),
+                  f"`{path}:max_depth_by_speed` must be a dictionary.")
+    config_assert(all(speed in VALID_SPEEDS for speed in max_depth_by_speed),
+                  f"`{path}:max_depth_by_speed` must only contain {VALID_SPEEDS}.")
+    config_assert(all(isinstance(max_depth, int) and max_depth >= 0
+                      for max_depth in max_depth_by_speed.values()),
+                  f"`{path}:max_depth_by_speed` depths must be non-negative integers.")
+
+
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: type, subsection: str = "") -> None:
     """
     Check the validity of a config section.
@@ -527,6 +542,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(polyglot_section.get("normalization") in ["none", "max", "sum"],
                   f"`{polyglot_section.get('normalization')}` is not a valid choice for "
                   f"`engine:polyglot:normalization`. Please choose from ['none', 'max', 'sum'].")
+    validate_polyglot_max_depth_by_speed(polyglot_section, "engine:polyglot")
     opponent_selection = polyglot_section.get("opponent_selection") or {}
     config_assert(isinstance(opponent_selection, dict),
                   "`engine:polyglot:opponent_selection` must be a dictionary.")
@@ -546,11 +562,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"`{normalization}` is not a valid choice for "
                       f"`engine:polyglot:opponent_selection:{opponent_key}:normalization`. "
                       "Please choose from ['none', 'max', 'sum'].")
+        validate_polyglot_max_depth_by_speed(opponent_cfg, f"engine:polyglot:opponent_selection:{opponent_key}")
 
     shallow_search_guard = CONFIG["engine"].get("shallow_search_guard") or {}
-    valid_speeds = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
-    config_assert(all(speed in valid_speeds for speed in shallow_search_guard.get("speeds", [])),
-                  f"`engine:shallow_search_guard:speeds` must only contain {valid_speeds}.")
+    config_assert(all(speed in VALID_SPEEDS for speed in shallow_search_guard.get("speeds", [])),
+                  f"`engine:shallow_search_guard:speeds` must only contain {VALID_SPEEDS}.")
     for key in ["min_depth", "extra_movetime_ms", "min_clock_ms", "min_ply"]:
         config_assert(shallow_search_guard.get(key, 0) >= 0,
                       f"`engine:shallow_search_guard:{key}` must be non-negative.")
