@@ -157,3 +157,119 @@ Avoid overfitting to the local opponent. Keep public high-rated bots in the eval
 - Verification commands
 - Result window
 - Rollback plan
+
+## 2026-06-08 ThinkPad Stockfish Bullet/Blitz Tuning
+
+This pass focused on the ThinkPad Stockfish deployment, with the goal of making rated bot-vs-bot bullet and blitz performance more stable near the 3080 range. The analysis prioritized losses and draws against similar or lower-rated bots. All runtime restarts were delayed until logs showed `Process Freed. Count: 0` and no `Stockfish/src/stockfish` process was active.
+
+Current live matchmaking and challenge policy for this deployment:
+
+- Accept only `bullet` and `blitz`; do not accept `rapid`.
+- Prefer bullet through default matchmaking weights.
+- Default outgoing games use 60 or 90 second base with 1 or 2 second increment.
+- Keep ignored `config.yml` mirrored in `.config-history/config.yml` after every private config change.
+
+### Opening Source Control
+
+Evidence game: `scyR4oww`, a bullet loss as black against `CloudNetBot`.
+
+The first move, `1...Nf6`, came from the local opening book. The following sharp sequence, including `...c5`, `...Nd5`, `...Qb6`, and `...Qxb2`, came from Lichess Opening Explorer. By the time Stockfish searched after `6. cxd5`, the bot was already in a bad Accelerated London pawn-grab line and the log showed a poor black winrate.
+
+Changes made:
+
+- Limit online opening explorer use to very shallow positions with `engine.online_moves.max_depth: 2`.
+- Disable live online opening moves in the private Stockfish config.
+- Keep bot-vs-bot polyglot selection on stronger weighted lines:
+  - `selection: weighted_random`
+  - `min_weight: 50`
+- Fix weighted random book selection so the minimum weight filter is applied before sampling.
+
+Related commits:
+
+- `784d3ab Avoid weak book sidelines in weighted random play`
+- `.config-history` `1a43e6b Prefer stronger weighted book lines against bots`
+- `.config-history` `454c2fa Stop online books before sharp bot middlegames`
+
+Operational note: for high-rated bot games, online opening explorer stats can prefer risky practical lines that are not good for this local Stockfish setup. Treat online openings as a shallow fallback only, not as a middlegame guide.
+
+### Repetition Guard: Enforce Root Moves
+
+Evidence game: `KvLfR0la`, a bullet draw by threefold repetition against `friendlybot_1700`.
+
+The log showed `Filtering immediate threefold repetition moves`, but the final move still repeated. Root cause: `EngineWrapper.search()` passed filtered `root_moves` to the engine, but did not verify that the returned move was actually in the allowed list.
+
+Change made:
+
+- After search, if `search_root_moves` exists and the engine result is outside that list, replace it with the first allowed move and log a warning.
+
+Regression test:
+
+- `test_search__does_not_play_filtered_repetition_if_engine_returns_it`
+
+Related commit:
+
+- `1d5bd97 Keep repetition guard authoritative after search`
+
+### Repetition Guard: Score-Bounded Avoidance
+
+Evidence games: `o1u2AXZc` and `imlXjLuL`, bullet draws by threefold repetition after the first repetition-guard fix.
+
+`o1u2AXZc` showed that hard-filtering every immediate repetition can be harmful. At move 69 the repeated move was filtered, but the best non-repeating alternative evaluated around `-5.17` from an otherwise equal position. This proved that repetition avoidance should be a preference, not an absolute rule.
+
+Change made:
+
+- Search the normal best move first.
+- If the best move immediately creates a threefold repetition, search again with non-repeating root moves.
+- Use the non-repeating move only if the score loss is within `repetition_guard.max_score_loss_cp`.
+- The live private config sets `max_score_loss_cp: 150`.
+- `config.yml.default` documents a conservative default of `200`.
+
+Regression test:
+
+- `test_search__keeps_repetition_when_safe_alternative_loses_too_much`
+
+Related commits:
+
+- `afc7ee1 Limit repetition avoidance to sound alternatives`
+- `.config-history` `3958411 Bound repetition avoidance score loss`
+
+Operational note: after this change, a draw by repetition is still acceptable when every non-repeating alternative is materially worse. The desired next improvement is not to force bad endgame moves, but to avoid entering dead-equal structures too early.
+
+### Verification From This Pass
+
+Commands that passed:
+
+```bash
+.venv/bin/pytest test_bot/test_engine_time_management.py -q
+```
+
+Latest passing result for the time-management and repetition-guard file:
+
+```text
+28 passed
+```
+
+Configuration loading was also checked for the live private file, confirming:
+
+```text
+repetition_guard.enabled=True
+repetition_guard.min_rating_gap=-25
+repetition_guard.max_score_loss_cp=150
+```
+
+Known verification debt:
+
+- `ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing complexity, docstring, mutable class attribute, and unused fake-engine argument warnings.
+- `mypy --strict lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing timeout typing, homemade engine override signatures, and fake-engine assignment types.
+- These failures are not clean-room blockers for the repetition changes, but they raise the maintenance cost of further strategy work.
+
+### Future Optimization Directions
+
+Prioritize these directions before adding heavier local experiments:
+
+- Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
+- Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
+- Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
+- Make repetition avoidance time-aware. When the opponent is very low on time, allow slightly more score loss to keep the game alive; when both sides have enough time, keep the current conservative threshold.
+- Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.
+- Clean up `engine_wrapper.py` complexity and test fake-engine typing before larger strategy changes, so future regressions are easier to isolate.
