@@ -60,4 +60,13 @@ color_selection:
 
 ## Runtime Note
 
-This change requires a safe idle restart before affecting new games.
+This change required a safe idle restart before affecting new games.
+
+## Restart Verification
+
+- Checked `/api/account/playing` immediately before restart: `active_count=0`.
+- Restarted LaunchAgent `org.chesszyh987.lichess-bot`.
+- Runtime PID changed from `91127` to `39567`.
+- Post-restart startup log showed the bot reconnected and scheduled matchmaking.
+- Post-restart matchmaking selected `blitz_probe` at `04:15:54`, challenged `BlueMoonBot` for rated `240+3`, then canceled after no acceptance.
+- Post-restart `/api/account/playing` check at `04:16:56`: `active_count=0`.
