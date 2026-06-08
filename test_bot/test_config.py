@@ -126,6 +126,21 @@ def test_insert_default_values__matchmaking_override_retry_defaults_to_false() -
     assert raw_config["matchmaking"]["try_overrides_on_empty_pool"] is False
 
 
+def test_insert_default_values__matchmaking_legacy_unknown_cooldown_cap_defaults_to_zero() -> None:
+    """Legacy unknown cooldown migration should be opt-in."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["matchmaking"]["legacy_unknown_cooldown_max_minutes"] == 0
+
+
 def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None:
     """Opening-book move filters should be opt-in."""
     raw_config: CONFIG_DICT_TYPE = {

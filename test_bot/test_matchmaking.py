@@ -1,4 +1,6 @@
 """Test functions for matchmaking module."""
+import datetime
+import json
 import logging
 import random
 from collections.abc import Sequence
@@ -1263,10 +1265,12 @@ def test_matchmaking_state__persists_decline_filters_across_restart(tmp_path) ->
 def test_matchmaking_state__loads_legacy_cooldowns_with_unknown_source(tmp_path) -> None:
     """Cooldowns persisted before source tracking should remain active but identifiable."""
     state_file = tmp_path / "matchmaking_state.json"
-    state_file.write_text(
-        '{"cooldowns": [{"username": "LegacyBot", "aspect": "", '
-        '"expires_at": "2036-01-01T00:00:00+00:00"}]}',
-        encoding="utf-8")
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + years(10)).isoformat()
+    state_file.write_text(json.dumps({"cooldowns": [{
+        "username": "LegacyBot",
+        "aspect": "",
+        "expires_at": expires_at,
+    }]}), encoding="utf-8")
     mock_config = Configuration({
         "challenge": {"variants": ["standard"]},
         "matchmaking": {
@@ -1284,6 +1288,68 @@ def test_matchmaking_state__loads_legacy_cooldowns_with_unknown_source(tmp_path)
 
     assert not matchmaking.should_accept_challenge("LegacyBot", "")
     assert matchmaking.challenge_filter_sources[("LegacyBot", "")] == "unknown"
+    assert matchmaking.challenge_type_acceptable[("LegacyBot", "")].duration > years(9)
+
+
+def test_matchmaking_state__caps_legacy_unknown_global_cooldowns_when_configured(tmp_path) -> None:
+    """Legacy unknown global cooldowns can be shortened without deleting the whole state."""
+    state_file = tmp_path / "matchmaking_state.json"
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + years(10)).isoformat()
+    state_file.write_text(json.dumps({"cooldowns": [{
+        "username": "LegacyBot",
+        "aspect": "",
+        "expires_at": expires_at,
+    }]}), encoding="utf-8")
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+            "legacy_unknown_cooldown_max_minutes": 360,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not matchmaking.should_accept_challenge("LegacyBot", "")
+    assert matchmaking.challenge_filter_sources[("LegacyBot", "")] == "unknown"
+    duration = matchmaking.challenge_type_acceptable[("LegacyBot", "")].duration
+    assert minutes(359) < duration <= minutes(360)
+
+
+def test_matchmaking_state__keeps_configured_blocklist_long_when_legacy_cap_is_enabled(tmp_path) -> None:
+    """Configured blocklist entries should override capped legacy unknown state on startup."""
+    state_file = tmp_path / "matchmaking_state.json"
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + years(10)).isoformat()
+    state_file.write_text(json.dumps({"cooldowns": [{
+        "username": "BlockedBot",
+        "aspect": "",
+        "expires_at": expires_at,
+    }]}), encoding="utf-8")
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": ["BlockedBot"],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+            "legacy_unknown_cooldown_max_minutes": 360,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not matchmaking.should_accept_challenge("BlockedBot", "")
+    assert matchmaking.challenge_filter_sources[("BlockedBot", "")] == "configured_blocklist"
+    assert matchmaking.challenge_type_acceptable[("BlockedBot", "")].duration > years(9)
 
 
 def test_add_challenge_filter__uses_short_default_decline_cooldown() -> None:

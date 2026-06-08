@@ -353,7 +353,7 @@ class Matchmaking:
 
     def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
         """Choose an opponent."""
-        last_choice = (None, 0, 0, 0, "standard", "casual")
+        last_choice: tuple[str | None, int, int, int, str, str] = (None, 0, 0, 0, "standard", "casual")
         for override_choice in self.choose_override_sequence():
             bot_username, base_time, increment, num_days, variant, mode, had_ready_candidates = (
                 self.choose_opponent_from_config(override_choice)
@@ -547,6 +547,17 @@ class Matchmaking:
             return None
         return Timer(remaining)
 
+    def cap_legacy_unknown_cooldown(self, timer: Timer, aspect: str, source: str) -> Timer:
+        """Limit old global cooldowns that predate source tracking when configured."""
+        cap_minutes = self.matchmaking_cfg.lookup("legacy_unknown_cooldown_max_minutes") or 0
+        if source != "unknown" or aspect or cap_minutes <= 0:
+            return timer
+
+        max_duration = minutes(cap_minutes)
+        if timer.time_until_expiration() <= max_duration:
+            return timer
+        return Timer(max_duration)
+
     def save_state(self) -> None:
         """Persist matchmaking cooldowns and rate-limit backoff across process restarts."""
         cooldowns = []
@@ -589,8 +600,10 @@ class Matchmaking:
                 continue
             timer = self.timer_from_expires_at(expires_at)
             if timer:
+                source = cooldown.get("source") or "unknown"
+                timer = self.cap_legacy_unknown_cooldown(timer, aspect, source)
                 self.challenge_type_acceptable[(username, aspect)] = timer
-                self.challenge_filter_sources[(username, aspect)] = cooldown.get("source") or "unknown"
+                self.challenge_filter_sources[(username, aspect)] = source
 
         rate_limit_timer = self.timer_from_expires_at(state.get("rate_limit_expires_at", ""))
         if rate_limit_timer:

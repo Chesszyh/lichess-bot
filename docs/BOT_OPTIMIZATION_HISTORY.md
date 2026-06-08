@@ -376,6 +376,11 @@ Changes made:
   - Default: `false`, so upstream-style weighted random override selection is unchanged.
   - Live private Stockfish config: `true`.
   - Purpose: after a target-band bullet search returns zero candidates, immediately try the lower-weight `blitz_fallback` instead of waiting another no-candidate interval.
+- Add `matchmaking.legacy_unknown_cooldown_max_minutes`.
+  - Default: `0`, so historical state is preserved unless explicitly migrated.
+  - Live private Stockfish config: `360` minutes.
+  - Purpose: cap old source-unknown global cooldowns that were saved before cooldown source tracking and now block scarce target-band candidates for years.
+  - Safety boundary: only empty-aspect cooldowns with missing or `unknown` source are capped; configured blocklist entries are re-added after state load and remain 10-year blocks.
 
 Related commits:
 
@@ -387,6 +392,7 @@ Related commits:
 - This pass: cool down drawn fast-game bot opponents.
 - This pass: filter the repeated bot-side Berlin Wall book move.
 - This pass: try blitz fallback immediately when the preferred bullet pool is empty.
+- This pass: cap legacy source-unknown global cooldowns in live config.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -399,6 +405,7 @@ Commands that passed:
 .venv/bin/pytest test_bot/test_engine_time_management.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py test_bot/test_external_moves.py -q
+.venv/bin/pytest test_bot/test_engine_time_management.py test_bot/test_config.py test_bot/test_matchmaking.py test_bot/test_external_moves.py -q
 .venv/bin/pytest test_bot/test_game_stream.py -q
 .venv/bin/pytest test_bot/test_external_moves.py -q
 .venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py
@@ -417,13 +424,13 @@ Latest passing result for the time-management and repetition-guard file:
 Latest passing result for the matchmaking cooldown and config checks:
 
 ```text
-57 passed
+64 passed
 ```
 
 Latest passing result for the current book-filter, config, time-management, and matchmaking regression set:
 
 ```text
-100 passed
+106 passed, 1 xfailed
 ```
 
 Latest passing result for the current matchmaking fallback, config, and book-filter regression set:
@@ -460,6 +467,7 @@ matchmaking.decline_cooldown_minutes=180
 matchmaking.outgoing_challenge_cooldown_minutes=180
 matchmaking.draw_cooldown_minutes=30
 matchmaking.try_overrides_on_empty_pool=True
+matchmaking.legacy_unknown_cooldown_max_minutes=360
 engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
 engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
 ```
@@ -507,6 +515,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Repeated target-band draw sink | `xzMGfX4n` and `Wp8SbY5A` were consecutive draws against `BlueMoonBot` | Add opt-in `draw_cooldown_minutes`; live value `30` for drawn bullet/blitz games against bots | `test_game_done__cools_down_bot_after_fast_draw`; `test_game_done__does_not_cool_down_bot_after_win`; config default test | Active |
 | Repeated Berlin Wall book draws | Recent white-side bot draws repeatedly entered `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 ... Qxd8+ Kxd8`, including `Q1poOSgG`, `Wp8SbY5A`, and `nSLk3U9v` | Add opt-in Polyglot `avoid_moves`; live bot profile skips `Bb5` after `e4 e5 Nf3 Nc6` | `test_get_book_move__avoid_moves_filters_configured_san_line`; config default test; live config mirrored privately | Active, watch if Italian/other alternatives improve conversion |
 | Bullet pool empty while blitz is allowed | Post-deploy logs at `18:27:48` showed default bullet searched `[3080, 4000]`, found `0` suitable opponents, and waited until `18:42:48`; no same-cycle blitz attempt happened | Add opt-in `try_overrides_on_empty_pool`; live value `true`, with default bullet weight `5` before blitz fallback weight `1` | `test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty`; config default test | Active |
+| Legacy source-unknown cooldowns | Runtime logs showed target-band candidates such as `maia3-79m_2600` blocked by `global_cooldown_unknown` for about 10 years from old state | Add opt-in `legacy_unknown_cooldown_max_minutes`; live value `360`, capped only for source-unknown global cooldowns loaded from state | `test_matchmaking_state__caps_legacy_unknown_global_cooldowns_when_configured`; configured blocklist regression keeps 10-year blocks | Active, watch pool volume |
 
 Current private live thresholds worth preserving unless new games disprove them:
 
@@ -515,6 +524,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `matchmaking.preferred_opponent_min_rating: 3080`
 - `matchmaking.blitz_fallback.preferred_opponent_min_rating: 3080`
 - `matchmaking.try_overrides_on_empty_pool: true`
+- `matchmaking.legacy_unknown_cooldown_max_minutes: 360`
 - `draw_or_resign.offer_draw_min_rating: 3080`
 - `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 15000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 60000`
@@ -527,9 +537,9 @@ Current private live thresholds worth preserving unless new games disprove them:
 
 Prioritize these directions before adding heavier local experiments:
 
-- Use the new source-specific rejection logs and target-band blocker details to watch whether `global_cooldown_unknown` shrinks as legacy cooldowns expire and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
+- Use the new source-specific rejection logs and target-band blocker details to watch whether `global_cooldown_unknown` shrinks after the 360-minute legacy cap and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
 - If the blocker log is still too terse, add an explicit one-off diagnostic command that dumps the full target-band blocked candidate set with source and remaining cooldown time.
-- If migrating legacy `unknown` cooldowns, classify only entries with strong historical-log evidence. Do not bulk-delete or relabel unknown state.
+- If further migrating legacy `unknown` cooldowns, classify only entries with strong historical-log evidence. Do not bulk-delete or relabel unknown state.
 - If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
