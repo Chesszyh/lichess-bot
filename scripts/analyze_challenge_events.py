@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -41,6 +42,17 @@ class ChallengeSummary:
     incoming_decisions: list[tuple[str, int]]
     incoming_by_challenger: list[tuple[str, int]]
     outgoing_declines: list[tuple[str, int]]
+    outgoing_no_id: int
+    outgoing_no_id_targets: list[tuple[str, int]]
+
+
+@dataclass(frozen=True)
+class OutgoingChallengeAttempt:
+    """One outgoing challenge creation attempt parsed from matchmaking logs."""
+
+    target: str
+    logged_at: datetime | None
+    challenge_id: str | None
 
 
 def event_payload_from_line(line: str) -> dict[str, Any] | None:
@@ -124,11 +136,47 @@ def parse_logs(paths: Sequence[Path], bot_name: str, since_local: datetime | Non
     return records
 
 
+def parse_outgoing_attempts(paths: Sequence[Path], since_local: datetime | None = None) -> list[OutgoingChallengeAttempt]:
+    """Parse outgoing challenge attempts and their immediate challenge ids from logs."""
+    attempts: list[OutgoingChallengeAttempt] = []
+    pending_target: tuple[str, datetime | None] | None = None
+    target_pattern = re.compile(r"Will challenge (?P<target>\S+) for a .+ game\.")
+    challenge_id_pattern = re.compile(r"Challenge id is (?P<challenge_id>\S+)\.")
+
+    for path in paths:
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            logged_at = local_log_time_from_line(line)
+            if since_local is not None and (logged_at is None or logged_at < since_local):
+                continue
+
+            target_match = target_pattern.search(line)
+            if target_match:
+                pending_target = (target_match.group("target"), logged_at)
+                continue
+
+            challenge_id_match = challenge_id_pattern.search(line)
+            if challenge_id_match and pending_target:
+                target, target_logged_at = pending_target
+                challenge_id = challenge_id_match.group("challenge_id")
+                attempts.append(
+                    OutgoingChallengeAttempt(
+                        target=target,
+                        logged_at=target_logged_at,
+                        challenge_id=None if challenge_id == "None" else challenge_id,
+                    ),
+                )
+                pending_target = None
+
+    return attempts
+
+
 def summarize_records(records: list[ChallengeRecord],
                       bot_name: str,
-                      active_time_controls: set[str] | None = None) -> ChallengeSummary:
+                      active_time_controls: set[str] | None = None,
+                      outgoing_attempts: list[OutgoingChallengeAttempt] | None = None) -> ChallengeSummary:
     """Summarize parsed challenge records."""
     active_time_controls = active_time_controls or set()
+    outgoing_attempts = outgoing_attempts or []
     incoming_created = [record for record in records if record.direction == "incoming" and record.decline_reason_key is None]
     incoming_decline_by_id = {
         record.challenge_id: record for record in records if record.direction == "incoming" and record.decline_reason_key
@@ -151,6 +199,7 @@ def summarize_records(records: list[ChallengeRecord],
 
     incoming_decision_rows = incoming_decisions.most_common()
     incoming_decision_rows.sort(key=lambda row: (not row[0].startswith("open_or_accepted"), -row[1], row[0]))
+    no_id_attempts = [attempt for attempt in outgoing_attempts if attempt.challenge_id is None]
 
     return ChallengeSummary(
         bot_name=bot_name,
@@ -163,6 +212,8 @@ def summarize_records(records: list[ChallengeRecord],
         outgoing_declines=Counter(
             f"{record.decline_reason_key} | {record.speed} | {record.time_control}" for record in outgoing_declines
         ).most_common(),
+        outgoing_no_id=len(no_id_attempts),
+        outgoing_no_id_targets=Counter(attempt.target for attempt in no_id_attempts).most_common(),
     )
 
 
@@ -171,7 +222,12 @@ def summarize_logs(paths: Sequence[Path],
                    active_time_controls: set[str] | None = None,
                    since_local: datetime | None = None) -> ChallengeSummary:
     """Parse and summarize challenge records from log files."""
-    return summarize_records(parse_logs(paths, bot_name, since_local), bot_name, active_time_controls)
+    return summarize_records(
+        parse_logs(paths, bot_name, since_local),
+        bot_name,
+        active_time_controls,
+        outgoing_attempts=parse_outgoing_attempts(paths, since_local),
+    )
 
 
 def append_count_section(lines: list[str], title: str, rows: list[tuple[str, int]], empty_text: str) -> None:
@@ -198,6 +254,12 @@ def render_markdown(summary: ChallengeSummary) -> str:
     append_count_section(lines, "Incoming Challenge Decisions", summary.incoming_decisions, "No incoming challenges found.")
     append_count_section(lines, "Incoming Challengers", summary.incoming_by_challenger, "No incoming challengers found.")
     append_count_section(lines, "Outgoing Declines", summary.outgoing_declines, "No outgoing declines found.")
+    append_count_section(
+        lines,
+        "Outgoing No-ID Challenge Responses",
+        summary.outgoing_no_id_targets,
+        "No no-id outgoing challenge responses found.",
+    )
     return "\n".join(lines) + "\n"
 
 

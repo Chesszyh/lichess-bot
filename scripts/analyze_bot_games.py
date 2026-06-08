@@ -127,6 +127,8 @@ class GameSummary:
     high_clock_normal_loss_contexts: list[tuple[str, int]]
     clock_pressure_misses: list[GameRecord]
     clock_pressure_miss_contexts: list[tuple[str, int]]
+    clock_pressure_draw_leaks: list[GameRecord]
+    clock_pressure_draw_leak_contexts: list[tuple[str, int]]
     largest_bot_eval_drops: list[BotEvalDrop]
     recent_losses: list[GameRecord]
 
@@ -461,6 +463,7 @@ def summarize_records(records_dir: Path,
                       high_clock_loss_threshold_seconds: int = 60,
                       clock_rich_loss_base_fraction: float = 0.35,
                       opponent_low_clock_threshold_seconds: int = 10,
+                      opponent_low_clock_draw_threshold_seconds: int = 15,
                       eval_drop_recent_loss_limit: int = 50,
                       focus_time_controls: set[str] | None = None,
                       time_controls: set[str] | None = None,
@@ -657,6 +660,28 @@ def summarize_records(records_dir: Path,
         f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
         for record in clock_pressure_misses
     ).most_common()
+    costly_draws = {record.path: record for record in lower_rated_draws + rating_negative_draws}.values()
+    clock_pressure_draw_leaks = [
+        record for record in costly_draws
+        if record.termination != "Time forfeit"
+        and record.bot_final_clock_seconds is not None
+        and record.opponent_final_clock_seconds is not None
+        and (base_seconds := time_control_base_seconds(record.time_control)) is not None
+        and record.bot_final_clock_seconds >= base_seconds * clock_rich_loss_base_fraction
+        and record.opponent_final_clock_seconds <= opponent_low_clock_draw_threshold_seconds
+    ]
+    clock_pressure_draw_leaks.sort(
+        key=lambda record: (
+            record.bot_rating_diff or 0,
+            record.rating_gap or 0,
+            record.bot_final_clock_seconds or 0,
+            -(record.opponent_final_clock_seconds or 0),
+        ),
+    )
+    clock_pressure_draw_leak_contexts = Counter(
+        f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in clock_pressure_draw_leaks
+    ).most_common()
     largest_bot_eval_drops = bot_eval_drops(recent_losses[:eval_drop_recent_loss_limit])
 
     return GameSummary(
@@ -713,6 +738,8 @@ def summarize_records(records_dir: Path,
         high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
         clock_pressure_misses=clock_pressure_misses[:10],
         clock_pressure_miss_contexts=clock_pressure_miss_contexts,
+        clock_pressure_draw_leaks=clock_pressure_draw_leaks[:10],
+        clock_pressure_draw_leak_contexts=clock_pressure_draw_leak_contexts,
         largest_bot_eval_drops=largest_bot_eval_drops[:10],
         recent_losses=recent_losses,
     )
@@ -1122,6 +1149,22 @@ def append_clock_pressure_miss_section(lines: list[str], records: list[GameRecor
         )
 
 
+def append_clock_pressure_draw_leak_section(lines: list[str], records: list[GameRecord]) -> None:
+    """Append costly draws where the bot kept clock while the opponent was nearly out of time."""
+    lines.extend(["", "## Clock-Pressure Draw Leaks", ""])
+    if not records:
+        lines.append("- No clock-pressure draw leaks found at the configured threshold.")
+        return
+    for record in records:
+        bot_clock = format_seconds(record.bot_final_clock_seconds or 0)
+        opponent_clock = format_seconds(record.opponent_final_clock_seconds or 0)
+        rating = f"{record.bot_rating_diff:+d} rating" if record.bot_rating_diff is not None else "unknown rating"
+        lines.append(
+            f"- `{bot_clock}` left vs opponent `{opponent_clock}` in "
+            f"{game_link(record)} vs `{record.opponent}` ({rating}): {record.opening}"
+        )
+
+
 def append_recent_losses_section(lines: list[str], records: list[GameRecord]) -> None:
     """Append a markdown section for the latest losses."""
     lines.extend(["", "## Recent Losses", ""])
@@ -1281,6 +1324,16 @@ def render_markdown(
     )
 
     append_clock_pressure_miss_section(lines, summary.clock_pressure_misses)
+
+    append_count_section(
+        lines,
+        "Clock-Pressure Draw Leak Contexts",
+        summary.clock_pressure_draw_leak_contexts,
+        empty_text="No clock-pressure draw leak contexts found.",
+        quote_item=True,
+    )
+
+    append_clock_pressure_draw_leak_section(lines, summary.clock_pressure_draw_leaks)
 
     append_eval_drop_section(lines, summary.largest_bot_eval_drops)
     append_recent_losses_section(lines, summary.recent_losses)

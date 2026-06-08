@@ -465,6 +465,50 @@ def test_render_markdown__shows_clock_pressure_misses(tmp_path: Path) -> None:
     assert "ordinary-clock-rich-loss.pgn" not in pressure_section
 
 
+def test_render_markdown__shows_clock_pressure_draw_leaks(tmp_path: Path) -> None:
+    """Costly draws with bot clock rich and opponent clock low should be separated from ordinary draws."""
+    pressure_headers = base_headers("1/2-1/2", "Semi-Slav Defense", "ilovecatgirl", "LowerPressureBot")
+    pressure_headers["Event"] = "rated bullet game"
+    pressure_headers["TimeControl"] = "120+1"
+    pressure_headers["WhiteElo"] = "3020"
+    pressure_headers["BlackElo"] = "2895"
+    pressure_headers["WhiteRatingDiff"] = "-1"
+    pressure_headers["BlackRatingDiff"] = "+1"
+    write_pgn(
+        tmp_path,
+        "pressure-draw-leak.pgn",
+        pressure_headers,
+        "1. d4 { [%clk 0:01:33] } Nf6 { [%clk 0:00:13] } 1/2-1/2",
+    )
+    ordinary_headers = base_headers("1/2-1/2", "Queen's Pawn Game", "HigherBot", "ilovecatgirl")
+    ordinary_headers["Event"] = "rated bullet game"
+    ordinary_headers["TimeControl"] = "120+1"
+    ordinary_headers["WhiteElo"] = "3100"
+    ordinary_headers["BlackElo"] = "3020"
+    ordinary_headers["BlackRatingDiff"] = "+1"
+    write_pgn(
+        tmp_path,
+        "ordinary-higher-rated-draw.pgn",
+        ordinary_headers,
+        "1. d4 { [%clk 0:00:13] } Nf6 { [%clk 0:01:33] } 1/2-1/2",
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert [record.path.name for record in summary.clock_pressure_draw_leaks] == ["pressure-draw-leak.pgn"]
+    assert summary.clock_pressure_draw_leak_contexts == [("Semi-Slav Defense | white | bullet | 120+1", 1)]
+    pressure_section = markdown.split("## Clock-Pressure Draw Leaks", maxsplit=1)[1].split(
+        "## Largest Bot Eval Drops",
+        maxsplit=1,
+    )[0]
+    assert (
+        "`93s` left vs opponent `13s` in `pressure-draw-leak.pgn` "
+        "vs `LowerPressureBot` (-1 rating): Semi-Slav Defense"
+    ) in pressure_section
+    assert "ordinary-higher-rated-draw.pgn" not in pressure_section
+
+
 def test_render_markdown__shows_largest_bot_eval_drops(tmp_path: Path) -> None:
     """Saved engine evals should identify tactical/conversion drops without rerunning engines."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "StrongBot")

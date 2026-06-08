@@ -85,3 +85,25 @@ def test_summarize_logs__filters_by_local_log_time(tmp_path: Path) -> None:
 
     assert summary.incoming_total == 1
     assert summary.incoming_by_challenger == [("NewBot | bullet | 60+1", 1)]
+
+
+def test_summarize_logs__tracks_no_id_outgoing_challenge_targets(tmp_path: Path) -> None:
+    """Challenge responses without ids should be visible as matchmaking waste."""
+    log_path = tmp_path / "run.log"
+    write_log(
+        log_path,
+        [
+            "2026-06-09 00:01:00,000 lib.matchmaking INFO Will challenge NoIdBot for a standard game.",
+            "2026-06-09 00:01:00,200 lib.matchmaking INFO Challenge id is None.",
+            "2026-06-09 00:02:00,000 lib.matchmaking INFO Will challenge ReadyBot for a standard game.",
+            "2026-06-09 00:02:00,200 lib.matchmaking INFO Challenge id is abc123.",
+        ],
+    )
+
+    summary = summarize_logs([log_path], "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.outgoing_no_id == 1
+    assert summary.outgoing_no_id_targets == [("NoIdBot", 1)]
+    assert "Outgoing No-ID Challenge Responses" in markdown
+    assert "`1` x `NoIdBot`" in markdown

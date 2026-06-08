@@ -478,6 +478,28 @@
 - `42s` left vs opponent `9s` in `abhisun_bot vs ilovecatgirl - WsrVL0wc.pgn` vs `abhisun_bot`: Caro-Kann Defense
 - `32s` left vs opponent `7s` in `MDBOT vs ilovecatgirl - g6cJXfgh.pgn` vs `MDBOT`: Scandinavian Defense: Modern Variation
 
+## Clock-Pressure Draw Leak Contexts
+
+- `1` x `Nimzowitsch Defense: Declined Variation | black | bullet | 120+1`
+- `1` x `Sicilian Defense: Wing Gambit, Deferred Variation | black | bullet | 120+1`
+- `1` x `Semi-Slav Defense: Chigorin Defense | black | bullet | 90+1`
+- `1` x `Semi-Slav Defense: Normal Variation | black | bullet | 120+1`
+- `1` x `Catalan Opening: Open Defense, Modern Sharp Variation | black | bullet | 90+1`
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 90+1`
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 60+1`
+- `1` x `Caro-Kann Defense | white | bullet | 60+1`
+
+## Clock-Pressure Draw Leaks
+
+- `122s` left vs opponent `4s` in `Worst-ai vs ilovecatgirl - ml4y9CRN.pgn` vs `Worst-ai` (-3 rating): Nimzowitsch Defense: Declined Variation
+- `82s` left vs opponent `10s` in `Valhalla-Bot vs ilovecatgirl - uL0nTI07.pgn` vs `Valhalla-Bot` (-1 rating): Sicilian Defense: Wing Gambit, Deferred Variation
+- `33s` left vs opponent `12s` in `AggressiveStockfish vs ilovecatgirl - ToE3GG2C.pgn` vs `AggressiveStockfish` (-1 rating): Semi-Slav Defense: Chigorin Defense
+- `93s` left vs opponent `13s` in `AggressiveStockfish vs ilovecatgirl - CFYHfwEL.pgn` vs `AggressiveStockfish` (-1 rating): Semi-Slav Defense: Normal Variation
+- `88s` left vs opponent `11s` in `DefenchessOfficial vs ilovecatgirl - mmJFwmO6.pgn` vs `DefenchessOfficial` (-1 rating): Catalan Opening: Open Defense, Modern Sharp Variation
+- `96s` left vs opponent `10s` in `friendlybot_1700 vs ilovecatgirl - nX47W72Z.pgn` vs `friendlybot_1700` (+0 rating): Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted
+- `55s` left vs opponent `10s` in `friendlybot_1700 vs ilovecatgirl - QpilNfau.pgn` vs `friendlybot_1700` (unknown rating): Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted
+- `29s` left vs opponent `4s` in `ilovecatgirl vs BorkaTower - s6Xix5ZX.pgn` vs `BorkaTower` (+0 rating): Caro-Kann Defense
+
 ## Largest Bot Eval Drops
 
 - `-389.10` after `a5` in `Fischer_Bot vs ilovecatgirl - sSos0k3i.pgn` vs `Fischer_Bot`: `-10.85` to `-399.95` (Semi-Slav Defense: Anti-Moscow Gambit | black | 120+1)

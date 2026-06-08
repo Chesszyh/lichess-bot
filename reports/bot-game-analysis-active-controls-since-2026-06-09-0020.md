@@ -199,6 +199,14 @@
 
 - No clock-pressure misses found at the configured threshold.
 
+## Clock-Pressure Draw Leak Contexts
+
+- No clock-pressure draw leak contexts found.
+
+## Clock-Pressure Draw Leaks
+
+- No clock-pressure draw leaks found at the configured threshold.
+
 ## Largest Bot Eval Drops
 
 - No saved bot eval drops found.
