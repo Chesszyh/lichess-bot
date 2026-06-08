@@ -305,6 +305,7 @@ matchmaking:
   decline_cooldown_minutes: 360    # Wait this many minutes before retrying a bot that declined a challenge.
   outgoing_challenge_cooldown_minutes: 720  # Wait this many minutes before retrying an opponent that did not answer an outgoing challenge.
   draw_cooldown_minutes: 0         # Wait this many minutes before retrying a bot after a drawn bullet/blitz game.
+  try_overrides_on_empty_pool: false  # If true, try other matchmaking overrides in weight order before waiting when the selected pool is empty.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60
     - 180

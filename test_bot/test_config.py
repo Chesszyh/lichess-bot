@@ -111,6 +111,21 @@ def test_insert_default_values__matchmaking_draw_cooldown_defaults_to_zero() -> 
     assert raw_config["matchmaking"]["draw_cooldown_minutes"] == 0
 
 
+def test_insert_default_values__matchmaking_override_retry_defaults_to_false() -> None:
+    """Trying other matchmaking overrides after an empty pool is opt-in."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["matchmaking"]["try_overrides_on_empty_pool"] is False
+
+
 def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None:
     """Opening-book move filters should be opt-in."""
     raw_config: CONFIG_DICT_TYPE = {

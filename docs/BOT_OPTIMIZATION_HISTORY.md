@@ -365,6 +365,10 @@ Changes made:
   - Default: `[]`, so this is opt-in.
   - Live private Stockfish bot profile: after `e4 e5 Nf3 Nc6`, skip `Bb5`.
   - Purpose: repeated white-side Berlin Wall draws showed that the book should stop entering `Bb5 Nf6 O-O Nxe4` against bots.
+- Add `matchmaking.try_overrides_on_empty_pool`.
+  - Default: `false`, so upstream-style weighted random override selection is unchanged.
+  - Live private Stockfish config: `true`.
+  - Purpose: after a target-band bullet search returns zero candidates, immediately try the lower-weight `blitz_fallback` instead of waiting another no-candidate interval.
 
 Related commits:
 
@@ -375,6 +379,7 @@ Related commits:
 - This pass: log target-band cooldown blockers.
 - This pass: cool down drawn fast-game bot opponents.
 - This pass: filter the repeated bot-side Berlin Wall book move.
+- This pass: try blitz fallback immediately when the preferred bullet pool is empty.
 
 Operational note: this is a pool-health and rating-protection change. It deliberately avoids relaxing the 3080 floor until there is evidence that the shorter, source-aware cooldown policy is still too restrictive.
 
@@ -385,9 +390,11 @@ Commands that passed:
 ```bash
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
+.venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py test_bot/test_external_moves.py -q
 .venv/bin/pytest test_bot/test_game_stream.py -q
 .venv/bin/pytest test_bot/test_external_moves.py -q
 .venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py
+.venv/bin/ruff check --config test_bot/ruff.toml lib/matchmaking.py lib/config.py test_bot/test_matchmaking.py test_bot/test_config.py --ignore C901,PLR0912,ANN001,ARG005
 .venv/bin/ruff check --config test_bot/ruff.toml lib/lichess_bot.py lib/config.py --ignore C901,PLR0912
 .venv/bin/ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_external_moves.py --ignore C901,D101,D102,D103,D107,PLR0912,PLR0913,PLR0915,PLR0917,PLW2901,RUF012,RUF100,ARG002
 git diff --check
@@ -411,6 +418,12 @@ Latest passing result for the current book-filter, config, time-management, and 
 100 passed
 ```
 
+Latest passing result for the current matchmaking fallback, config, and book-filter regression set:
+
+```text
+69 passed
+```
+
 Configuration loading was also checked for the live private file, confirming:
 
 ```text
@@ -431,6 +444,7 @@ matchmaking.blitz_fallback.preferred_opponent_min_rating=3080
 matchmaking.decline_cooldown_minutes=180
 matchmaking.outgoing_challenge_cooldown_minutes=180
 matchmaking.draw_cooldown_minutes=30
+matchmaking.try_overrides_on_empty_pool=True
 engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
 engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
 ```
@@ -477,6 +491,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
 | Repeated target-band draw sink | `xzMGfX4n` and `Wp8SbY5A` were consecutive draws against `BlueMoonBot` | Add opt-in `draw_cooldown_minutes`; live value `30` for drawn bullet/blitz games against bots | `test_game_done__cools_down_bot_after_fast_draw`; `test_game_done__does_not_cool_down_bot_after_win`; config default test | Active |
 | Repeated Berlin Wall book draws | Recent white-side bot draws repeatedly entered `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 ... Qxd8+ Kxd8`, including `Q1poOSgG`, `Wp8SbY5A`, and `nSLk3U9v` | Add opt-in Polyglot `avoid_moves`; live bot profile skips `Bb5` after `e4 e5 Nf3 Nc6` | `test_get_book_move__avoid_moves_filters_configured_san_line`; config default test; live config mirrored privately | Active, watch if Italian/other alternatives improve conversion |
+| Bullet pool empty while blitz is allowed | Post-deploy logs at `18:27:48` showed default bullet searched `[3080, 4000]`, found `0` suitable opponents, and waited until `18:42:48`; no same-cycle blitz attempt happened | Add opt-in `try_overrides_on_empty_pool`; live value `true`, with default bullet weight `5` before blitz fallback weight `1` | `test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty`; config default test | Active |
 
 Current private live thresholds worth preserving unless new games disprove them:
 
@@ -484,6 +499,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `matchmaking.opponent_min_rating: 3080`
 - `matchmaking.preferred_opponent_min_rating: 3080`
 - `matchmaking.blitz_fallback.preferred_opponent_min_rating: 3080`
+- `matchmaking.try_overrides_on_empty_pool: true`
 - `draw_or_resign.offer_draw_min_rating: 3080`
 - `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 15000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 60000`

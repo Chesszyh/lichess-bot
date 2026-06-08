@@ -269,8 +269,7 @@ class Matchmaking:
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         if online_bots and not ready_bots:
-            logger.error("No suitable bots are ready for challenge after applying decline filters.")
-            self.cool_down_no_candidates()
+            logger.info("No suitable bots are ready for challenge after applying decline filters.")
         return ready_bots
 
     def prefer_high_rated_opponents(self, online_bots: list[UserProfileType], game_type: str,
@@ -290,9 +289,8 @@ class Matchmaking:
         logger.info(f"No ready opponents rated at least {preferred_min_rating}; using the fallback pool.")
         return online_bots
 
-    def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
-        """Choose an opponent."""
-        override_choice = self.choose_override()
+    def choose_opponent_from_config(self, override_choice: str | None) -> tuple[str | None, int, int, int, str, str, bool]:
+        """Choose an opponent from the default config or one override."""
         logger.info(f"Using the {override_choice or 'default'} matchmaking configuration.")
         override = {} if override_choice is None else self.matchmaking_cfg.overrides.lookup(override_choice)
         match_config = self.matchmaking_cfg | override
@@ -332,9 +330,8 @@ class Matchmaking:
         logger.info(f"Choosing from {len(online_bots)} suitable opponents")
 
         online_bots = self.filter_ready_opponents(online_bots, variant, game_type, mode)
-        if not online_bots:
-            self.cool_down_no_candidates()
-        else:
+        had_ready_candidates = bool(online_bots)
+        if online_bots:
             online_bots = self.prefer_high_rated_opponents(online_bots, game_type, preferred_min_rating)
         bot_username = None
         weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
@@ -350,9 +347,41 @@ class Matchmaking:
             if online_bots:
                 logger.exception("Error:")
             else:
-                logger.error("No suitable bots found to challenge.")
+                logger.info(f"No suitable bots found with the {override_choice or 'default'} matchmaking configuration.")
 
-        return bot_username, base_time, increment, num_days, variant, mode
+        return bot_username, base_time, increment, num_days, variant, mode, had_ready_candidates
+
+    def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
+        """Choose an opponent."""
+        last_choice = (None, 0, 0, 0, "standard", "casual")
+        for override_choice in self.choose_override_sequence():
+            bot_username, base_time, increment, num_days, variant, mode, had_ready_candidates = (
+                self.choose_opponent_from_config(override_choice)
+            )
+            last_choice = (bot_username, base_time, increment, num_days, variant, mode)
+            if bot_username:
+                return last_choice
+            if had_ready_candidates:
+                break
+
+        self.cool_down_no_candidates()
+        return last_choice
+
+    def choose_override_sequence(self) -> list[str | None]:
+        """Return the matchmaking configs to try in order."""
+        if not self.matchmaking_cfg.lookup("try_overrides_on_empty_pool"):
+            return [self.choose_override()]
+
+        override_choices = [None] + self.matchmaking_cfg.overrides.keys()
+        override_weights = cast(Configuration | None, self.matchmaking_cfg.lookup("override_weights"))
+
+        def weight_for(override_name: str | None) -> int | float:
+            if not override_weights:
+                return 1
+            weight = cast(int | float | None, override_weights.lookup(override_name or "default"))
+            return 1 if weight is None else weight
+
+        return sorted(override_choices, key=weight_for, reverse=True)
 
     def choose_override(self) -> str | None:
         """Choose the base matchmaking config or one of its overrides."""

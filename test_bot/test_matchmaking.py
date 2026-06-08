@@ -407,6 +407,56 @@ def test_choose_opponent__uses_override_weights_for_bullet_first_matchmaking(mon
     assert (base_time, increment, days, variant, mode) == (60, 1, 0, "standard", "rated")
 
 
+def test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bullet remains first, but an empty bullet pool should not skip an available blitz target."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "blitzbot", "perfs": {"blitz": {"rating": 3090, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 3080,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "try_overrides_on_empty_pool": True,
+            "override_weights": {"default": 5, "blitz_fallback": 1},
+            "overrides": {
+                "blitz_fallback": {
+                    "challenge_initial_time": [180],
+                    "challenge_increment": [1],
+                },
+            },
+        }
+    })
+    mock_user_profile: UserProfileType = {
+        "username": "testbot",
+        "perfs": {"bullet": {"rating": 3030}, "blitz": {"rating": 3030}},
+    }
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0]])
+
+    opponent, base_time, increment, days, variant, mode = matchmaking.choose_opponent()
+
+    assert opponent == "blitzbot"
+    assert (base_time, increment, days, variant, mode) == (180, 1, 0, "standard", "rated")
+    assert mock_li.get_online_bots.call_count == 2
+    assert matchmaking.no_candidate_timer.is_expired()
+
+
 def test_choose_opponent__logs_rejection_reason_counts(
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture) -> None:
