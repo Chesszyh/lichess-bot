@@ -255,6 +255,20 @@ Regression tests:
 
 Operational note: this should be implemented as a narrow draw-offer policy, not as a blanket refusal to accept every high-rated draw offer. The aim is to stop the bot from voluntarily ending playable equal games below the target rating band.
 
+### Opponent Pool: Avoid Below-Target Draw Sinks
+
+Evidence game: `G5YWiyfP`, a bullet draw by threefold repetition as white against `friendlybot_1700`.
+
+This game was played before the `offer_draw_min_rating` process restart took effect. The bot correctly declined an incoming draw offer, but the final repetition was unavoidable: before `57. Kg1`, python-chess showed exactly one legal move, and that move immediately produced the threefold. The practical problem happened earlier: the outgoing matchmaking floor was still `3000`, so the bot voluntarily entered another rated game against a 3026 opponent where a draw is below the 3080 target band.
+
+Change made in the live private Stockfish config:
+
+- Raise incoming `challenge.min_rating` from `3000` to `3080`.
+- Raise outgoing `matchmaking.opponent_min_rating` from `3000` to `3080`.
+- Raise outgoing `matchmaking.preferred_opponent_min_rating` and the `blitz_fallback` preferred floor from `3000` to `3080`.
+
+Operational note: this may reduce game volume when few 3080+ bots are online. That is intentional for this phase: the evidence window had too many non-wins against 3000-3079 and even sub-3000 bots, which is poor signal for stabilizing both bullet and blitz near 3080.
+
 ### Verification From This Pass
 
 Commands that passed:
@@ -275,6 +289,7 @@ Configuration loading was also checked for the live private file, confirming:
 repetition_guard.enabled=True
 repetition_guard.min_rating_gap=-25
 repetition_guard.max_score_loss_cp=150
+draw_or_resign.offer_draw_min_rating=3080
 ```
 
 Known verification debt:
@@ -292,5 +307,6 @@ Prioritize these directions before adding heavier local experiments:
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
 - Make repetition avoidance time-aware. When the opponent is very low on time, allow slightly more score loss to keep the game alive; when both sides have enough time, keep the current conservative threshold.
 - Validate the new draw-offer floor in live games like `dzsQr4Rh`; if too many target-band games become dead flag races, tune the floor or add a clock-aware exception.
+- Validate the 3080 opponent-pool floor. If game volume becomes too sparse, prefer a temporary short fallback window over permanently re-opening 3000-3079 draw sinks.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.
 - Clean up `engine_wrapper.py` complexity and test fake-engine typing before larger strategy changes, so future regressions are easier to isolate.
