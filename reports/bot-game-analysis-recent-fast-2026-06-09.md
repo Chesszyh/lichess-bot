@@ -2,12 +2,12 @@
 
 ## Scope
 
-- Games analyzed: `38`
+- Games analyzed: `39`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 26, 'loss': 11, 'win': 1}`
+- Results: `{'draw': 26, 'loss': 11, 'unknown': 1, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -50,6 +50,7 @@
 
 - `26` x rated draw
 - `11` x rated loss
+- `1` x rated unknown
 - `1` x rated win
 
 ## Results by Speed
@@ -58,6 +59,7 @@
 - `12` x bullet draw
 - `9` x bullet loss
 - `2` x blitz loss
+- `1` x blitz unknown
 - `1` x bullet win
 
 ## Results by Time Control
@@ -243,11 +245,11 @@
 
 ## Unknown Result Terminations
 
-- No unknown-result games found.
+- `1` x Abandoned
 
 ## Unknown Result Contexts
 
-- No unknown-result contexts found.
+- `1` x `Abandoned | black | blitz | 240+3`
 
 ## Loss Prefixes
 
