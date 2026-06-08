@@ -1,0 +1,421 @@
+# Bot Game Analysis for ilovecatgirl
+
+## Scope
+
+- Games analyzed: `1906`
+- Modes: `rated`
+- Results: `{'draw': 1099, 'loss': 356, 'unknown': 44, 'win': 407}`
+- Opening risk gate: FAILED (44 >= 3)
+- No local engine analysis was run.
+
+## Loss Openings
+
+- `44` x Sicilian Defense: Najdorf Variation, English Attack
+- `15` x Caro-Kann Defense: Advance Variation, Short Variation
+- `10` x Ruy Lopez: Berlin Defense, Berlin Wall
+- `9` x French Defense: Steinitz Variation, Boleslavsky Variation
+- `8` x Sicilian Defense: Moscow Variation, Main Line
+- `7` x Queen's Pawn Game: London System
+- `7` x Semi-Slav Defense
+- `6` x Sicilian Defense: Modern Variations
+- `5` x Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
+- `5` x Sicilian Defense: Najdorf Variation
+
+## Results by Mode
+
+- `1099` x rated draw
+- `407` x rated win
+- `356` x rated loss
+- `44` x rated unknown
+
+## Results by Speed
+
+- `834` x blitz draw
+- `279` x blitz loss
+- `265` x bullet draw
+- `240` x bullet win
+- `167` x blitz win
+- `77` x bullet loss
+- `30` x blitz unknown
+- `14` x bullet unknown
+
+## Results by Time Control
+
+- `148` x 180+2 draw
+- `104` x 240+2 draw
+- `92` x 180+0 loss
+- `88` x 180+3 draw
+- `87` x 300+2 draw
+- `87` x 300+3 draw
+- `79` x 240+3 draw
+- `70` x 180+1 draw
+- `57` x 180+0 draw
+- `52` x 60+1 draw
+
+## Rating Impact by Mode
+
+- `rated`: `+226` rating over `1626` games
+
+## Rating Impact by Speed
+
+- `blitz`: `+40` rating over `1129` games
+- `bullet`: `+186` rating over `497` games
+
+## Rating Impact by Time Control
+
+- `180+2 black`: `-96` rating over `103` games
+- `180+0 black`: `-88` rating over `78` games
+- `120+0 black`: `-55` rating over `38` games
+- `180+0 white`: `-54` rating over `84` games
+- `240+2 black`: `-45` rating over `76` games
+- `240+0 white`: `-33` rating over `23` games
+- `300+2 black`: `-31` rating over `54` games
+- `300+3 black`: `-18` rating over `38` games
+- `120+2 black`: `-17` rating over `16` games
+- `180+3 black`: `-15` rating over `41` games
+
+## Rating Impact by Opening
+
+- `Caro-Kann Defense: Advance Variation, Short Variation`: `-38` rating over `32` games
+- `Sicilian Defense: Modern Variations`: `-24` rating over `19` games
+- `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack`: `-22` rating over `7` games
+- `Caro-Kann Defense`: `-16` rating over `6` games
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense`: `-15` rating over `7` games
+- `Indian Defense`: `-14` rating over `5` games
+- `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation`: `-13` rating over `3` games
+- `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit`: `-13` rating over `3` games
+- `Ruy Lopez: Closed, Karpov Variation`: `-13` rating over `2` games
+- `Ruy Lopez: Marshall Attack, Modern Main Line`: `-12` rating over `14` games
+
+## Rating Impact by Opening Context
+
+- `Sicilian Defense: Najdorf Variation, English Attack | black | blitz`: `-38` rating over `71` games
+- `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz`: `-35` rating over `16` games
+- `Ruy Lopez: Marshall Attack | white | blitz`: `-24` rating over `5` games
+- `Sicilian Defense: Moscow Variation, Main Line | black | bullet`: `-22` rating over `15` games
+- `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack | black | blitz`: `-22` rating over `7` games
+- `Sicilian Defense: Modern Variations | black | bullet`: `-19` rating over `11` games
+- `Sicilian Defense: Closed | black | blitz`: `-18` rating over `9` games
+- `French Defense: Steinitz Variation, Boleslavsky Variation | black | blitz`: `-17` rating over `4` games
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet`: `-16` rating over `2` games
+- `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation | black | blitz`: `-13` rating over `3` games
+
+## Focused Rating Impact by Opening Context
+
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-16` rating over `2` games
+- `Caro-Kann Defense | black | bullet | 120+1`: `-9` rating over `1` games
+- `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: `-6` rating over `1` games
+- `Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation | white | bullet | 90+1`: `-5` rating over `3` games
+- `Indian Defense: Accelerated London System | black | bullet | 90+1`: `-5` rating over `1` games
+- `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: `-5` rating over `1` games
+- `French Defense: Steinitz Variation, Boleslavsky Variation | white | bullet | 120+1`: `-4` rating over `3` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: `-4` rating over `2` games
+- `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: `-4` rating over `1` games
+
+## Focused Score by Opening Context
+
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `Caro-Kann Defense | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Indian Defense: Accelerated London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Scandinavian Defense: Modern Variation | black | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Scotch Game: Mieses Variation | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Sicilian Defense: Prins Variation | black | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Sicilian Defense: Scheveningen Variation, Keres Attack | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+
+## Focused Rating Impact by Opponent
+
+- `abcd_engine | bullet | 60+1`: `-10` rating over `2` games
+- `ToromBot | bullet | 90+1`: `-9` rating over `3` games
+- `grail-bot | bullet | 120+1`: `-8` rating over `2` games
+- `MDBOT | bullet | 60+1`: `-7` rating over `4` games
+- `duchessAI | bullet | 60+1`: `-6` rating over `6` games
+- `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
+- `abhisun_bot | bullet | 120+1`: `-4` rating over `2` games
+- `TakticproChess | bullet | 120+1`: `-4` rating over `1` games
+- `DarkOnBot | bullet | 90+1`: `-3` rating over `2` games
+
+## Focused Score by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `TakticproChess | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `bot1e | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `ToromBot | bullet | 90+1`: W-D-L `0-1-2`, score `16.7%` over `3` games
+- `MDBOT | bullet | 60+1`: W-D-L `0-2-3`, score `20.0%` over `5` games
+- `abcd_engine | bullet | 60+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
+- `DarkOnBot | bullet | 90+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
+- `Fischer_Bot | bullet | 120+1`: W-D-L `0-2-1`, score `33.3%` over `3` games
+- `DarkOnBot | bullet | 60+1`: W-D-L `0-7-1`, score `43.8%` over `8` games
+
+## Worst Scoring Controls
+
+- `180+0 black`: W-D-L `8-26-49`, score `25.3%` over `83` games
+- `300+2 black`: W-D-L `0-36-21`, score `31.6%` over `57` games
+- `180+0 white`: W-D-L `12-31-43`, score `32.0%` over `86` games
+- `180+2 black`: W-D-L `8-62-40`, score `35.5%` over `110` games
+- `300+3 black`: W-D-L `1-30-12`, score `37.2%` over `43` games
+- `180+3 black`: W-D-L `2-29-13`, score `37.5%` over `44` games
+- `240+3 black`: W-D-L `1-32-9`, score `40.5%` over `42` games
+- `240+2 black`: W-D-L `10-45-25`, score `40.6%` over `80` games
+- `120+0 black`: W-D-L `10-17-13`, score `46.2%` over `40` games
+- `300+1 black`: W-D-L `1-10-2`, score `46.2%` over `13` games
+
+## Loss Colors
+
+- `250` x black
+- `106` x white
+
+## Loss Terminations
+
+- `249` x Normal
+- `107` x Time forfeit
+
+## Time Forfeit Loss Controls
+
+- `26` x 180+0 white
+- `21` x 180+0 black
+- `5` x 180+1 black
+- `5` x 60+0 white
+- `5` x 240+0 white
+- `4` x 120+2 black
+- `3` x 60+2 black
+- `3` x 180+2 black
+- `3` x 180+2 white
+- `3` x 120+2 white
+
+## Loss Prefixes
+
+- `42` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
+- `14` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6`
+- `10` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6`
+- `7` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5`
+- `7` x `e4 e6 d4 d5 Nc3 Nf6 e5 Nfd7 f4 c5 Nf3 Nc6`
+- `6` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Bg5 e6`
+- `5` x `d4 Nf6 Nf3 d5 Bf4 c5 e3 Nc6 Nbd2 Qb6 dxc5 Qxb2`
+- `4` x `e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Bg6`
+- `4` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 Bg5 Be7 e3 Nbd7`
+- `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 h3 e6`
+
+## Loss Prefix Contexts
+
+- `16` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | Normal`
+- `13` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | Normal`
+- `6` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Bg5 e6 | black | blitz | Normal`
+- `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6 | black | blitz | Normal`
+- `5` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | Normal`
+- `5` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | Time forfeit`
+- `4` x `e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Bg6 | black | blitz | Normal`
+- `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | Time forfeit`
+- `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | Time forfeit`
+- `4` x `d4 Nf6 Nf3 d5 Bf4 c5 e3 Nc6 Nbd2 Qb6 dxc5 Qxb2 | black | bullet | Normal`
+
+## Lower-Rated Draws
+
+- Lower-rated draws found: `197`
+
+## Lower-Rated Draw Openings
+
+- `22` x Sicilian Defense: Najdorf Variation, English Attack
+- `12` x Sicilian Defense: Najdorf Variation
+- `7` x Catalan Opening: Open Defense, Modern Sharp Variation
+- `7` x Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation
+- `6` x Semi-Slav Defense: Meran Variation, Wade Variation
+- `5` x Semi-Slav Defense: Chigorin Defense
+- `5` x Semi-Slav Defense
+- `4` x Sicilian Defense: Closed
+- `4` x Catalan Opening: Open Defense, Classical Line
+- `4` x Ruy Lopez: Berlin Defense, l'Hermet Variation, Berlin Wall Defense
+
+## Lower-Rated Draw Terminations
+
+- `184` x Normal
+- `7` x Time forfeit
+- `6` x Insufficient material
+
+## Lower-Rated Draw Prefixes
+
+- `20` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
+- `7` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5`
+- `6` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6`
+- `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5`
+- `4` x `e4 c5 Nf3 e6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Ndb5 d6`
+- `3` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Bd3 dxc4`
+- `3` x `d4 Nf6 c4 e6 g3 d5 Nf3 dxc4 Bg2 Nc6 Qa4 Bb4+`
+- `3` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7`
+- `3` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7`
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6`
+
+## Focused Lower-Rated Draw Contexts
+
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Be2 Bd6 | black | bullet | 120+1`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 | black | bullet | 90+1`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 g3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | bullet | 90+1`
+- `1` x `e4 c5 Nf3 d6 b4 cxb4 Bb5+ Bd7 Qe2 g6 d4 Bg7 | black | bullet | 120+1`
+- `1` x `e4 Nc6 Nf3 g6 d4 Bg7 c3 d6 h3 e5 dxe5 Nxe5 | black | bullet | 120+1`
+- `1` x `Nf3 Nf6 d4 d5 c4 e6 Bg5 Be7 e3 O-O Nc3 h6 | black | bullet | 60+1`
+- `1` x `Nf3 d6 d4 Nf6 c4 c6 Nc3 Bg4 e4 e5 d5 Be7 | black | bullet | 60+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+1`
+- `1` x `d4 g6 e4 c6 Bd3 Bg7 Nf3 Nf6 e5 Nd5 c4 Nc7 | black | bullet | 60+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 90+1`
+
+## Lower-Rated Draw Contexts
+
+- `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5 | black | blitz | 180+2`
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | white | blitz | 240+1`
+- `2` x `d4 Nf6 c4 e6 g3 d5 Nf3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | blitz | 180+1`
+- `2` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | 240+0`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 90+0`
+- `2` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5 | black | bullet | 60+0`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Bd3 dxc4 | black | bullet | 90+2`
+
+## Largest Lower-Rated Draw Gaps
+
+- gap `576` vs `GNUPassant` (2330) in `ilovecatgirl vs GNUPassant - Cdt4VUHk.pgn`: Caro-Kann Defense: Advance Variation, Short Variation
+- gap `561` vs `PeachFruit` (2381) in `ilovecatgirl vs PeachFruit - aD2Tfss0.pgn`: Sicilian Defense: Taimanov Variation, Bastrikov Variation
+- gap `528` vs `PeachFruit` (2360) in `PeachFruit vs ilovecatgirl - nWc2j90j.pgn`: Catalan Opening: Open Defense, Modern Sharp Variation
+- gap `483` vs `SoloBot` (2508) in `SoloBot vs ilovecatgirl - ke35DrrS.pgn`: Sicilian Defense: Moscow Variation, Main Line
+- gap `472` vs `Eichkatzerl` (2426) in `Eichkatzerl vs ilovecatgirl - 42ytSeFu.pgn`: Sicilian Defense: Sozin Attack
+- gap `450` vs `prokopakop` (2525) in `prokopakop vs ilovecatgirl - TQr2RUE6.pgn`: Sicilian Defense: Najdorf Variation, English Attack
+- gap `429` vs `prokopakop` (2510) in `ilovecatgirl vs prokopakop - FfzXRpyW.pgn`: Ruy Lopez: Closed, Smyslov Defense
+- gap `427` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - SO2bW34b.pgn`: Sicilian Defense: Najdorf Variation
+- gap `419` vs `prokopakop` (2511) in `prokopakop vs ilovecatgirl - ZnbOQOsf.pgn`: Sicilian Defense: Najdorf Variation
+- gap `413` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - e4tmsmoS.pgn`: Sicilian Defense: Najdorf Variation
+
+## Rating-Negative Draw Terminations
+
+- `145` x Normal
+- `6` x Time forfeit
+- `4` x Insufficient material
+
+## Focused Rating-Negative Draw Contexts
+
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Be2 Bd6 | black | bullet | 120+1`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 | black | bullet | 90+1`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 g3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | bullet | 90+1`
+- `1` x `e4 c5 Nf3 d6 b4 cxb4 Bb5+ Bd7 Qe2 g6 d4 Bg7 | black | bullet | 120+1`
+- `1` x `e4 Nc6 Nf3 g6 d4 Bg7 c3 d6 h3 e5 dxe5 Nxe5 | black | bullet | 120+1`
+- `1` x `Nf3 Nf6 d4 d5 c4 e6 Bg5 Be7 e3 O-O Nc3 h6 | black | bullet | 60+1`
+- `1` x `Nf3 d6 d4 Nf6 c4 c6 Nc3 Bg4 e4 e5 d5 Be7 | black | bullet | 60+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+1`
+- `1` x `d4 g6 e4 c6 Bd3 Bg7 Nf3 Nf6 e5 Nd5 c4 Nc7 | black | bullet | 60+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 90+1`
+
+## Rating-Negative Draw Contexts
+
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | white | blitz | 240+1`
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5 | black | blitz | 180+2`
+- `2` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7 | black | blitz | 180+2`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | 240+0`
+- `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5 | black | bullet | 60+0`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Be2 Bd6 | black | bullet | 120+1`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 Bb4 Qb3 c5 dxc5 Nc6 | black | blitz | 240+2`
+- `1` x `d4 Nf6 Nf3 g6 c4 Bg7 Nc3 d5 cxd5 Nxd5 e4 Nxc3 | black | blitz | 180+2`
+- `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 | black | bullet | 90+1`
+
+## Largest Rating-Negative Draws
+
+- `-9` rating in `ilovecatgirl vs PeachFruit - aD2Tfss0.pgn` vs `PeachFruit` (2381): Sicilian Defense: Taimanov Variation, Bastrikov Variation
+- `-7` rating in `SykoraBot vs ilovecatgirl - 8xlgsYLk.pgn` vs `SykoraBot` (2684): Sicilian Defense: Modern Variations
+- `-6` rating in `nebubot vs ilovecatgirl - LbFAw6V9.pgn` vs `nebubot` (2525): Semi-Slav Defense
+- `-6` rating in `odonata-bot vs ilovecatgirl - 0PaFi7q2.pgn` vs `odonata-bot` (2749): Sicilian Defense: Najdorf Variation, English Attack
+- `-5` rating in `Eichkatzerl vs ilovecatgirl - 42ytSeFu.pgn` vs `Eichkatzerl` (2426): Sicilian Defense: Sozin Attack
+- `-5` rating in `PeachFruit vs ilovecatgirl - nWc2j90j.pgn` vs `PeachFruit` (2360): Catalan Opening: Open Defense, Modern Sharp Variation
+- `-5` rating in `SoloBot vs ilovecatgirl - ke35DrrS.pgn` vs `SoloBot` (2508): Sicilian Defense: Moscow Variation, Main Line
+- `-5` rating in `ilovecatgirl vs BretemaBot - 2IigHLor.pgn` vs `BretemaBot` (2699): English Opening: King's English Variation
+- `-5` rating in `ilovecatgirl vs GNUPassant - Cdt4VUHk.pgn` vs `GNUPassant` (2330): Caro-Kann Defense: Advance Variation, Short Variation
+- `-5` rating in `ilovecatgirl vs duchessAI - OjJ2izmH.pgn` vs `duchessAI` (2812): Sicilian Defense: Staunton-Cochrane Variation
+
+## Clock-Rich Normal Loss Contexts
+
+- `3` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 300+2`
+- `3` x `Sicilian Defense: Moscow Variation, Main Line | black | bullet | 120+0`
+- `3` x `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 120+0`
+- `3` x `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 60+0`
+- `2` x `Semi-Slav Defense: Anti-Moscow Gambit | black | blitz | 300+2`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 300+2`
+- `2` x `Caro-Kann Defense: Advance Variation | black | blitz | 240+3`
+- `2` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 240+2`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 30+1`
+- `1` x `Caro-Kann Defense: Advance Variation, Short Variation | white | blitz | 300+2`
+
+## Clock-Rich Normal Losses
+
+- `330s` left in `ilovecatgirl vs RecklessEngine - wKRb8aH8.pgn` vs `RecklessEngine`: Caro-Kann Defense: Advance Variation, Short Variation
+- `301s` left in `DarkOnBot vs ilovecatgirl - xH8osINM.pgn` vs `DarkOnBot`: Sicilian Defense: Richter-Rauzer Variation, Neo-Modern Variation, Early Deviations
+- `286s` left in `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, Adams Attack
+- `270s` left in `YoBot_v2 vs ilovecatgirl - HAU7QRJ9.pgn` vs `YoBot_v2`: Semi-Slav Defense: Anti-Moscow Gambit
+- `269s` left in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation, English Attack
+- `269s` left in `ilovecatgirl vs BlueMoonBot - ArFhoUjy.pgn` vs `BlueMoonBot`: Sicilian Defense: Taimanov Variation, Bastrikov Variation
+- `266s` left in `CuteBot vs ilovecatgirl - bELe3av9.pgn` vs `CuteBot`: Caro-Kann Defense: Advance Variation, Short Variation
+- `254s` left in `TakticproChess vs ilovecatgirl - QBWEqSHD.pgn` vs `TakticproChess`: Queen's Gambit Declined: Exchange Variation, Positional Variation
+- `250s` left in `TakticproChess vs ilovecatgirl - WwckI7lb.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation
+- `249s` left in `wyxx210704_bot vs ilovecatgirl - ezPjAgnq.pgn` vs `wyxx210704_bot`: Caro-Kann Defense: Advance Variation, Short Variation
+
+## Focused High-Clock Normal Loss Contexts
+
+- `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
+- `1` x `Queen's Pawn Game: London System | black | bullet | 60+1`
+- `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
+- `1` x `Scotch Game: Mieses Variation | white | bullet | 60+1`
+
+## High-Clock Normal Loss Contexts
+
+- `3` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 300+2`
+- `3` x `Sicilian Defense: Moscow Variation, Main Line | black | bullet | 120+0`
+- `2` x `Semi-Slav Defense: Anti-Moscow Gambit | black | blitz | 300+2`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 300+2`
+- `2` x `Caro-Kann Defense: Advance Variation | black | blitz | 240+3`
+- `2` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 240+2`
+- `2` x `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 120+0`
+- `1` x `Caro-Kann Defense: Advance Variation, Short Variation | white | blitz | 300+2`
+- `1` x `Sicilian Defense: Richter-Rauzer Variation, Neo-Modern Variation, Early Deviations | black | blitz | 300+2`
+- `1` x `Sicilian Defense: Najdorf Variation, Adams Attack | black | blitz | 300+3`
+
+## High-Clock Normal Losses
+
+- `330s` left in `ilovecatgirl vs RecklessEngine - wKRb8aH8.pgn` vs `RecklessEngine`: Caro-Kann Defense: Advance Variation, Short Variation
+- `301s` left in `DarkOnBot vs ilovecatgirl - xH8osINM.pgn` vs `DarkOnBot`: Sicilian Defense: Richter-Rauzer Variation, Neo-Modern Variation, Early Deviations
+- `286s` left in `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, Adams Attack
+- `270s` left in `YoBot_v2 vs ilovecatgirl - HAU7QRJ9.pgn` vs `YoBot_v2`: Semi-Slav Defense: Anti-Moscow Gambit
+- `269s` left in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation, English Attack
+- `269s` left in `ilovecatgirl vs BlueMoonBot - ArFhoUjy.pgn` vs `BlueMoonBot`: Sicilian Defense: Taimanov Variation, Bastrikov Variation
+- `266s` left in `CuteBot vs ilovecatgirl - bELe3av9.pgn` vs `CuteBot`: Caro-Kann Defense: Advance Variation, Short Variation
+- `254s` left in `TakticproChess vs ilovecatgirl - QBWEqSHD.pgn` vs `TakticproChess`: Queen's Gambit Declined: Exchange Variation, Positional Variation
+- `250s` left in `TakticproChess vs ilovecatgirl - WwckI7lb.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation
+- `249s` left in `wyxx210704_bot vs ilovecatgirl - ezPjAgnq.pgn` vs `wyxx210704_bot`: Caro-Kann Defense: Advance Variation, Short Variation
+
+## Largest Bot Eval Drops
+
+- `-394.17` after `Kh4` in `ArasanX vs ilovecatgirl - CNjERGD9.pgn` vs `ArasanX`: `-5.81` to `-399.98` (Sicilian Defense: Najdorf Variation, English Attack | black | 180+3)
+- `-389.89` after `Kc7` in `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: `-10.03` to `-399.92` (Sicilian Defense: Najdorf Variation, Adams Attack | black | 300+3)
+- `-389.45` after `Ra2+` in `SimonEricAfonso vs ilovecatgirl - WUJo1fC0.pgn` vs `SimonEricAfonso`: `-10.43` to `-399.88` (Semi-Slav Defense | black | 180+3)
+- `-388.11` after `Rd5+` in `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: `-11.85` to `-399.96` (Nimzo-Indian Defense: Normal Variation, Classical Defense | white | 60+1)
+- `-317.48` after `Kf6` in `TakticproChess vs ilovecatgirl - cArqfmSd.pgn` vs `TakticproChess`: `-82.37` to `-399.85` (Semi-Slav Defense | black | 240+2)
+- `-199.98` after `Re1` in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: `-199.85` to `-399.83` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+2)
+- `-199.97` after `Rb2` in `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: `-199.87` to `-399.84` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+2)
+- `-199.97` after `Kc8` in `suniferia vs ilovecatgirl - GxAtiN96.pgn` vs `suniferia`: `-199.79` to `-399.76` (Sicilian Defense: Najdorf Variation, English Attack | black | 300+3)
+- `-199.90` after `Kxb6` in `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: `-199.98` to `-399.88` (Queen's Gambit Accepted: Central Variation, Greco Variation | black | 60+2)
+- `-193.31` after `Kb5` in `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: `-6.53` to `-199.84` (Queen's Gambit Accepted: Central Variation, Greco Variation | black | 60+2)
+
+## Recent Losses
+
+- `2026-06-08 11:52:50+00:00` `MEGA-NOOB-BOT vs ilovecatgirl - 87C7maRn.pgn` vs `MEGA-NOOB-BOT`: Ruy Lopez: Open, Bernstein Variation
+- `2026-06-08 11:28:35+00:00` `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
+- `2026-06-08 10:47:09+00:00` `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: Queen's Gambit Accepted: Central Variation, Greco Variation
+- `2026-06-08 10:16:53+00:00` `ilovecatgirl vs abcd_engine - 2QVD5cp2.pgn` vs `abcd_engine`: Nimzo-Indian Defense: Normal Variation, Classical Defense
+- `2026-06-08 08:51:21+00:00` `ArasanX vs ilovecatgirl - CNjERGD9.pgn` vs `ArasanX`: Sicilian Defense: Najdorf Variation, English Attack
+- `2026-06-08 08:05:00+00:00` `TakticproChess vs ilovecatgirl - cArqfmSd.pgn` vs `TakticproChess`: Semi-Slav Defense
+- `2026-06-07 23:01:40+00:00` `TakticproChess vs ilovecatgirl - fLBNC4KL.pgn` vs `TakticproChess`: Sicilian Defense: Najdorf Variation, English Attack
+- `2026-06-07 20:07:10+00:00` `SimonEricAfonso vs ilovecatgirl - WUJo1fC0.pgn` vs `SimonEricAfonso`: Semi-Slav Defense
+- `2026-06-07 19:21:11+00:00` `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, Adams Attack
+- `2026-06-07 18:39:20+00:00` `suniferia vs ilovecatgirl - GxAtiN96.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, English Attack
