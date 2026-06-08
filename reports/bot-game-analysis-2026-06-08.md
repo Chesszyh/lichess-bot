@@ -2,8 +2,8 @@
 
 ## Scope
 
-- Games analyzed: `2355`
-- Results: `{'draw': 1397, 'loss': 466, 'unknown': 45, 'win': 447}`
+- Games analyzed: `2356`
+- Results: `{'draw': 1397, 'loss': 467, 'unknown': 45, 'win': 447}`
 - Opening risk gate: FAILED (66 >= 3)
 - No local engine analysis was run.
 
@@ -27,7 +27,7 @@
 - `269` x bullet draw
 - `242` x bullet win
 - `205` x blitz win
-- `80` x bullet loss
+- `81` x bullet loss
 - `31` x blitz unknown
 - `14` x bullet unknown
 
@@ -47,7 +47,7 @@
 ## Rating Impact by Speed
 
 - `blitz`: `+40` rating over `1129` games
-- `bullet`: `+196` rating over `494` games
+- `bullet`: `+190` rating over `495` games
 
 ## Rating Impact by Time Control
 
@@ -68,12 +68,12 @@
 - `Sicilian Defense: Modern Variations`: `-24` rating over `19` games
 - `Sicilian Defense: Nyezhmetdinov-Rossolimo Attack`: `-22` rating over `7` games
 - `Caro-Kann Defense`: `-16` rating over `6` games
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense`: `-15` rating over `7` games
 - `Indian Defense`: `-14` rating over `5` games
 - `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation`: `-13` rating over `3` games
 - `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit`: `-13` rating over `3` games
 - `Ruy Lopez: Closed, Karpov Variation`: `-13` rating over `2` games
 - `Ruy Lopez: Marshall Attack, Modern Main Line`: `-12` rating over `14` games
-- `Caro-Kann Defense: Advance Variation`: `-12` rating over `8` games
 
 ## Rating Impact by Opening Context
 
@@ -85,14 +85,14 @@
 - `Sicilian Defense: Modern Variations | black | bullet`: `-19` rating over `11` games
 - `Sicilian Defense: Closed | black | blitz`: `-18` rating over `9` games
 - `French Defense: Steinitz Variation, Boleslavsky Variation | black | blitz`: `-17` rating over `4` games
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet`: `-16` rating over `2` games
 - `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation | black | blitz`: `-13` rating over `3` games
-- `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit | black | blitz`: `-13` rating over `3` games
 
 ## Focused Rating Impact by Opening Context
 
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-16` rating over `2` games
 - `Sicilian Defense: Najdorf Variation, Poisoned Pawn Variation | black | blitz | 120+2`: `-11` rating over `1` games
 - `Sicilian Defense: Smith-Morra Gambit Accepted, Scheveningen Formation | black | blitz | 120+2`: `-11` rating over `1` games
-- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-10` rating over `1` games
 - `Philidor Defense: Exchange Variation | white | blitz | 120+2`: `-10` rating over `1` games
 - `Caro-Kann Defense | black | bullet | 120+1`: `-9` rating over `1` games
 - `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
@@ -103,11 +103,11 @@
 
 ## Focused Score by Opening Context
 
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
 - `Caro-Kann Defense | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Carr Defense | white | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `French Defense: Rubinstein Variation | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Indian Defense: Accelerated London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
-- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Philidor Defense: Exchange Variation | white | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
@@ -130,11 +130,11 @@
 ## Loss Colors
 
 - `331` x black
-- `135` x white
+- `136` x white
 
 ## Loss Terminations
 
-- `334` x Normal
+- `335` x Normal
 - `132` x Time forfeit
 
 ## Time Forfeit Loss Controls
@@ -282,6 +282,7 @@
 
 ## Recent Losses
 
+- `2026-06-08 11:28:35+00:00` `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `2026-06-08 10:47:09+00:00` `Cheszter vs ilovecatgirl - ZiJe1OaC.pgn` vs `Cheszter`: Queen's Gambit Accepted: Central Variation, Greco Variation
 - `2026-06-08 10:16:53+00:00` `ilovecatgirl vs abcd_engine - 2QVD5cp2.pgn` vs `abcd_engine`: Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `2026-06-08 08:51:21+00:00` `ArasanX vs ilovecatgirl - CNjERGD9.pgn` vs `ArasanX`: Sicilian Defense: Najdorf Variation, English Attack
@@ -291,4 +292,3 @@
 - `2026-06-07 19:21:11+00:00` `suniferia vs ilovecatgirl - Cgxa3C6t.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, Adams Attack
 - `2026-06-07 18:39:20+00:00` `suniferia vs ilovecatgirl - GxAtiN96.pgn` vs `suniferia`: Sicilian Defense: Najdorf Variation, English Attack
 - `2026-06-07 17:29:47+00:00` `CupchessBot vs ilovecatgirl - x4Cr3jad.pgn` vs `CupchessBot`: Sicilian Defense: Najdorf Variation, Zagreb Variation
-- `2026-06-07 16:05:57+00:00` `ilovecatgirl vs suniferia - 2Yrx6U31.pgn` vs `suniferia`: Caro-Kann Defense: Advance Variation, Short Variation

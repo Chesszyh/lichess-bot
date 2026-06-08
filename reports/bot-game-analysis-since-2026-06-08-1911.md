@@ -2,47 +2,47 @@
 
 ## Scope
 
-- Games analyzed: `0`
+- Games analyzed: `1`
 - Since UTC: `2026-06-08T11:11:00+00:00`
-- Results: `{}`
-- Opening risk gate: passed (0 < 3)
+- Results: `{'loss': 1}`
+- Opening risk gate: passed (1 < 3)
 - No local engine analysis was run.
 
 ## Loss Openings
 
-- No losses found.
+- `1` x Nimzo-Indian Defense: Normal Variation, Classical Defense
 
 ## Results by Speed
 
-- No games found.
+- `1` x bullet loss
 
 ## Results by Time Control
 
-- No games found.
+- `1` x 60+1 loss
 
 ## Rating Impact by Speed
 
-- No rating-diff tags found.
+- `bullet`: `-6` rating over `1` games
 
 ## Rating Impact by Time Control
 
-- No rating-diff tags found.
+- `60+1 white`: `-6` rating over `1` games
 
 ## Rating Impact by Opening
 
-- No rating-diff tags found.
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense`: `-6` rating over `1` games
 
 ## Rating Impact by Opening Context
 
-- No rating-diff tags found.
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet`: `-6` rating over `1` games
 
 ## Focused Rating Impact by Opening Context
 
-- No rating-diff tags found.
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-6` rating over `1` games
 
 ## Focused Score by Opening Context
 
-- No scored controls found.
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
 ## Worst Scoring Controls
 
@@ -50,11 +50,11 @@
 
 ## Loss Colors
 
-- No losses found.
+- `1` x white
 
 ## Loss Terminations
 
-- No losses found.
+- `1` x Normal
 
 ## Time Forfeit Loss Controls
 
@@ -62,11 +62,11 @@
 
 ## Loss Prefixes
 
-- No loss prefixes found.
+- `1` x `d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5 a3 dxc4`
 
 ## Loss Prefix Contexts
 
-- No loss prefix contexts found.
+- `1` x `d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5 a3 dxc4 | white | bullet | Normal`
 
 ## Lower-Rated Draws
 
@@ -106,4 +106,4 @@
 
 ## Recent Losses
 
-- No recent losses found.
+- `2026-06-08 11:28:35+00:00` `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
