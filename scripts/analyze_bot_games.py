@@ -141,6 +141,36 @@ def parse_focus_time_controls(value: str | None) -> set[str]:
     return {item.strip() for item in value.split(",") if item.strip()}
 
 
+def strip_pgn_variations(pgn_text: str) -> str:
+    """Remove parenthesized PGN variations while preserving mainline comments."""
+    stripped: list[str] = []
+    variation_depth = 0
+    in_comment = False
+    for character in pgn_text:
+        if in_comment:
+            if variation_depth == 0:
+                stripped.append(character)
+            if character == "}":
+                in_comment = False
+            continue
+
+        if character == "{":
+            in_comment = True
+            if variation_depth == 0:
+                stripped.append(character)
+            continue
+        if character == "(":
+            variation_depth += 1
+            continue
+        if character == ")" and variation_depth > 0:
+            variation_depth -= 1
+            continue
+        if variation_depth == 0:
+            stripped.append(character)
+
+    return "".join(stripped)
+
+
 def time_control_base_seconds(time_control: str) -> int | None:
     """Return the base seconds from a PGN TimeControl tag."""
     base_seconds = time_control.split("+", maxsplit=1)[0]
@@ -312,7 +342,7 @@ def parse_game(path: Path,
     if not headers_match_filters(headers, bot_name, max_base_seconds, since_utc):
         return None
 
-    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    game = chess.pgn.read_game(io.StringIO(strip_pgn_variations(pgn_text)))
     if game is None:
         return None
 

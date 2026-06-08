@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from scripts.analyze_bot_games import parse_args, render_markdown, summarize_records
+from scripts.analyze_bot_games import parse_args, render_markdown, strip_pgn_variations, summarize_records
 
 
 def write_pgn(records_dir: Path, name: str, headers: dict[str, str], moves: str) -> None:
@@ -340,6 +340,19 @@ def test_render_markdown__shows_largest_bot_eval_drops(tmp_path: Path) -> None:
     assert eval_drop.drop_cp == 80
     assert "Largest Bot Eval Drops" in markdown
     assert "`-0.80` after `c4` in `eval-drop-loss.pgn` vs `StrongBot`: `+1.20` to `+0.40`" in markdown
+
+
+def test_strip_pgn_variations__preserves_mainline_comments_and_removes_side_lines() -> None:
+    """Large saved engine PVs should not be parsed for mainline-only summary fields."""
+    pgn_text = (
+        "1. d4 { [%clk 0:01:00] } ( 1. d4 Nf6 2. c4 e6 { [%eval 0.32,10] } ) "
+        "1... Nf6 { [%clk 0:01:00] } 2. c4 { [%clk 0:00:59] } 1/2-1/2"
+    )
+
+    assert strip_pgn_variations(pgn_text) == (
+        "1. d4 { [%clk 0:01:00] }  "
+        "1... Nf6 { [%clk 0:01:00] } 2. c4 { [%clk 0:00:59] } 1/2-1/2"
+    )
 
 
 def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path: Path) -> None:
