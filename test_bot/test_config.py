@@ -141,6 +141,21 @@ def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None
     assert raw_config["engine"]["polyglot"]["avoid_moves"] == []
 
 
+def test_insert_default_values__repetition_guard_opponent_claim_defaults_to_false() -> None:
+    """One-ply repetition trap filtering should be opt-in."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci", "repetition_guard": {}},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["engine"]["repetition_guard"]["avoid_opponent_immediate_claim"] is False
+
+
 def test_validate_config__rejects_unknown_matchmaking_override_weight(monkeypatch: pytest.MonkeyPatch) -> None:
     """Override weights should only reference the default config or configured overrides."""
     raw_config: CONFIG_DICT_TYPE = {

@@ -766,6 +766,66 @@ def test_search__filters_repetition_against_higher_rated_opponent_with_large_clo
     assert result.move != repeated_move
 
 
+def test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge() -> None:
+    """Do not hand the opponent a one-move threefold claim when the bot has a bullet clock edge."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    fake_engine = RepetitionFakeEngine("d3b4")
+    wrapper.engine = fake_engine
+    board = chess.Board()
+    for san in [
+            "d4", "Nf6", "c4", "e6", "Nf3", "d5", "Nc3", "Bb4",
+            "Qa4+", "Nc6", "e3", "O-O", "Qc2", "Ne7", "Bd2", "c5",
+            "a3", "Bxc3", "Bxc3", "cxd4", "Bxd4", "Bd7", "Be2", "Rc8",
+            "O-O", "dxc4", "Rfd1", "Ng6", "a4", "Qc7", "Nd2", "e5",
+            "Bc3", "Nd5", "Nxc4", "Nxc3", "Qxc3", "Be6", "Nd6", "Qxc3",
+            "bxc3", "Rxc3", "Nxb7", "Rb8", "Nd6", "Ne7", "a5", "g6",
+            "Nb5", "Rc2", "Bf1", "a6", "Nd6", "Rc6", "Rac1", "f5",
+            "f3", "Kf8", "e4", "h5", "h4", "f4", "Kh1", "Rb4",
+            "Kg1", "Rb8", "Kh2", "Rb4", "Be2", "Rb8", "Kh1", "Bg8",
+            "Bf1", "Be6", "Kg1", "Rb4", "Kh2", "Rb8", "Be2", "Rb4",
+            "Bf1", "Rb8", "Rxc6", "Nxc6", "Bc4", "Ke7", "Bxe6", "Kxe6",
+            "Nc4", "Rd8", "Rxd8", "Nxd8", "Nb2", "Kd6", "Nd3", "Nc6",
+            "Kg1", "Nxa5", "Nb4", "Nc4", "Nxa6", "Ne3", "Nb4", "Kc5",
+            "Nd3+", "Kd4", "Nb4", "Kc5", "Nd3+", "Kd4",
+    ]:
+        board.push_san(san)
+    repeated_move = chess.Move.from_uci("d3b4")
+    repeated_board = board.copy(stack=True)
+    repeated_board.push(repeated_move)
+    claim_board = repeated_board.copy(stack=True)
+    claim_board.push(chess.Move.from_uci("d4c5"))
+    assert not repeated_board.is_repetition(3)
+    assert claim_board.is_repetition(3)
+    game = bullet_game()
+    game.black.rating = 3105
+    game.state["wtime"] = 64270
+    game.state["btime"] = 25470
+    engine_cfg = Configuration({
+        "repetition_guard": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "min_rating_gap": -25,
+            "avoid_opponent_immediate_claim": True,
+            "clock_advantage_override_enabled": True,
+            "clock_advantage_override_speeds": ["bullet", "blitz"],
+            "clock_advantage_override_opponent_ms": 40000,
+            "clock_advantage_override_min_ms": 30000,
+        },
+    })
+
+    result = wrapper.search(board,
+                            chess.engine.Limit(white_clock=64, black_clock=25),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=engine_cfg)
+
+    assert fake_engine.root_moves
+    assert repeated_move not in fake_engine.root_moves
+    assert result.move != repeated_move
+
+
 def test_search__does_not_play_filtered_repetition_if_engine_returns_it() -> None:
     """Do not trust an engine result that violates repetition-guard root moves."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

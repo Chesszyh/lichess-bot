@@ -390,7 +390,7 @@ class EngineWrapper:
             logger.warning(f"Engine returned {result.move} outside root moves; using {replacement} instead.")
             result.move = replacement
         guard_root_moves = repetition_guard_root_moves(board, game, search_root_moves, repetition_guard)
-        if guard_root_moves and result.move not in guard_root_moves and move_triggers_threefold(board, result.move):
+        if guard_root_moves and result.move not in guard_root_moves:
             guarded = active_engine.play(board,
                                          time_limit,
                                          info=chess.engine.INFO_ALL,
@@ -955,21 +955,41 @@ def repetition_guard_root_moves(board: chess.Board,
         return root_moves
 
     candidates = root_moves or list(board.legal_moves)
+    avoid_opponent_claim = bool(repetition_guard.lookup("avoid_opponent_immediate_claim"))
     safe_moves: list[chess.Move] = []
     repeated_moves: list[chess.Move] = []
+    opponent_claim_moves: list[chess.Move] = []
     for move in candidates:
         candidate = board.copy(stack=True)
         candidate.push(move)
         if candidate.is_repetition(3):
             repeated_moves.append(move)
+        elif avoid_opponent_claim and opponent_can_trigger_threefold(candidate):
+            opponent_claim_moves.append(move)
         else:
             safe_moves.append(move)
 
-    if not repeated_moves or not safe_moves:
+    unsafe_moves = repeated_moves + opponent_claim_moves
+    if not unsafe_moves or not safe_moves:
         return root_moves
 
-    logger.info(f"Filtering immediate threefold repetition moves: {', '.join(map(str, repeated_moves))}")
+    if repeated_moves:
+        logger.info(f"Filtering immediate threefold repetition moves: {', '.join(map(str, repeated_moves))}")
+    if opponent_claim_moves:
+        logger.info("Filtering moves that allow opponent immediate threefold claim: "
+                    f"{', '.join(map(str, opponent_claim_moves))}")
     return safe_moves
+
+
+def opponent_can_trigger_threefold(board_after_move: chess.Board) -> bool:
+    """Whether the opponent can immediately claim a threefold repetition after this move."""
+    for reply in board_after_move.legal_moves:
+        candidate = board_after_move.copy(stack=True)
+        candidate.push(reply)
+        if candidate.is_repetition(3):
+            return True
+
+    return False
 
 
 def repetition_guard_clock_override_applies(repetition_guard: Configuration, game: model.Game) -> bool:

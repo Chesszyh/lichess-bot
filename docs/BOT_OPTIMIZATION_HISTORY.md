@@ -316,17 +316,24 @@ Evidence game: `nSLk3U9v`, a rated 90+1 bullet game as white against `TakticproC
 
 The bot declined multiple incoming draw offers and reached a large practical clock edge, about 101 seconds to 31 seconds, but the game still ended by threefold repetition. The log did not show `Filtering immediate threefold repetition moves` for this game. Root cause: `repetition_guard.min_rating_gap` was `-25`, while the opponent outrated the bot by about 65 points, so the repetition guard never ran even with a decisive bullet clock edge.
 
+Follow-up evidence game: `xUcwqJsv`, a rated 60+1 bullet game as white against `Cheszter` rated 3105.
+
+The bot again declined an incoming draw offer, reached about 64 seconds versus 24 seconds, and still drew by threefold repetition. This time the final repetition was created by the opponent's `...Kc5`, not by the bot's move. Local PGN rule analysis of the pre-final position showed the bot's `Nb4` allowed exactly one immediate opponent threefold claim reply, while 12 legal bot moves did not hand over that one-move claim.
+
 Change made:
 
 - Add `repetition_guard.clock_advantage_override_enabled`.
 - Add speed, opponent-clock, and minimum-clock-advantage thresholds for the rating-gate override.
 - Enable the override in the live private Stockfish config for `bullet` and `blitz`.
-- Set the live thresholds to allow repetition avoidance when the opponent has at most 40 seconds and the bot has at least a 60 second clock edge.
+- Set the live thresholds to allow repetition avoidance when the opponent has at most 40 seconds and the bot has at least a 30 second clock edge.
+- Add opt-in `repetition_guard.avoid_opponent_immediate_claim`.
+- Enable it in the live private Stockfish config, so a guarded search can avoid moves that let the opponent claim a threefold repetition on the next move.
 - Keep `repetition_guard.max_score_loss_cp: 150`, so this override does not force clearly losing non-repeating moves.
 
 Regression test:
 
 - `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`
+- `test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge`
 
 Operational note: this is a practical bullet/blitz conversion rule, not a general anti-draw setting against stronger bots. Without a large clock edge, the existing rating gate still protects high-rated target-band draws.
 
@@ -389,6 +396,7 @@ Commands that passed:
 
 ```bash
 .venv/bin/pytest test_bot/test_engine_time_management.py -q
+.venv/bin/pytest test_bot/test_engine_time_management.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py -q
 .venv/bin/pytest test_bot/test_matchmaking.py test_bot/test_config.py test_bot/test_external_moves.py -q
 .venv/bin/pytest test_bot/test_game_stream.py -q
@@ -424,15 +432,22 @@ Latest passing result for the current matchmaking fallback, config, and book-fil
 69 passed
 ```
 
+Latest passing result for the current repetition-trap and config regression set:
+
+```text
+48 passed
+```
+
 Configuration loading was also checked for the live private file, confirming:
 
 ```text
 repetition_guard.enabled=True
 repetition_guard.min_rating_gap=-25
 repetition_guard.max_score_loss_cp=150
+repetition_guard.avoid_opponent_immediate_claim=True
 repetition_guard.clock_advantage_override_enabled=True
 repetition_guard.clock_advantage_override_opponent_ms=40000
-repetition_guard.clock_advantage_override_min_ms=60000
+repetition_guard.clock_advantage_override_min_ms=30000
 draw_or_resign.offer_draw_min_rating=3080
 draw_or_resign.offer_draw_clock_advantage_enabled=True
 draw_or_resign.offer_draw_clock_advantage_opponent_ms=15000
@@ -485,7 +500,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Below-target draw offers | `dzsQr4Rh` draw by agreement vs below-target opponent | Add `draw_or_resign.offer_draw_min_rating`; live floor `3080` | `test_search__does_not_offer_normal_draw_below_target_rating_floor`; `test_search__offers_normal_draw_at_target_rating_floor` | Active |
 | Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
 | Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s; `xzMGfX4n` proactively offered draw with about 92s vs 10s | Decline or skip normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`; `test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging` | Active |
-| Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard | Add clock-edge override for repetition guard rating gate while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge` | Active |
+| Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard; `xUcwqJsv` repeated with about 64s vs 24s because the bot allowed the opponent an immediate threefold claim | Add clock-edge override for repetition guard rating gate; lower live clock-edge threshold to 30s; add opt-in one-ply opponent-claim filtering while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`; `test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge` | Active |
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
@@ -504,8 +519,9 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 15000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 60000`
 - `repetition_guard.max_score_loss_cp: 150`
+- `repetition_guard.avoid_opponent_immediate_claim: true`
 - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
-- `repetition_guard.clock_advantage_override_min_ms: 60000`
+- `repetition_guard.clock_advantage_override_min_ms: 30000`
 
 ### Future Optimization Directions
 
@@ -518,7 +534,7 @@ Prioritize these directions before adding heavier local experiments:
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
-- Make repetition avoidance time-aware. When the opponent is very low on time, allow slightly more score loss to keep the game alive; when both sides have enough time, keep the current conservative threshold.
+- Continue validating the new one-ply repetition trap filter in target-band games. If it avoids too many sound repetitions, keep the live 30 second clock-edge gate but raise `max_score_loss_cp` only after concrete PGN evidence.
 - Validate the new draw-offer floor in live games like `dzsQr4Rh`; if too many target-band games become dead flag races, tune the floor or add a clock-aware exception.
 - Validate the 3080 opponent-pool floor. If game volume becomes too sparse, prefer a temporary short fallback window over permanently re-opening 3000-3079 draw sinks.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.

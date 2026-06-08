@@ -61,6 +61,7 @@ engine:                            # Engine settings.
       - blitz
     min_rating_gap: 0              # Only avoid immediate repetitions when our rating minus the opponent rating is at least this value. Use a negative value to also avoid repetitions against slightly higher-rated opponents.
     max_score_loss_cp: 200         # Keep the repeating move if the best non-repeating alternative loses more than this many centipawns.
+    avoid_opponent_immediate_claim: false # If true, also avoid moves that let the opponent claim a threefold repetition on the next move.
     clock_advantage_override_enabled: false # If true, allow repetition avoidance despite min_rating_gap when the bot has a large clock edge.
     clock_advantage_override_speeds: [bullet, blitz] # Speeds where the repetition clock-advantage override applies.
     clock_advantage_override_opponent_ms: 40000 # Opponent clock threshold for overriding the repetition rating gate.

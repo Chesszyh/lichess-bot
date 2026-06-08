@@ -267,6 +267,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
                        force_empty_values=True)
     change_value_to_list(CONFIG, "engine", "repetition_guard", key="speeds")
     set_config_default(CONFIG, "engine", "repetition_guard", key="min_rating_gap", default=0)
+    set_config_default(CONFIG, "engine", "repetition_guard", key="avoid_opponent_immediate_claim", default=False)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_threshold_ms", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_ms", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_score_threshold_cp", default=0)
