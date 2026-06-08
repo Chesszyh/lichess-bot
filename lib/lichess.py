@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 DEFAULT_POST_TIMEOUT_SECONDS = 2
+ARENA_GET_TIMEOUT_SECONDS = 10
 TOKEN_TEST_POST_TIMEOUT_SECONDS = 10
 MOVE_POST_TIMEOUT_SECONDS = 5
 MOVE_POST_RETRY_MAX_TIME_SECONDS = 8
@@ -231,7 +232,8 @@ class Lichess:
         return response
 
     def api_get_json(self, endpoint_name: str, *template_args: str,
-                     params: dict[str, str] | None = None
+                     params: dict[str, str] | None = None,
+                     timeout: int = 2
                      ) -> PublicDataType | UserProfileType | dict[str, list[GameType]] | list[dict[str, str]]:
         """
         Send a GET to the lichess.org endpoints that return a JSON.
@@ -241,12 +243,13 @@ class Lichess:
         :param params: Parameters sent to lichess.org.
         :return: lichess.org's response in a dict.
         """
-        response = self.api_get(endpoint_name, *template_args, params=params)
+        response = self.api_get(endpoint_name, *template_args, params=params, timeout=timeout)
         json_response: PublicDataType | UserProfileType | dict[str, list[GameType]] | list[dict[str, str]] = response.json()
         return json_response
 
     def api_get_list(self, endpoint_name: str, *template_args: str,
-                     params: dict[str, str] | None = None) -> list[UserProfileType]:
+                     params: dict[str, str] | None = None,
+                     timeout: int = 2) -> list[UserProfileType]:
         """
         Send a GET to the lichess.org endpoints that return a list containing JSON.
 
@@ -255,12 +258,13 @@ class Lichess:
         :param params: Parameters sent to lichess.org.
         :return: lichess.org's response in a list of dicts.
         """
-        response = self.api_get(endpoint_name, *template_args, params=params)
+        response = self.api_get(endpoint_name, *template_args, params=params, timeout=timeout)
         json_response: list[UserProfileType] = response.json()
         return json_response
 
     def api_get_raw(self, endpoint_name: str, *template_args: str,
-                    params: dict[str, str] | None = None) -> str:
+                    params: dict[str, str] | None = None,
+                    timeout: int = 2) -> str:
         """
         Send a GET to lichess.org that returns plain text (UTF-8).
 
@@ -269,7 +273,7 @@ class Lichess:
         :param params: Parameters sent to lichess.org.
         :return: The text of lichess.org's response.
         """
-        response = self.api_get(endpoint_name, *template_args, params=params)
+        response = self.api_get(endpoint_name, *template_args, params=params, timeout=timeout)
         return response.text
 
     @backoff.on_exception(backoff.constant,
@@ -514,7 +518,7 @@ class Lichess:
 
     def get_user_teams(self, username: str) -> list[dict[str, str]]:
         """Get teams a user belongs to."""
-        return cast(list[dict[str, str]], self.api_get_json("user_teams", username))
+        return cast(list[dict[str, str]], self.api_get_json("user_teams", username, timeout=ARENA_GET_TIMEOUT_SECONDS))
 
     def join_team(self, team_id: str, message: str = "", password: str | None = None) -> None:
         """Request to join a team."""
@@ -535,7 +539,7 @@ class Lichess:
         """Get team arena tournaments."""
         params = {"status": status, "max": str(max_tournaments)}
         try:
-            arenas_str = self.api_get_raw("team_arenas", team_id, params=params)
+            arenas_str = self.api_get_raw("team_arenas", team_id, params=params, timeout=ARENA_GET_TIMEOUT_SECONDS)
             arenas = list(filter(bool, arenas_str.split("\n")))
             return list(map(json.loads, arenas))
         except Exception:
