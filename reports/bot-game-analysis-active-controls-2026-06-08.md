@@ -2,10 +2,11 @@
 
 ## Scope
 
-- Games analyzed: `263`
+- Games analyzed: `264`
+- Speeds: `bullet`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
-- Results: `{'draw': 123, 'loss': 21, 'unknown': 10, 'win': 109}`
+- Results: `{'draw': 124, 'loss': 21, 'unknown': 10, 'win': 109}`
 - Opening risk gate: FAILED (4 >= 3)
 - No local engine analysis was run.
 
@@ -37,14 +38,14 @@
 
 ## Results by Mode
 
-- `123` x rated draw
+- `124` x rated draw
 - `109` x rated win
 - `21` x rated loss
 - `10` x rated unknown
 
 ## Results by Speed
 
-- `123` x bullet draw
+- `124` x bullet draw
 - `109` x bullet win
 - `21` x bullet loss
 - `10` x bullet unknown
@@ -53,7 +54,7 @@
 
 - `53` x 60+1 draw
 - `50` x 60+1 win
-- `45` x 120+1 draw
+- `46` x 120+1 draw
 - `37` x 120+1 win
 - `25` x 90+1 draw
 - `22` x 90+1 win
@@ -64,11 +65,11 @@
 
 ## Rating Impact by Mode
 
-- `rated`: `+217` rating over `219` games
+- `rated`: `+218` rating over `220` games
 
 ## Rating Impact by Speed
 
-- `bullet`: `+217` rating over `219` games
+- `bullet`: `+218` rating over `220` games
 
 ## Rating Impact by Time Control
 
@@ -76,7 +77,7 @@
 - `90+1 white`: `+17` rating over `17` games
 - `120+1 white`: `+33` rating over `35` games
 - `60+1 black`: `+39` rating over `45` games
-- `120+1 black`: `+58` rating over `45` games
+- `120+1 black`: `+59` rating over `46` games
 - `60+1 white`: `+60` rating over `49` games
 
 ## Rating Impact by Opening
@@ -84,9 +85,9 @@
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense`: `-14` rating over `3` games
 - `Caro-Kann Defense`: `-9` rating over `2` games
 - `Scotch Game: Mieses Variation`: `-8` rating over `1` games
-- `Queen's Pawn Game: London System`: `-6` rating over `4` games
 - `French Defense: Rubinstein Variation`: `-6` rating over `1` games
 - `Semi-Slav Defense: Anti-Moscow Gambit`: `-6` rating over `1` games
+- `Queen's Pawn Game: London System`: `-5` rating over `5` games
 - `Sicilian Defense: Scheveningen Variation, Keres Attack`: `-4` rating over `2` games
 - `Queen's Gambit Declined: Traditional Variation`: `-4` rating over `1` games
 - `Scandinavian Defense: Modern Variation`: `-4` rating over `1` games
@@ -97,9 +98,9 @@
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet`: `-16` rating over `2` games
 - `Caro-Kann Defense | black | bullet`: `-9` rating over `1` games
 - `Scotch Game: Mieses Variation | white | bullet`: `-8` rating over `1` games
-- `Queen's Pawn Game: London System | black | bullet`: `-6` rating over `4` games
 - `French Defense: Rubinstein Variation | black | bullet`: `-6` rating over `1` games
 - `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet`: `-6` rating over `1` games
+- `Queen's Pawn Game: London System | black | bullet`: `-5` rating over `5` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-5` rating over `1` games
 - `Indian Defense: Accelerated London System | black | bullet`: `-4` rating over `2` games
 - `Queen's Gambit Declined: Traditional Variation | white | bullet`: `-4` rating over `1` games
@@ -134,12 +135,12 @@
 ## Focused Rating Impact by Time Control
 
 - `90+1`: `+27` rating over `45` games
-- `120+1`: `+91` rating over `80` games
+- `120+1`: `+92` rating over `81` games
 - `60+1`: `+99` rating over `94` games
 
 ## Focused Score by Time Control
 
-- `120+1`: W-D-L `37-45-7`, score `66.9%` over `89` games
+- `120+1`: W-D-L `37-46-7`, score `66.7%` over `90` games
 - `90+1`: W-D-L `22-25-4`, score `67.6%` over `51` games
 - `60+1`: W-D-L `50-53-10`, score `67.7%` over `113` games
 
@@ -200,7 +201,7 @@
 - `120+1 white`: W-D-L `15-22-3`, score `65.0%` over `40` games
 - `60+1 black`: W-D-L `22-25-6`, score `65.1%` over `53` games
 - `90+1 black`: W-D-L `14-16-3`, score `66.7%` over `33` games
-- `120+1 black`: W-D-L `22-23-4`, score `68.4%` over `49` games
+- `120+1 black`: W-D-L `22-24-4`, score `68.0%` over `50` games
 - `90+1 white`: W-D-L `8-9-1`, score `69.4%` over `18` games
 - `60+1 white`: W-D-L `28-28-4`, score `70.0%` over `60` games
 
