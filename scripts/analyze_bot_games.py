@@ -89,6 +89,7 @@ class GameSummary:
     rating_impact_by_opening_context: list[tuple[str, int, int]]
     rating_impact_by_opponent: list[tuple[str, int, int]]
     score_by_opponent: list[tuple[str, int, int, int, int, float]]
+    opponent_leak_watchlist: list[tuple[str, int, int, int, int, int]]
     focused_rating_impact_by_time_control: list[tuple[str, int, int]]
     focused_score_by_time_control: list[tuple[str, int, int, int, int, float]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
@@ -583,6 +584,7 @@ def summarize_records(records_dir: Path,
         if record.move_prefix and focus_time_controls and record.time_control in focus_time_controls
     ).most_common()
     rating_negative_draws.sort(key=lambda record: record.bot_rating_diff or 0)
+    opponent_leak_watchlist = opponent_leak_watchlist_for_records(losses, lower_rated_draws, rating_negative_draws)
     recent_losses = sorted(
         losses,
         key=lambda record: record.utc_started or datetime.min.replace(tzinfo=UTC),
@@ -642,6 +644,7 @@ def summarize_records(records_dir: Path,
         rating_impact_by_opening_context=rating_impact_by_opening_context,
         rating_impact_by_opponent=rating_impact_by_opponent,
         score_by_opponent=score_by_opponent,
+        opponent_leak_watchlist=opponent_leak_watchlist,
         focused_rating_impact_by_time_control=focused_rating_impact_by_time_control,
         focused_score_by_time_control=focused_score_by_time_control,
         focused_rating_impact_by_opening_context=focused_rating_impact_by_opening_context,
@@ -737,6 +740,46 @@ def score_by_control(records: list[GameRecord], min_games: int) -> list[tuple[st
         scores.append((control, wins, draws, losses_count, total, score_percent))
 
     return sorted(scores, key=lambda item: (item[5], -item[4], item[0]))
+
+
+def opponent_leak_watchlist_for_records(
+    losses: list[GameRecord],
+    lower_rated_draws: list[GameRecord],
+    rating_negative_draws: list[GameRecord],
+) -> list[tuple[str, int, int, int, int, int]]:
+    """Return opponent-control clusters combining losses and costly draw leaks."""
+    implicated_records = [*losses, *lower_rated_draws, *rating_negative_draws]
+    labels = {record.path: f"{record.opponent} | {record.speed} | {record.time_control}" for record in implicated_records}
+    loss_counts = Counter(labels[record.path] for record in losses)
+    lower_draw_counts = Counter(labels[record.path] for record in lower_rated_draws)
+    negative_draw_counts = Counter(labels[record.path] for record in rating_negative_draws)
+
+    rating_diffs: dict[str, int] = {}
+    unique_records = {record.path: record for record in implicated_records}
+    for path, record in unique_records.items():
+        if record.bot_rating_diff is None:
+            continue
+        label = labels[path]
+        rating_diffs[label] = rating_diffs.get(label, 0) + record.bot_rating_diff
+
+    watchlist = []
+    for label in sorted(set(labels.values())):
+        losses_count = loss_counts[label]
+        lower_draws_count = lower_draw_counts[label]
+        negative_draws_count = negative_draw_counts[label]
+        risk_score = losses_count * 3 + lower_draws_count + negative_draws_count
+        watchlist.append(
+            (
+                label,
+                losses_count,
+                lower_draws_count,
+                negative_draws_count,
+                rating_diffs.get(label, 0),
+                risk_score,
+            ),
+        )
+
+    return sorted(watchlist, key=lambda item: (-item[5], item[4], item[0]))
 
 
 def bot_eval_drops(records: list[GameRecord]) -> list[BotEvalDrop]:
@@ -837,6 +880,23 @@ def append_rating_impact_section(lines: list[str], title: str, impacts: list[tup
     lines.extend(
         f"- `{label}`: `{rating_diff:+d}` rating over `{games}` games"
         for label, games, rating_diff in impacts[:10]
+    )
+
+
+def append_opponent_leak_watchlist_section(
+    lines: list[str],
+    watchlist: list[tuple[str, int, int, int, int, int]],
+) -> None:
+    """Append the combined opponent risk watchlist."""
+    lines.extend(["", "## Opponent Leak Watchlist", ""])
+    if not watchlist:
+        lines.append("- No loss or costly draw opponent clusters found.")
+        return
+    lines.extend(
+        f"- `{label}`: risk `{risk_score}`, losses `{losses_count}`, "
+        f"lower-rated draws `{lower_draws_count}`, rating-negative draws `{negative_draws_count}`, "
+        f"rating `{rating_diff:+d}`"
+        for label, losses_count, lower_draws_count, negative_draws_count, rating_diff, risk_score in watchlist[:10]
     )
 
 
@@ -996,6 +1056,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     if summary.speeds:
         speeds = ", ".join(sorted(summary.speeds))
         lines.insert(5, f"- Speeds: `{speeds}`")
+    append_opponent_leak_watchlist_section(lines, summary.opponent_leak_watchlist)
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Results by Mode", summary.results_by_mode, empty_text="No games found.")
     append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")

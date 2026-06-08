@@ -561,6 +561,56 @@ def test_render_markdown__clusters_rating_negative_draw_opponents(tmp_path: Path
     assert "HigherBot | bullet | 90+1" not in opponent_section
 
 
+def test_render_markdown__ranks_combined_opponent_leaks(tmp_path: Path) -> None:
+    """Losses and costly lower-rated draws should combine into one opponent risk list."""
+    loss_headers = base_headers("1-0", "Ruy Lopez: Open", "MEGA-NOOB-BOT", "ilovecatgirl")
+    loss_headers["TimeControl"] = "90+1"
+    loss_headers["WhiteRatingDiff"] = "+5"
+    loss_headers["BlackRatingDiff"] = "-5"
+    write_pgn(tmp_path, "mega-loss.pgn", loss_headers, "1. e4 e5 1-0")
+
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "duchessAI", "ilovecatgirl")
+        draw_headers["WhiteElo"] = str(2810 + index)
+        draw_headers["BlackElo"] = "2940"
+        draw_headers["WhiteRatingDiff"] = "+2"
+        draw_headers["BlackRatingDiff"] = "-2"
+        draw_headers["TimeControl"] = "60+1"
+        write_pgn(tmp_path, f"duchess-negative-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+
+    harmless_draw = base_headers("1/2-1/2", "Queen's Pawn Game", "HigherBot", "ilovecatgirl")
+    harmless_draw["WhiteElo"] = "3040"
+    harmless_draw["BlackElo"] = "3020"
+    harmless_draw["WhiteRatingDiff"] = "-1"
+    harmless_draw["BlackRatingDiff"] = "+1"
+    harmless_draw["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "higher-rated-draw.pgn", harmless_draw, "1. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.opponent_leak_watchlist == [
+        ("duchessAI | bullet | 60+1", 0, 2, 2, -4, 4),
+        ("MEGA-NOOB-BOT | bullet | 90+1", 1, 0, 0, -5, 3),
+    ]
+    assert "Opponent Leak Watchlist" in markdown
+    duchess_line = (
+        "`duchessAI | bullet | 60+1`: risk `4`, losses `0`, lower-rated draws `2`, "
+        "rating-negative draws `2`, rating `-4`"
+    )
+    mega_line = (
+        "`MEGA-NOOB-BOT | bullet | 90+1`: risk `3`, losses `1`, lower-rated draws `0`, "
+        "rating-negative draws `0`, rating `-5`"
+    )
+    assert duchess_line in markdown
+    assert mega_line in markdown
+    watchlist_section = markdown.split("## Opponent Leak Watchlist", maxsplit=1)[1].split(
+        "## Loss Openings",
+        maxsplit=1,
+    )[0]
+    assert "HigherBot" not in watchlist_section
+
+
 def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_path: Path) -> None:
     """Focused rating impact should keep active controls separate from abandoned historical controls."""
     current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
