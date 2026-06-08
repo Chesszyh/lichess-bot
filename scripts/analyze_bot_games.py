@@ -70,6 +70,8 @@ class GameSummary:
     focused_lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
+    clock_rich_normal_losses: list[GameRecord]
+    clock_rich_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_losses: list[GameRecord]
     focused_high_clock_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_loss_contexts: list[tuple[str, int]]
@@ -267,6 +269,7 @@ def summarize_records(records_dir: Path,
                       max_base_seconds: int = 300,
                       control_min_games: int = 10,
                       high_clock_loss_threshold_seconds: int = 60,
+                      clock_rich_loss_base_fraction: float = 0.35,
                       focus_time_controls: set[str] | None = None,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
@@ -356,6 +359,21 @@ def summarize_records(records_dir: Path,
         key=lambda record: record.utc_started or datetime.min.replace(tzinfo=UTC),
         reverse=True,
     )[:10]
+    clock_rich_normal_losses = [
+        record for record in losses
+        if record.termination != "Time forfeit"
+        and record.bot_final_clock_seconds is not None
+        and (base_seconds := time_control_base_seconds(record.time_control)) is not None
+        and record.bot_final_clock_seconds >= base_seconds * clock_rich_loss_base_fraction
+    ]
+    clock_rich_normal_losses.sort(
+        key=lambda record: record.bot_final_clock_seconds or 0,
+        reverse=True,
+    )
+    clock_rich_normal_loss_contexts = Counter(
+        f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in clock_rich_normal_losses
+    ).most_common()
     high_clock_normal_losses = [
         record for record in losses
         if record.termination != "Time forfeit"
@@ -402,6 +420,8 @@ def summarize_records(records_dir: Path,
         focused_lower_rated_draw_contexts=focused_lower_rated_draw_contexts,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
+        clock_rich_normal_losses=clock_rich_normal_losses[:10],
+        clock_rich_normal_loss_contexts=clock_rich_normal_loss_contexts,
         high_clock_normal_losses=high_clock_normal_losses[:10],
         focused_high_clock_normal_loss_contexts=focused_high_clock_normal_loss_contexts,
         high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
@@ -604,6 +624,22 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         )
     else:
         lines.append("- No lower-rated draw leaks found at the configured threshold.")
+
+    append_count_section(
+        lines,
+        "Clock-Rich Normal Loss Contexts",
+        summary.clock_rich_normal_loss_contexts,
+        empty_text="No clock-rich normal loss contexts found.",
+        quote_item=True,
+    )
+
+    lines.extend(["", "## Clock-Rich Normal Losses", ""])
+    if summary.clock_rich_normal_losses:
+        for record in summary.clock_rich_normal_losses:
+            clock = format_seconds(record.bot_final_clock_seconds or 0)
+            lines.append(f"- `{clock}` left in {game_link(record)} vs `{record.opponent}`: {record.opening}")
+    else:
+        lines.append("- No clock-rich normal losses found at the configured threshold.")
 
     append_count_section(
         lines,

@@ -92,6 +92,14 @@
 
 - No lower-rated draw leaks found at the configured threshold.
 
+## Clock-Rich Normal Loss Contexts
+
+- `1` x `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`
+
+## Clock-Rich Normal Losses
+
+- `24s` left in `ilovecatgirl vs MEGA-NOOB-BOT - wUt40hrP.pgn` vs `MEGA-NOOB-BOT`: Nimzo-Indian Defense: Normal Variation, Classical Defense
+
 ## Focused High-Clock Normal Loss Contexts
 
 - No focused high-clock normal loss contexts found.

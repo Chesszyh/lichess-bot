@@ -284,6 +284,38 @@ def test_render_markdown__shows_high_clock_normal_losses(tmp_path: Path) -> None
     assert "high-clock-time-forfeit-loss.pgn" not in high_clock_section
 
 
+def test_render_markdown__shows_clock_rich_normal_losses_by_base_fraction(tmp_path: Path) -> None:
+    """Bullet losses with substantial remaining clock should not be hidden by a fixed 60s threshold."""
+    clock_rich_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "StrongBot")
+    clock_rich_headers["TimeControl"] = "60+1"
+    write_pgn(
+        tmp_path,
+        "clock-rich-bullet-loss.pgn",
+        clock_rich_headers,
+        "1. d4 { [%clk 0:00:28] } Nf6 { [%clk 0:00:34] } 0-1",
+    )
+    low_clock_headers = base_headers("0-1", "Scotch Game", "ilovecatgirl", "FastBot")
+    low_clock_headers["TimeControl"] = "60+1"
+    write_pgn(
+        tmp_path,
+        "low-clock-bullet-loss.pgn",
+        low_clock_headers,
+        "1. e4 { [%clk 0:00:12] } e5 { [%clk 0:00:30] } 0-1",
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.clock_rich_normal_loss_contexts == [("Nimzo-Indian Defense | white | bullet | 60+1", 1)]
+    assert "Clock-Rich Normal Loss Contexts" in markdown
+    assert "`1` x `Nimzo-Indian Defense | white | bullet | 60+1`" in markdown
+    clock_rich_section = markdown.split("## Clock-Rich Normal Losses", maxsplit=1)[1].split(
+        "## Recent Losses",
+    )[0]
+    assert "`28s` left in `clock-rich-bullet-loss.pgn` vs `StrongBot`: Nimzo-Indian Defense" in clock_rich_section
+    assert "low-clock-bullet-loss.pgn" not in clock_rich_section
+
+
 def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path: Path) -> None:
     """Focused high-clock loss contexts should separate current controls from abandoned historical controls."""
     current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
