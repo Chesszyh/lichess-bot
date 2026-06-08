@@ -37,3 +37,6 @@ challenge for 2026-06-08 21:23:54 CST.
 - The next outgoing challenge was scheduled for 2026-06-08 21:42:28 CST, 15 minutes after the local game-done event.
 - A later clean startup with no active game scheduled the next outgoing challenge for 2026-06-08 21:46:08 CST, again
   matching `matchmaking.challenge_timeout: 15`.
+- After the endpoint-failure cadence fix was committed, the bot was safely restarted again at 2026-06-08 21:41 CST with
+  `GET /api/account/playing` returning no active games. The new process scheduled its next outgoing challenge for
+  2026-06-08 21:56:05 CST, preserving the 15-minute cadence under the updated code.
