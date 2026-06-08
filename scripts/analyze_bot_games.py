@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import io
@@ -36,6 +36,7 @@ class GameRecord:
     opponent: str
     opponent_rating: int | None
     rating_gap: int | None
+    bot_rating_diff: int | None
     move_prefix: str
 
 
@@ -48,6 +49,8 @@ class GameSummary:
     result_counts: dict[str, int]
     results_by_speed: list[tuple[str, int]]
     results_by_time_control: list[tuple[str, int]]
+    rating_impact_by_speed: list[tuple[str, int, int]]
+    rating_impact_by_time_control: list[tuple[str, int, int]]
     worst_scoring_controls: list[tuple[str, int, int, int, int, float]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
@@ -190,6 +193,9 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
     opponent_rating = black_elo if bot_is_white else white_elo
     bot_rating = white_elo if bot_is_white else black_elo
     rating_gap = bot_rating - opponent_rating if bot_rating is not None and opponent_rating is not None else None
+    bot_rating_diff = parse_int(headers.get("WhiteRatingDiff", "")) if bot_is_white else parse_int(
+        headers.get("BlackRatingDiff", "")
+    )
 
     return GameRecord(
         path=path,
@@ -210,6 +216,7 @@ def parse_game(path: Path, bot_name: str, max_prefix_plies: int) -> GameRecord |
         opponent=opponent,
         opponent_rating=opponent_rating,
         rating_gap=rating_gap,
+        bot_rating_diff=bot_rating_diff,
         move_prefix=game_move_prefix(game, max_prefix_plies),
     )
 
@@ -239,6 +246,11 @@ def summarize_records(records_dir: Path,
     results_by_time_control = Counter(
         f"{record.time_control} {record.bot_result}" for record in records
     ).most_common()
+    rating_impact_by_speed = rating_impact_by_group(records, lambda record: record.speed)
+    rating_impact_by_time_control = rating_impact_by_group(
+        records,
+        lambda record: f"{record.time_control} {record.bot_color}",
+    )
     control_results: dict[str, Counter[str]] = {}
     for record in records:
         if result_score(record.bot_result) is None:
@@ -292,6 +304,8 @@ def summarize_records(records_dir: Path,
         result_counts=dict(sorted(result_counts.items())),
         results_by_speed=results_by_speed,
         results_by_time_control=results_by_time_control,
+        rating_impact_by_speed=rating_impact_by_speed,
+        rating_impact_by_time_control=rating_impact_by_time_control,
         worst_scoring_controls=worst_scoring_controls,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
@@ -305,6 +319,22 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
         recent_losses=recent_losses,
+    )
+
+
+def rating_impact_by_group(records: list[GameRecord],
+                           label_for_record: Callable[[GameRecord], str]) -> list[tuple[str, int, int]]:
+    """Return rating impact grouped by a record label."""
+    totals: dict[str, tuple[int, int]] = {}
+    for record in records:
+        if record.bot_rating_diff is None:
+            continue
+        label = label_for_record(record)
+        games, rating_diff = totals.get(label, (0, 0))
+        totals[label] = games + 1, rating_diff + record.bot_rating_diff
+    return sorted(
+        ((label, games, rating_diff) for label, (games, rating_diff) in totals.items()),
+        key=lambda item: (item[2], -item[1], item[0]),
     )
 
 
@@ -354,6 +384,18 @@ def append_score_section(lines: list[str],
     )
 
 
+def append_rating_impact_section(lines: list[str], title: str, impacts: list[tuple[str, int, int]]) -> None:
+    """Append a markdown section for rating deltas by group."""
+    lines.extend(["", f"## {title}", ""])
+    if not impacts:
+        lines.append("- No rating-diff tags found.")
+        return
+    lines.extend(
+        f"- `{label}`: `{rating_diff:+d}` rating over `{games}` games"
+        for label, games, rating_diff in impacts[:10]
+    )
+
+
 def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     """Render a markdown analysis report."""
     lines = [
@@ -374,6 +416,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         summary.results_by_time_control,
         empty_text="No games found.",
     )
+    append_rating_impact_section(lines, "Rating Impact by Speed", summary.rating_impact_by_speed)
+    append_rating_impact_section(lines, "Rating Impact by Time Control", summary.rating_impact_by_time_control)
     append_score_section(lines, "Worst Scoring Controls", summary.worst_scoring_controls)
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")

@@ -160,6 +160,37 @@ def test_render_markdown__clusters_results_by_speed_and_time_control(tmp_path: P
     assert "`2` x 60+1 loss" in markdown
 
 
+def test_render_markdown__shows_rating_impact_by_speed_and_time_control(tmp_path: Path) -> None:
+    """Rating deltas should expose which speed and clock pools are costing rating."""
+    bullet_loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "BulletBot")
+    bullet_loss_headers["TimeControl"] = "60+1"
+    bullet_loss_headers["WhiteRatingDiff"] = "-8"
+    bullet_loss_headers["BlackRatingDiff"] = "+8"
+    write_pgn(tmp_path, "bullet-loss.pgn", bullet_loss_headers, "1. d4 Nf6 0-1")
+    bullet_win_headers = base_headers("1-0", "Caro-Kann Defense", "ilovecatgirl", "AnotherBulletBot")
+    bullet_win_headers["TimeControl"] = "60+1"
+    bullet_win_headers["WhiteRatingDiff"] = "+3"
+    bullet_win_headers["BlackRatingDiff"] = "-3"
+    write_pgn(tmp_path, "bullet-win.pgn", bullet_win_headers, "1. e4 c6 1-0")
+    blitz_loss_headers = base_headers("1-0", "Sicilian Defense", "BlitzBot", "ilovecatgirl")
+    blitz_loss_headers["TimeControl"] = "180+2"
+    blitz_loss_headers["WhiteRatingDiff"] = "+6"
+    blitz_loss_headers["BlackRatingDiff"] = "-6"
+    write_pgn(tmp_path, "blitz-loss.pgn", blitz_loss_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.rating_impact_by_speed[0] == ("blitz", 1, -6)
+    assert summary.rating_impact_by_speed[1] == ("bullet", 2, -5)
+    assert summary.rating_impact_by_time_control[0] == ("180+2 black", 1, -6)
+    assert summary.rating_impact_by_time_control[1] == ("60+1 white", 2, -5)
+    assert "Rating Impact by Speed" in markdown
+    assert "`blitz`: `-6` rating over `1` games" in markdown
+    assert "Rating Impact by Time Control" in markdown
+    assert "`60+1 white`: `-5` rating over `2` games" in markdown
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")

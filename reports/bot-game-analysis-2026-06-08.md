@@ -44,6 +44,24 @@
 - `58` x 180+0 draw
 - `57` x 180+2 loss
 
+## Rating Impact by Speed
+
+- `blitz`: `+40` rating over `1129` games
+- `bullet`: `+196` rating over `494` games
+
+## Rating Impact by Time Control
+
+- `180+2 black`: `-96` rating over `103` games
+- `180+0 black`: `-88` rating over `78` games
+- `120+0 black`: `-55` rating over `38` games
+- `180+0 white`: `-54` rating over `84` games
+- `240+2 black`: `-45` rating over `76` games
+- `240+0 white`: `-33` rating over `23` games
+- `300+2 black`: `-31` rating over `54` games
+- `300+3 black`: `-18` rating over `38` games
+- `120+2 black`: `-17` rating over `16` games
+- `180+3 black`: `-15` rating over `41` games
+
 ## Worst Scoring Controls
 
 - `180+0 black`: W-D-L `8-26-51`, score `24.7%` over `85` games
