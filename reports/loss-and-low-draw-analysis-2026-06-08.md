@@ -63,4 +63,8 @@ Top openings in lower-rated draws:
 ## Actions From This Turn
 
 - Fix the inactive-game move POST path so a failed move submit after game finish does not force a reconnect.
-- Keep tracking Najdorf and lower-rated draw clusters after the speed-specific book-depth changes are actually loaded by the running bot process.
+- Tighten bot-vs-bot blitz polyglot depth from `6` to `4`, matching the existing bullet cap, because the live
+  `mMJSo1SR` bot blitz game again followed the local book into the largest historical loss/draw cluster:
+  Najdorf English Attack.
+- Keep tracking Najdorf and lower-rated draw clusters after the tighter book-depth changes are actually loaded by the
+  running bot process.

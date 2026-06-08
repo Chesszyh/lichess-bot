@@ -131,7 +131,7 @@ def test_default_config__bot_fast_games_leave_polyglot_book_early() -> None:
     bot_selection = default_config["engine"]["polyglot"]["opponent_selection"]["bot"]
 
     assert bot_selection["max_depth_by_speed"]["bullet"] <= 4
-    assert bot_selection["max_depth_by_speed"]["blitz"] <= 6
+    assert bot_selection["max_depth_by_speed"]["blitz"] <= 4
 
 
 def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:

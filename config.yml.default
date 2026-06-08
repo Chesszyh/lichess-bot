@@ -32,7 +32,7 @@ engine:                            # Engine settings.
       bot:
         max_depth_by_speed:        # Optional speed-specific book depths for sharp bot-vs-bot games.
           bullet: 4
-          blitz: 6
+          blitz: 4
 #     human:
 #       selection: "uniform_random"
 #       min_weight: 25
