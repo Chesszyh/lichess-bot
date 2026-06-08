@@ -2,9 +2,9 @@
 
 ## Scope
 
-- Games analyzed: `1`
+- Games analyzed: `2`
 - Since UTC: `2026-06-08T11:36:38+00:00`
-- Results: `{'loss': 1}`
+- Results: `{'draw': 1, 'loss': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -14,43 +14,51 @@
 
 ## Results by Speed
 
+- `1` x bullet draw
 - `1` x bullet loss
 
 ## Results by Time Control
 
+- `1` x 90+1 draw
 - `1` x 90+1 loss
 
 ## Rating Impact by Speed
 
-- `bullet`: `-5` rating over `1` games
+- `bullet`: `-4` rating over `2` games
 
 ## Rating Impact by Time Control
 
-- `90+1 black`: `-5` rating over `1` games
+- `90+1 black`: `-4` rating over `2` games
 
 ## Rating Impact by Opening
 
 - `Ruy Lopez: Open, Bernstein Variation`: `-5` rating over `1` games
+- `Queen's Pawn Game: London System`: `+1` rating over `1` games
 
 ## Rating Impact by Opening Context
 
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-5` rating over `1` games
+- `Queen's Pawn Game: London System | black | bullet`: `+1` rating over `1` games
 
 ## Focused Rating Impact by Opening Context
 
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: `-5` rating over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: `+1` rating over `1` games
 
 ## Focused Score by Opening Context
 
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opponent
 
 - `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
+- `CloudNetBot | bullet | 90+1`: `+1` rating over `1` games
 
 ## Focused Score by Opponent
 
 - `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `CloudNetBot | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Worst Scoring Controls
 

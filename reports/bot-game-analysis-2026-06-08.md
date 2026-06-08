@@ -2,8 +2,8 @@
 
 ## Scope
 
-- Games analyzed: `2357`
-- Results: `{'draw': 1397, 'loss': 468, 'unknown': 45, 'win': 447}`
+- Games analyzed: `2358`
+- Results: `{'draw': 1398, 'loss': 468, 'unknown': 45, 'win': 447}`
 - Opening risk gate: FAILED (66 >= 3)
 - No local engine analysis was run.
 
@@ -24,7 +24,7 @@
 
 - `1128` x blitz draw
 - `386` x blitz loss
-- `269` x bullet draw
+- `270` x bullet draw
 - `242` x bullet win
 - `205` x blitz win
 - `82` x bullet loss
@@ -47,7 +47,7 @@
 ## Rating Impact by Speed
 
 - `blitz`: `+40` rating over `1129` games
-- `bullet`: `+185` rating over `496` games
+- `bullet`: `+186` rating over `497` games
 
 ## Rating Impact by Time Control
 
@@ -111,8 +111,8 @@
 - `Philidor Defense: Exchange Variation | white | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
-- `Queen's Pawn Game: London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Pawn Game: London System | black | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Rapport-Jobava System | black | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
 ## Focused Rating Impact by Opponent
 
