@@ -1,7 +1,9 @@
 """Test functions for config module."""
 import logging
+from pathlib import Path
 
 import pytest
+import yaml
 
 from lib import config
 
@@ -33,7 +35,7 @@ def test_config_warn__false(caplog: pytest.LogCaptureFixture) -> None:
         assert caplog.records[0].levelname == "WARNING"
 
 
-def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypatch) -> None:
+def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypatch: pytest.MonkeyPatch) -> None:
     """Opponent-specific polyglot overrides should validate their selection values."""
     raw_config = {
         "token": "token",
@@ -79,7 +81,17 @@ def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_
     assert raw_config["resource_monitor"]["idle_sample_period"] == 17
 
 
-def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch) -> None:
+def test_default_config__blitz_high_clock_cap_stays_below_runaway_lc0_spend() -> None:
+    """The sample Lc0 blitz profile should not allow repeated 45s high-clock searches."""
+    default_config = yaml.safe_load(Path("config.yml.default").read_text())
+    blitz_time_management = default_config["engine"]["blitz_time_management"]
+
+    assert blitz_time_management["max_clock_ms"] <= 15000
+    assert blitz_time_management["high_clock_ms"] <= 15000
+    assert blitz_time_management["force_movetime_threshold_ms"] >= 60000
+
+
+def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:
     """Idle resource sampling period must be positive."""
     raw_config = {
         "token": "token",

@@ -61,6 +61,32 @@ engine:                            # Engine settings.
     equal_simplified_clock_threshold_ms: 0 # Bot clock threshold for the equal simplified cap.
     equal_simplified_clock_ms: 0       # Movetime cap for stable equal simplified fast-game positions.
 
+  blitz_time_management:              # Optional blitz-only override for Lc0-style engines that can over-spend after book exit.
+    enabled: false
+    speeds:
+      - blitz
+    force_movetime_caps: true
+    force_movetime_threshold_ms: 60000 # Use exact movetime once under 60s to avoid late-game clock collapse.
+    hard_movetime_caps: true
+    max_clock_ms: 15000                # Keep high-clock blitz searches bounded; 45s repeatedly left the bot defending low-clock endings.
+    high_clock_threshold_ms: 600000
+    high_clock_ms: 15000
+    low_clock_threshold_ms: 20000
+    low_clock_ms: 3500
+    critical_clock_threshold_ms: 8000
+    critical_clock_ms: 1200
+    emergency_clock_threshold_ms: 3000
+    emergency_clock_ms: 200
+    winning_mate_clock_threshold_ms: 30000
+    winning_mate_clock_ms: 1500
+    winning_score_threshold_cp: 500
+    winning_score_clock_threshold_ms: 30000
+    winning_score_clock_ms: 2500
+    equal_simplified_score_threshold_cp: 25
+    equal_simplified_piece_threshold: 12
+    equal_simplified_clock_threshold_ms: 600000
+    equal_simplified_clock_ms: 5000
+
   rating_control:
     enabled: false                 # Allow trusted users to change UCI_LimitStrength/UCI_Elo during a game with !rating.
     admins: []
