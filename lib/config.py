@@ -207,6 +207,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_moves", default=5)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_rating_gap_limit", default=0)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_enabled", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_min_rating", default=3000)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_moves", default=2)
@@ -430,6 +431,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       "engine:endgame_engine:max_pieces must be greater than 0.")
         config_assert(endgame_engine["queenless_max_pieces"] >= 0,
                       "engine:endgame_engine:queenless_max_pieces must be greater than or equal to 0.")
+
+    draw_or_resign = CONFIG["engine"].get("draw_or_resign") or {}
+    config_assert(draw_or_resign["offer_draw_rating_gap_limit"] >= 0,
+                  "engine:draw_or_resign:offer_draw_rating_gap_limit must be greater than or equal to 0.")
 
     if CONFIG["engine"]["protocol"] == "xboard":
         for section, subsection in (("online_moves", "online_egtb"),

@@ -284,9 +284,15 @@ class EngineWrapper:
         draw_offer_moves = self.draw_or_resign.offer_draw_moves
         draw_score_range: int = self.draw_or_resign.offer_draw_score
         draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
+        draw_rating_gap_limit: int = self.draw_or_resign.lookup("offer_draw_rating_gap_limit") or 0
+        rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0) if game else 0
+        rating_gap_allows_normal_draw = draw_rating_gap_limit <= 0 or rating_gap < draw_rating_gap_limit
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
-        if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:
+        if (can_offer_draw
+                and rating_gap_allows_normal_draw
+                and len(self.scores) >= draw_offer_moves
+                and enough_pieces_captured):
             if recent_scores_near_draw(draw_offer_moves, draw_score_range):
                 result.draw_offered = True
 
