@@ -10,6 +10,10 @@
 - Opening risk gate: passed (0 < 3)
 - No local engine analysis was run.
 
+## Opponent Leak Watchlist
+
+- No loss or costly draw opponent clusters found.
+
 ## Loss Openings
 
 - No losses found.
