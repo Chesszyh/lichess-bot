@@ -596,8 +596,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     repetition_guard = CONFIG["engine"].get("repetition_guard") or {}
     config_assert(all(speed in valid_speeds for speed in repetition_guard.get("speeds", [])),
                   f"`engine:repetition_guard:speeds` must only contain {valid_speeds}.")
-    config_assert(repetition_guard.get("min_rating_gap", 0) >= 0,
-                  "`engine:repetition_guard:min_rating_gap` must be non-negative.")
+    config_assert(isinstance(repetition_guard.get("min_rating_gap", 0), int),
+                  "`engine:repetition_guard:min_rating_gap` must be an integer.")
 
     bullet_time_management = CONFIG["engine"].get("bullet_time_management") or {}
     for key in ["winning_mate_clock_threshold_ms", "winning_mate_clock_ms",

@@ -117,6 +117,28 @@ def test_validate_config__rejects_unknown_matchmaking_override_weight(monkeypatc
         config.validate_config(raw_config)
 
 
+def test_validate_config__allows_negative_repetition_guard_gap(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A negative repetition gap should allow playing on against slightly higher-rated opponents."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {
+            "dir": ".",
+            "name": "engine",
+            "protocol": "uci",
+            "repetition_guard": {"enabled": True, "min_rating_gap": -25},
+        },
+        "challenge": {},
+        "matchmaking": {},
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda *_: True)
+
+    config.validate_config(raw_config)
+
+
 def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:
     """Idle resource sampling period must be positive."""
     raw_config: CONFIG_DICT_TYPE = {

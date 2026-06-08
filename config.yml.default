@@ -55,7 +55,7 @@ engine:                            # Engine settings.
     speeds:
       - bullet
       - blitz
-    min_rating_gap: 0              # Only avoid immediate repetitions when the bot outrates the opponent by at least this many points.
+    min_rating_gap: 0              # Only avoid immediate repetitions when our rating minus the opponent rating is at least this value. Use a negative value to also avoid repetitions against slightly higher-rated opponents.
 
   bullet_time_management:
     winning_mate_clock_threshold_ms: 0 # If positive, use winning_mate_clock_ms after a previous engine search found a forced mate and the bot clock is below this value.
