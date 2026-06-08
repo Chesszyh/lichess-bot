@@ -12,6 +12,11 @@
 
 - `1` x Ruy Lopez: Open, Bernstein Variation
 
+## Results by Mode
+
+- `1` x rated draw
+- `1` x rated loss
+
 ## Results by Speed
 
 - `1` x bullet draw
@@ -21,6 +26,10 @@
 
 - `1` x 90+1 draw
 - `1` x 90+1 loss
+
+## Rating Impact by Mode
+
+- `rated`: `-4` rating over `2` games
 
 ## Rating Impact by Speed
 

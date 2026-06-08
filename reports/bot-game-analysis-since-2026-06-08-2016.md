@@ -12,6 +12,10 @@
 
 - No losses found.
 
+## Results by Mode
+
+- `1` x rated draw
+
 ## Results by Speed
 
 - `1` x bullet draw
@@ -19,6 +23,10 @@
 ## Results by Time Control
 
 - `1` x 90+1 draw
+
+## Rating Impact by Mode
+
+- `rated`: `+1` rating over `1` games
 
 ## Rating Impact by Speed
 

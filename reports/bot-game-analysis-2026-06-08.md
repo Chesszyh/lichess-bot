@@ -20,6 +20,17 @@
 - `7` x Sicilian Defense: Nyezhmetdinov-Rossolimo Attack
 - `7` x Sicilian Defense: Najdorf Variation
 
+## Results by Mode
+
+- `1099` x rated draw
+- `407` x rated win
+- `356` x rated loss
+- `299` x casual draw
+- `112` x casual loss
+- `44` x rated unknown
+- `40` x casual win
+- `1` x casual unknown
+
 ## Results by Speed
 
 - `1128` x blitz draw
@@ -43,6 +54,10 @@
 - `90` x 180+1 draw
 - `58` x 180+0 draw
 - `57` x 180+2 loss
+
+## Rating Impact by Mode
+
+- `rated`: `+226` rating over `1626` games
 
 ## Rating Impact by Speed
 

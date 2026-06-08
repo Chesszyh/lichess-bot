@@ -13,6 +13,11 @@
 - `1` x Ruy Lopez: Open, Bernstein Variation
 - `1` x Nimzo-Indian Defense: Normal Variation, Classical Defense
 
+## Results by Mode
+
+- `2` x rated loss
+- `1` x rated draw
+
 ## Results by Speed
 
 - `2` x bullet loss
@@ -23,6 +28,10 @@
 - `1` x 90+1 draw
 - `1` x 90+1 loss
 - `1` x 60+1 loss
+
+## Rating Impact by Mode
+
+- `rated`: `-10` rating over `3` games
 
 ## Rating Impact by Speed
 

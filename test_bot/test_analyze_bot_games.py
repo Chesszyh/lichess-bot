@@ -100,6 +100,30 @@ def test_render_markdown__shows_since_utc_scope(tmp_path: Path) -> None:
     assert "Since UTC: `2026-06-08T10:30:00+00:00`" in markdown
 
 
+def test_render_markdown__shows_rated_mode_distribution(tmp_path: Path) -> None:
+    """Rating-focused tuning should distinguish rated games from casual resource usage."""
+    rated_headers = base_headers("1-0", "Rated Opening", "ilovecatgirl", "RatedBot")
+    rated_headers["Event"] = "rated bullet game"
+    rated_headers["TimeControl"] = "60+1"
+    rated_headers["WhiteRatingDiff"] = "+5"
+    write_pgn(tmp_path, "rated-win.pgn", rated_headers, "1. e4 c5 1-0")
+    casual_headers = base_headers("0-1", "Casual Opening", "ilovecatgirl", "CasualBot")
+    casual_headers["Event"] = "casual blitz game"
+    casual_headers.pop("WhiteRatingDiff", None)
+    casual_headers.pop("BlackRatingDiff", None)
+    write_pgn(tmp_path, "casual-loss.pgn", casual_headers, "1. d4 Nf6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.results_by_mode == [("casual loss", 1), ("rated win", 1)]
+    assert summary.rating_impact_by_mode == [("rated", 1, 5)]
+    assert "Results by Mode" in markdown
+    assert "`1` x casual loss" in markdown
+    assert "Rating Impact by Mode" in markdown
+    assert "`rated`: `+5` rating over `1` games" in markdown
+
+
 def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
     """Black-loss concentration should be visible in the lightweight report."""
     write_pgn(

@@ -48,6 +48,7 @@ class GameRecord:
     white: str
     black: str
     result: str
+    mode: str
     time_control: str
     speed: str
     opening: str
@@ -75,8 +76,10 @@ class GameSummary:
     since_utc: datetime | None
     total_games: int
     result_counts: dict[str, int]
+    results_by_mode: list[tuple[str, int]]
     results_by_speed: list[tuple[str, int]]
     results_by_time_control: list[tuple[str, int]]
+    rating_impact_by_mode: list[tuple[str, int, int]]
     rating_impact_by_speed: list[tuple[str, int, int]]
     rating_impact_by_time_control: list[tuple[str, int, int]]
     rating_impact_by_opening: list[tuple[str, int, int]]
@@ -316,6 +319,16 @@ def bot_result(result: str, bot_is_white: bool) -> str:
     return "unknown"
 
 
+def game_mode(event: str) -> str:
+    """Return rated/casual mode from a Lichess Event header."""
+    lowered = event.casefold()
+    if "rated" in lowered:
+        return "rated"
+    if "casual" in lowered:
+        return "casual"
+    return "unknown"
+
+
 def headers_match_filters(headers: chess.pgn.Headers,
                           bot_name: str,
                           max_base_seconds: int | None,
@@ -373,6 +386,7 @@ def parse_game(path: Path,
         white=white,
         black=black,
         result=headers.get("Result", "*"),
+        mode=game_mode(headers.get("Event", "")),
         time_control=headers.get("TimeControl", ""),
         speed=time_control_speed(headers.get("TimeControl", "")),
         opening=headers.get("Opening", "Unknown"),
@@ -424,10 +438,12 @@ def summarize_records(records_dir: Path,
         records.append(record)
 
     result_counts = Counter(record.bot_result for record in records)
+    results_by_mode = Counter(f"{record.mode} {record.bot_result}" for record in records).most_common()
     results_by_speed = Counter(f"{record.speed} {record.bot_result}" for record in records).most_common()
     results_by_time_control = Counter(
         f"{record.time_control} {record.bot_result}" for record in records
     ).most_common()
+    rating_impact_by_mode = rating_impact_by_group(records, lambda record: record.mode)
     rating_impact_by_speed = rating_impact_by_group(records, lambda record: record.speed)
     rating_impact_by_time_control = rating_impact_by_group(
         records,
@@ -562,8 +578,10 @@ def summarize_records(records_dir: Path,
         since_utc=since_utc,
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
+        results_by_mode=results_by_mode,
         results_by_speed=results_by_speed,
         results_by_time_control=results_by_time_control,
+        rating_impact_by_mode=rating_impact_by_mode,
         rating_impact_by_speed=rating_impact_by_speed,
         rating_impact_by_time_control=rating_impact_by_time_control,
         rating_impact_by_opening=rating_impact_by_opening,
@@ -858,6 +876,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     if summary.since_utc is not None:
         lines.insert(5, f"- Since UTC: `{summary.since_utc.isoformat()}`")
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
+    append_count_section(lines, "Results by Mode", summary.results_by_mode, empty_text="No games found.")
     append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")
     append_count_section(
         lines,
@@ -865,6 +884,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         summary.results_by_time_control,
         empty_text="No games found.",
     )
+    append_rating_impact_section(lines, "Rating Impact by Mode", summary.rating_impact_by_mode)
     append_rating_impact_section(lines, "Rating Impact by Speed", summary.rating_impact_by_speed)
     append_rating_impact_section(lines, "Rating Impact by Time Control", summary.rating_impact_by_time_control)
     append_rating_impact_section(lines, "Rating Impact by Opening", summary.rating_impact_by_opening)
