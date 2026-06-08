@@ -315,6 +315,33 @@ def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path
     assert "300+2" not in focused_section
 
 
+def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_path: Path) -> None:
+    """Focused rating impact should keep active controls separate from abandoned historical controls."""
+    current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
+    current_headers["TimeControl"] = "60+2"
+    current_headers["WhiteRatingDiff"] = "+7"
+    current_headers["BlackRatingDiff"] = "-7"
+    write_pgn(tmp_path, "current-control-rating-loss.pgn", current_headers, "1. d4 d5 1-0")
+    abandoned_headers = base_headers("1-0", "Caro-Kann Defense", "SlowBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "300+2"
+    abandoned_headers["WhiteRatingDiff"] = "+20"
+    abandoned_headers["BlackRatingDiff"] = "-20"
+    write_pgn(tmp_path, "abandoned-control-rating-loss.pgn", abandoned_headers, "1. e4 c6 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", focus_time_controls={"60+2"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_rating_impact_by_opening_context == [
+        ("Queen's Gambit Accepted | black | bullet | 60+2", 1, -7),
+    ]
+    assert "Focused Rating Impact by Opening Context" in markdown
+    assert "`Queen's Gambit Accepted | black | bullet | 60+2`: `-7` rating over `1` games" in markdown
+    focused_section = markdown.split("## Focused Rating Impact by Opening Context", maxsplit=1)[1].split(
+        "## Worst Scoring Controls",
+    )[0]
+    assert "300+2" not in focused_section
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")

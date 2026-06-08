@@ -88,6 +88,19 @@
 - `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation | black | blitz`: `-13` rating over `3` games
 - `Sicilian Defense: Delayed Alapin Variation, Basman-Palatnik Double Gambit | black | blitz`: `-13` rating over `3` games
 
+## Focused Rating Impact by Opening Context
+
+- `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-10` rating over `1` games
+- `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
+- `Sicilian Defense: Modern Variations | black | bullet | 90+2`: `-7` rating over `4` games
+- `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: `-7` rating over `1` games
+- `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 60+2`: `-6` rating over `5` games
+- `Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation | white | bullet | 90+1`: `-5` rating over `3` games
+- `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 90+2`: `-5` rating over `3` games
+- `Indian Defense: Accelerated London System | black | bullet | 90+1`: `-5` rating over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: `-5` rating over `1` games
+- `Sicilian Defense: Modern Variations | black | bullet | 60+2`: `-5` rating over `1` games
+
 ## Worst Scoring Controls
 
 - `180+0 black`: W-D-L `8-26-51`, score `24.7%` over `85` games
@@ -208,10 +221,7 @@
 
 ## Focused High-Clock Normal Loss Contexts
 
-- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 120+1`
 - `1` x `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`
-- `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
-- `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
 - `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 60+1`
 - `1` x `Scotch Game: Mieses Variation | white | bullet | 60+1`
 
