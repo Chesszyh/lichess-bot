@@ -371,7 +371,6 @@ class EngineWrapper:
         active_engine = self.engine_for_position(board)
         search_root_moves = root_moves if isinstance(root_moves, list) else None
         repetition_guard = engine_cfg.lookup("repetition_guard") if engine_cfg else None
-        search_root_moves = repetition_guard_root_moves(board, game, search_root_moves, repetition_guard)
         result = active_engine.play(board,
                                     time_limit,
                                     info=chess.engine.INFO_ALL,
@@ -385,6 +384,24 @@ class EngineWrapper:
             replacement = search_root_moves[0]
             logger.warning(f"Engine returned {result.move} outside root moves; using {replacement} instead.")
             result.move = replacement
+        guard_root_moves = repetition_guard_root_moves(board, game, search_root_moves, repetition_guard)
+        if guard_root_moves and result.move not in guard_root_moves and move_triggers_threefold(board, result.move):
+            guarded = active_engine.play(board,
+                                         time_limit,
+                                         info=chess.engine.INFO_ALL,
+                                         ponder=ponder,
+                                         draw_offered=draw_offered,
+                                         root_moves=guard_root_moves)
+            if game and engine_cfg:
+                guarded = self.extend_shallow_search(active_engine, board, game, guarded, draw_offered,
+                                                     guard_root_moves, engine_cfg)
+            if not guarded.resigned and guarded.move not in guard_root_moves:
+                replacement = guard_root_moves[0]
+                logger.warning(f"Engine returned {guarded.move} outside repetition guard root moves; "
+                               f"using {replacement} instead.")
+                guarded.move = replacement
+            if should_use_repetition_guard_result(result, guarded, repetition_guard):
+                result = guarded
         self.record_search_result(result, board)
         return self.offer_draw_or_resign(result, board, draw_offered, game)
 
@@ -948,6 +965,45 @@ def repetition_guard_root_moves(board: chess.Board,
 
     logger.info(f"Filtering immediate threefold repetition moves: {', '.join(map(str, repeated_moves))}")
     return safe_moves
+
+
+def move_triggers_threefold(board: chess.Board, move: chess.Move | None) -> bool:
+    """Whether playing move immediately creates a threefold repetition claim."""
+    if move is None:
+        return False
+
+    candidate = board.copy(stack=True)
+    candidate.push(move)
+    return candidate.is_repetition(3)
+
+
+def play_result_score_cp(result: chess.engine.PlayResult) -> int | None:
+    """Return a centipawn score from a play result when available."""
+    score = result.info.get("score")
+    if not isinstance(score, chess.engine.PovScore):
+        return None
+    return score.relative.score(mate_score=40000)
+
+
+def should_use_repetition_guard_result(original: chess.engine.PlayResult,
+                                       guarded: chess.engine.PlayResult,
+                                       repetition_guard: Configuration | None) -> bool:
+    """Avoid immediate repetitions only when the non-repeating move does not lose too much score."""
+    original_score = play_result_score_cp(original)
+    guarded_score = play_result_score_cp(guarded)
+    if original_score is None or guarded_score is None:
+        return True
+
+    max_score_loss = 200
+    if repetition_guard:
+        max_score_loss = repetition_guard.lookup("max_score_loss_cp") or max_score_loss
+
+    score_loss = original_score - guarded_score
+    if score_loss <= max_score_loss:
+        return True
+
+    logger.info(f"Keeping immediate repetition because the best non-repeating move loses {score_loss} cp.")
+    return False
 
 
 def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limit: chess.engine.Limit,
