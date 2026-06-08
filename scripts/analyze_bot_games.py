@@ -48,11 +48,13 @@ class GameSummary:
     result_counts: dict[str, int]
     results_by_speed: list[tuple[str, int]]
     results_by_time_control: list[tuple[str, int]]
+    worst_scoring_controls: list[tuple[str, int, int, int, int, float]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
     losses_by_termination: list[tuple[str, int]]
     time_forfeit_loss_controls: list[tuple[str, int]]
     loss_prefixes: list[tuple[str, int]]
+    loss_prefix_contexts: list[tuple[str, int]]
     lower_rated_draw_count: int
     lower_rated_draws_by_opening: list[tuple[str, int]]
     lower_rated_draw_prefixes: list[tuple[str, int]]
@@ -127,6 +129,17 @@ def is_fast_time_control(time_control: str, max_base_seconds: int) -> bool:
     """Return whether a time control is in the configured bullet/blitz scope."""
     base_seconds = time_control_base_seconds(time_control)
     return base_seconds is not None and base_seconds <= max_base_seconds
+
+
+def result_score(result: str) -> float | None:
+    """Return the bot score contribution for a result bucket."""
+    if result == "win":
+        return 1.0
+    if result == "draw":
+        return 0.5
+    if result == "loss":
+        return 0.0
+    return None
 
 
 def game_move_prefix(game: chess.pgn.Game, max_prefix_plies: int) -> str:
@@ -206,6 +219,7 @@ def summarize_records(records_dir: Path,
                       max_prefix_plies: int = 12,
                       lower_rated_draw_gap: int = 1,
                       max_base_seconds: int = 300,
+                      control_min_games: int = 10,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
     records: list[GameRecord] = []
@@ -224,6 +238,22 @@ def summarize_records(records_dir: Path,
     results_by_time_control = Counter(
         f"{record.time_control} {record.bot_result}" for record in records
     ).most_common()
+    control_results: dict[str, Counter[str]] = {}
+    for record in records:
+        if result_score(record.bot_result) is None:
+            continue
+        control_results.setdefault(f"{record.time_control} {record.bot_color}", Counter())[record.bot_result] += 1
+    worst_scoring_controls = []
+    for control, result_counter in control_results.items():
+        wins = result_counter["win"]
+        draws = result_counter["draw"]
+        losses_count = result_counter["loss"]
+        total = wins + draws + losses_count
+        if total < control_min_games:
+            continue
+        score_percent = round((wins + 0.5 * draws) * 100 / total, 1)
+        worst_scoring_controls.append((control, wins, draws, losses_count, total, score_percent))
+    worst_scoring_controls.sort(key=lambda item: (item[5], -item[4], item[0]))
     losses = [record for record in records if record.bot_result == "loss"]
     losses_by_opening = Counter(record.opening for record in losses).most_common()
     losses_by_color = Counter(record.bot_color for record in losses).most_common()
@@ -232,6 +262,11 @@ def summarize_records(records_dir: Path,
         f"{record.time_control} {record.bot_color}" for record in losses if record.termination == "Time forfeit"
     ).most_common()
     loss_prefixes = Counter(record.move_prefix for record in losses if record.move_prefix).most_common()
+    loss_prefix_contexts = Counter(
+        f"{record.move_prefix} | {record.bot_color} | {record.speed} | {record.termination or 'Unknown'}"
+        for record in losses
+        if record.move_prefix
+    ).most_common()
     lower_rated_draws = [
         record for record in records
         if record.bot_result == "draw" and record.rating_gap is not None and record.rating_gap >= lower_rated_draw_gap
@@ -251,11 +286,13 @@ def summarize_records(records_dir: Path,
         result_counts=dict(sorted(result_counts.items())),
         results_by_speed=results_by_speed,
         results_by_time_control=results_by_time_control,
+        worst_scoring_controls=worst_scoring_controls,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
         losses_by_termination=losses_by_termination,
         time_forfeit_loss_controls=time_forfeit_loss_controls,
         loss_prefixes=loss_prefixes,
+        loss_prefix_contexts=loss_prefix_contexts,
         lower_rated_draw_count=len(lower_rated_draws),
         lower_rated_draws_by_opening=lower_rated_draws_by_opening,
         lower_rated_draw_prefixes=lower_rated_draw_prefixes,
@@ -296,6 +333,20 @@ def append_count_section(lines: list[str],
         lines.append(f"- {empty_text}")
 
 
+def append_score_section(lines: list[str],
+                         title: str,
+                         controls: list[tuple[str, int, int, int, int, float]]) -> None:
+    """Append a markdown section for exact-clock score rates."""
+    lines.extend(["", f"## {title}", ""])
+    if not controls:
+        lines.append("- No scored controls found.")
+        return
+    lines.extend(
+        f"- `{control}`: W-D-L `{wins}-{draws}-{losses}`, score `{score_percent}%` over `{total}` games"
+        for control, wins, draws, losses, total, score_percent in controls[:10]
+    )
+
+
 def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     """Render a markdown analysis report."""
     lines = [
@@ -316,6 +367,7 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         summary.results_by_time_control,
         empty_text="No games found.",
     )
+    append_score_section(lines, "Worst Scoring Controls", summary.worst_scoring_controls)
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")
     append_count_section(
@@ -329,6 +381,13 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         "Loss Prefixes",
         summary.loss_prefixes,
         empty_text="No loss prefixes found.",
+        quote_item=True,
+    )
+    append_count_section(
+        lines,
+        "Loss Prefix Contexts",
+        summary.loss_prefix_contexts,
+        empty_text="No loss prefix contexts found.",
         quote_item=True,
     )
 
@@ -378,6 +437,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-prefix-plies", type=int, default=12, help="Move-prefix length for loss clustering.")
     parser.add_argument("--lower-rated-draw-gap", type=int, default=1, help="Rating gap threshold for draw leaks.")
     parser.add_argument("--max-base-seconds", type=int, default=300, help="Maximum base time to include.")
+    parser.add_argument("--control-min-games", type=int, default=10,
+                        help="Minimum scored games for exact-clock score-rate clusters.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
     return parser.parse_args(argv)
@@ -392,6 +453,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         max_prefix_plies=args.max_prefix_plies,
         lower_rated_draw_gap=args.lower_rated_draw_gap,
         max_base_seconds=args.max_base_seconds,
+        control_min_games=args.control_min_games,
         since_utc=parse_since_utc(args.since_utc),
     )
     markdown = render_markdown(summary, risk_threshold=args.risk_threshold)

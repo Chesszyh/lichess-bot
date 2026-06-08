@@ -160,6 +160,51 @@ def test_render_markdown__clusters_results_by_speed_and_time_control(tmp_path: P
     assert "`2` x 60+1 loss" in markdown
 
 
+def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
+    """Score rate by exact clock and color should expose weak pools, not only raw counts."""
+    loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")
+    loss_headers["TimeControl"] = "180+0"
+    write_pgn(tmp_path, "white-180-zero-loss.pgn", loss_headers, "1. d4 Nf6 0-1")
+    draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", "DrawBot")
+    draw_headers["TimeControl"] = "180+0"
+    write_pgn(tmp_path, "white-180-zero-draw.pgn", draw_headers, "1. e4 e6 1/2-1/2")
+    win_headers = base_headers("1-0", "Caro-Kann Defense", "ilovecatgirl", "WinBot")
+    win_headers["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "white-60-one-win.pgn", win_headers, "1. e4 c6 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", control_min_games=1)
+    markdown = render_markdown(summary)
+
+    assert summary.worst_scoring_controls[0] == ("180+0 white", 0, 1, 1, 2, 25.0)
+    assert "Worst Scoring Controls" in markdown
+    assert "`180+0 white`: W-D-L `0-1-1`, score `25.0%` over `2` games" in markdown
+
+
+def test_render_markdown__clusters_loss_prefix_context(tmp_path: Path) -> None:
+    """Opening-prefix risks should show color, speed, and termination context."""
+    for index in range(2):
+        loss_headers = base_headers("1-0", "Sicilian Defense: Najdorf Variation", f"NajdorfBot{index}", "ilovecatgirl")
+        loss_headers["TimeControl"] = "60+1"
+        loss_headers["Termination"] = "Normal"
+        write_pgn(
+            tmp_path,
+            f"black-bullet-najdorf-loss-{index}.pgn",
+            loss_headers,
+            "1. e4 c5 2. Nf3 d6 1-0",
+        )
+    time_loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")
+    time_loss_headers["TimeControl"] = "180+0"
+    time_loss_headers["Termination"] = "Time forfeit"
+    write_pgn(tmp_path, "white-blitz-time-loss.pgn", time_loss_headers, "1. d4 Nf6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", max_prefix_plies=4)
+    markdown = render_markdown(summary)
+
+    assert summary.loss_prefix_contexts[0] == ("e4 c5 Nf3 d6 | black | bullet | Normal", 2)
+    assert "Loss Prefix Contexts" in markdown
+    assert "`2` x `e4 c5 Nf3 d6 | black | bullet | Normal`" in markdown
+
+
 def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     """The report should expose the total lower-rated draw count, not only the top examples."""
     for index in range(2):

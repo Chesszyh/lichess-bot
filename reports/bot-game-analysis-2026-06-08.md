@@ -44,6 +44,19 @@
 - `58` x 180+0 draw
 - `57` x 180+2 loss
 
+## Worst Scoring Controls
+
+- `180+0 black`: W-D-L `8-26-51`, score `24.7%` over `85` games
+- `180+0 white`: W-D-L `12-32-45`, score `31.5%` over `89` games
+- `300+2 black`: W-D-L `2-60-36`, score `32.7%` over `98` games
+- `180+3 black`: W-D-L `3-34-19`, score `35.7%` over `56` games
+- `180+2 black`: W-D-L `10-87-47`, score `37.2%` over `144` games
+- `240+2 black`: W-D-L `12-68-40`, score `38.3%` over `120` games
+- `180+1 black`: W-D-L `11-41-27`, score `39.9%` over `79` games
+- `300+3 black`: W-D-L `4-40-16`, score `40.0%` over `60` games
+- `300+1 black`: W-D-L `1-23-7`, score `40.3%` over `31` games
+- `240+3 black`: W-D-L `1-36-10`, score `40.4%` over `47` games
+
 ## Loss Colors
 
 - `330` x black
@@ -79,6 +92,19 @@
 - `5` x `d4 Nf6 Nf3 d5 Bf4 c5 e3 Nc6 Nbd2 Qb6 dxc5 Qxb2`
 - `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 h3 e6`
 - `5` x `e4 c5 Nf3 d6 Nc3 Nf6 d4 cxd4 Nxd4 a6 Be3 e5`
+
+## Loss Prefix Contexts
+
+- `23` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | Normal`
+- `13` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | Normal`
+- `7` x `e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Bg6 | black | blitz | Normal`
+- `7` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Bg5 e6 | black | blitz | Normal`
+- `7` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | Time forfeit`
+- `6` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6 | black | blitz | Normal`
+- `6` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 | white | blitz | Normal`
+- `6` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | Time forfeit`
+- `6` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | white | blitz | Time forfeit`
+- `5` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | Normal`
 
 ## Lower-Rated Draws
 
