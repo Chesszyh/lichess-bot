@@ -194,6 +194,79 @@ class Matchmaking:
             weights = [1] * len(online_bots)
         return weights
 
+    def matchmaking_candidate_rejection_reason(self, bot: UserProfileType, game_type: str, min_rating: int,
+                                               max_rating: int) -> str | None:
+        """Return why an online bot is not suitable for the current outgoing challenge."""
+        perf = bot.get("perfs", {}).get(game_type, {})
+        rating = perf.get("rating", 0)
+        reason = None
+        if bot["username"] == self.username():
+            reason = "self"
+        elif bot["username"] in self.matchmaking_cfg.block_list:
+            reason = "configured_blocklist"
+        elif bot["username"] in self.online_block_list:
+            reason = "online_blocklist"
+        elif not self.should_accept_challenge(bot["username"], ""):
+            reason = "global_cooldown"
+        elif perf.get("games", 0) <= 0:
+            reason = f"no_{game_type}_games"
+        elif rating < min_rating:
+            reason = "rating_below_min"
+        elif rating > max_rating:
+            reason = "rating_above_max"
+        return reason
+
+    def filter_suitable_opponents(self, online_bots: list[UserProfileType], game_type: str, min_rating: int,
+                                  max_rating: int) -> list[UserProfileType]:
+        """Filter online bots and log aggregate rejection reasons for sparse-pool diagnosis."""
+        rejection_counts: defaultdict[str, int] = defaultdict(int)
+        suitable_bots: list[UserProfileType] = []
+        for bot in online_bots:
+            rejection_reason = self.matchmaking_candidate_rejection_reason(bot, game_type, min_rating, max_rating)
+            if rejection_reason:
+                rejection_counts[rejection_reason] += 1
+            else:
+                suitable_bots.append(bot)
+        if rejection_counts:
+            rejection_summary = ", ".join(f"{reason}={rejection_counts[reason]}" for reason in sorted(rejection_counts))
+            logger.info(f"Rejected online bot candidates: {rejection_summary}")
+        return suitable_bots
+
+    def cool_down_no_candidates(self) -> None:
+        """Back off briefly after an empty candidate pool."""
+        self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
+        self.show_earliest_challenge_time()
+
+    def filter_ready_opponents(self, online_bots: list[UserProfileType], variant: str, game_type: str,
+                               mode: str) -> list[UserProfileType]:
+        """Apply decline filters after the base suitability filters."""
+        def ready_for_challenge(bot: UserProfileType) -> bool:
+            aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
+            return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
+
+        ready_bots = list(filter(ready_for_challenge, online_bots))
+        if online_bots and not ready_bots:
+            logger.error("No suitable bots are ready for challenge after applying decline filters.")
+            self.cool_down_no_candidates()
+        return ready_bots
+
+    def prefer_high_rated_opponents(self, online_bots: list[UserProfileType], game_type: str,
+                                    preferred_min_rating: int) -> list[UserProfileType]:
+        """Prefer the target rating band when it is available."""
+        if preferred_min_rating <= 0:
+            return online_bots
+
+        preferred_bots = [
+            bot for bot in online_bots
+            if bot.get("perfs", {}).get(game_type, {}).get("rating", 0) >= preferred_min_rating
+        ]
+        if preferred_bots:
+            logger.info(f"Preferring {len(preferred_bots)} opponents rated at least {preferred_min_rating}.")
+            return preferred_bots
+
+        logger.info(f"No ready opponents rated at least {preferred_min_rating}; using the fallback pool.")
+        return online_bots
+
     def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
         """Choose an opponent."""
         override_choice = self.choose_override()
@@ -229,42 +302,17 @@ class Matchmaking:
             max_rating = min(max_rating, bot_rating + rating_diff)
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
 
-        def is_suitable_opponent(bot: UserProfileType) -> bool:
-            perf = bot.get("perfs", {}).get(game_type, {})
-            return (bot["username"] != self.username()
-                    and not self.in_block_list(bot["username"])
-                    and perf.get("games", 0) > 0
-                    and min_rating <= perf.get("rating", 0) <= max_rating)
-
         self.online_block_list.refresh()
         online_bots = self.li.get_online_bots()
         logger.info(f"Found {len(online_bots)} online bots")
-        online_bots = list(filter(is_suitable_opponent, online_bots))
+        online_bots = self.filter_suitable_opponents(online_bots, game_type, min_rating, max_rating)
         logger.info(f"Choosing from {len(online_bots)} suitable opponents")
 
-        def ready_for_challenge(bot: UserProfileType) -> bool:
-            aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
-            return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
-
-        ready_bots = list(filter(ready_for_challenge, online_bots))
-        if online_bots and not ready_bots:
-            logger.error("No suitable bots are ready for challenge after applying decline filters.")
-            self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
-            self.show_earliest_challenge_time()
-            online_bots = []
-        else:
-            online_bots = ready_bots
+        online_bots = self.filter_ready_opponents(online_bots, variant, game_type, mode)
         if not online_bots:
-            self.no_candidate_timer = Timer(NO_CANDIDATE_DELAY)
-            self.show_earliest_challenge_time()
-        elif preferred_min_rating > 0:
-            preferred_bots = [bot for bot in online_bots
-                              if bot.get("perfs", {}).get(game_type, {}).get("rating", 0) >= preferred_min_rating]
-            if preferred_bots:
-                logger.info(f"Preferring {len(preferred_bots)} opponents rated at least {preferred_min_rating}.")
-                online_bots = preferred_bots
-            else:
-                logger.info(f"No ready opponents rated at least {preferred_min_rating}; using the fallback pool.")
+            self.cool_down_no_candidates()
+        else:
+            online_bots = self.prefer_high_rated_opponents(online_bots, game_type, preferred_min_rating)
         bot_username = None
         weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 

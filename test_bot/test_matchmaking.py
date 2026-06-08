@@ -1,4 +1,5 @@
 """Test functions for matchmaking module."""
+import logging
 import random
 from collections.abc import Sequence
 from typing import Any
@@ -404,6 +405,59 @@ def test_choose_opponent__uses_override_weights_for_bullet_first_matchmaking(mon
     assert override_weights == [[1, 5]]
     assert opponent == "bulletbot"
     assert (base_time, increment, days, variant, mode) == (60, 1, 0, "standard", "rated")
+
+
+def test_choose_opponent__logs_rejection_reason_counts(
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture) -> None:
+    """Sparse target pools should explain which filters removed online bots."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "testbot", "perfs": {"bullet": {"rating": 3090, "games": 50}}},
+        {"username": "cooldownbot", "perfs": {"bullet": {"rating": 3090, "games": 50}}},
+        {"username": "nogamesbot", "perfs": {"bullet": {"rating": 3090, "games": 0}}},
+        {"username": "lowbot", "perfs": {"bullet": {"rating": 3079, "games": 50}}},
+        {"username": "highbot", "perfs": {"bullet": {"rating": 4001, "games": 50}}},
+        {"username": "readybot", "perfs": {"bullet": {"rating": 3095, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 3080,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3060}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    matchmaking.add_challenge_filter("cooldownbot", "", hours(1))
+
+    def choose_first(seq: Sequence[Any], weights: Sequence[float] | None = None) -> list[Any]:
+        _ = weights
+        return [seq[0]]
+
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", choose_first)
+    caplog.set_level(logging.INFO)
+
+    opponent, *_ = matchmaking.choose_opponent()
+
+    assert opponent == "readybot"
+    assert ("Rejected online bot candidates: global_cooldown=1, no_bullet_games=1, "
+            "rating_above_max=1, rating_below_min=1, self=1") in caplog.messages
 
 
 def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:
