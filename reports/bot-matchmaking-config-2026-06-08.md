@@ -21,32 +21,43 @@ Recorded in local config history:
 - `.config-history` commit `7d5cf39`: avoid weak long blitz bot controls.
 - `.config-history` commit `afd8dba`: bias outgoing bullet matchmaking toward short controls.
 - `.config-history` commit `a01b8e5`: favor longer bullet controls after short-clock lc0 losses.
+- `.config-history` commit `7172e73`: restrict incoming fast-game increments to the active `+1` sample.
+- `.config-history` commit `575c002`: restrict fast games to rated mode.
+- `.config-history` commit `c626322`: limit arena base time to active controls.
+- `.config-history` commit `47a1379`: block `MEGA-NOOB-BOT` active controls.
 
 Effective private config intent:
 
 - Incoming challenge queue now prefers bot challengers with `challenge.preference: bot`.
-- Incoming challenges accept practical increment `bullet` and short `blitz`; `rapid` is listed but excluded by the `120` second base cap.
+- Incoming challenges and arena entries are restricted to rated games.
+- Incoming challenges accept rated `bullet` and short `blitz` only at `+1`; `rapid` is listed but excluded by the
+  `120` second base cap and `+1` increment cap.
 - Bullet challenges must still have increment because `min_increment: 1` and `bullet_requires_increment: true`.
-- Incoming base time is capped to `60` through `120` seconds, allowing practical `1+1` through `2+2` fast games.
+- Incoming base time is capped to `60` through `120` seconds, allowing practical `1+1`, `1.5+1`, and `2+1` fast games.
+- Arena selection now uses the same `120` second base cap and avoids `+2/+3` arenas, keeping arena pairings aligned with
+  the active `+1` evidence window.
 - Outgoing matchmaking can choose `60`, `90`, or `120` second base times, always with `1` second increment.
 - Outgoing matchmaking is still fully increment bullet, but now weights longer bullet controls more heavily:
   `60+1` is `1/14`, `90+1` is `4/14`, and `120+1` is `9/14`. This keeps a small short-clock sample for regression
   checks while emphasizing the longer bullet controls that should be less hostile to lc0 on the Mac mini.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
+- `MEGA-NOOB-BOT` is blocked for both incoming challenges and outgoing matchmaking after two active-control losses,
+  including the 2026-06-08 `90+1` high-clock normal loss.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
 - Endgame tablebase move sources are enabled for fast games: local 5-piece Syzygy is used directly by lichess-bot, and
   online EGTB is enabled up to `180` base seconds and `8` pieces when the bot has at least `10` seconds left. This targets
   technical bullet/blitz endgames without adding local engine load. This took effect after a safe restart at 2026-06-08
   19:03 CST.
-- The private config file now caps incoming bot games at `120` base seconds and outgoing bot games at `90` base seconds.
+- The private config file now caps incoming bot games and arena selection at `120` base seconds, and outgoing bot
+  matchmaking samples `60+1`, `90+1`, and `120+1`.
   The incoming cap took effect after a safe restart at 2026-06-08 18:53 CST, after game `ZiJe1OaC` had ended and all game
-  engine processes had exited; the outgoing `90` second cap took effect after a safe restart at 2026-06-08 18:56 CST.
+  engine processes had exited; later outgoing bullet weighting revisions kept the same safe-restart discipline.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
 ## Time Forfeit Evidence
 
-The refreshed bot-game report now tracks loss terminations. Across `2354` fast bot-vs-bot games, `132` losses were by `Time forfeit`, with historical clusters concentrated in no-increment blitz, especially `180+0` (`49` losses split across both colors). The current private config already mitigates that cluster by requiring incoming bot games to have at least `1` second increment and by issuing outgoing challenges only with `+1` or `+2` increments.
+The refreshed bot-game report now tracks loss terminations. Across `2354` fast bot-vs-bot games, `132` losses were by `Time forfeit`, with historical clusters concentrated in no-increment blitz, especially `180+0` (`49` losses split across both colors). The current private config already mitigates that cluster by requiring incoming bot games to have exactly `1` second increment and by issuing outgoing challenges only with `+1` increment.
 
 ## Speed Split Evidence
 
@@ -64,6 +75,11 @@ The latest `60+2` bullet loss to `Cheszter` was not a clock-loss pattern: the bo
 Syzygy probing showed the 4-piece phase was already lost, while the log showed all late moves came from `Source: Engine`
 instead of lichess-bot EGTB. Enabling direct local Syzygy and online EGTB gives exact move sources in future fast technical
 endgames before the capped search has to solve them unaided.
+
+The rated-only report still shows active-envelope `+2` losses and rating drag: `120+2 black` is `-17` over `16` rated
+games, while focused active controls include `120+2` blitz losses and `60+2`/`90+2` bullet losses. Because outgoing
+matchmaking already uses only `+1`, incoming challenges and arena selection were narrowed to `+1` to collect cleaner
+`60+1`, `90+1`, and `120+1` evidence before reopening higher increments.
 
 The analyzer now also lists high-clock normal losses separately. These are non-time-forfeit losses where the bot still had
 at least `60` seconds after its last recorded move, so they should be reviewed as chess-strength, opening, or conversion
