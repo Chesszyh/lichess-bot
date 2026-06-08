@@ -1,5 +1,6 @@
 """Tests for lightweight bot game analysis."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from scripts.analyze_bot_games import parse_args, render_markdown, summarize_records
@@ -80,6 +81,23 @@ def test_summarize_records__default_draw_gap_includes_any_lower_rated_bot(tmp_pa
 
     assert parse_args([]).lower_rated_draw_gap == 1
     assert summary.lower_rated_draws[0].path.name == "slightly-lower-draw.pgn"
+
+
+def test_render_markdown__shows_since_utc_scope(tmp_path: Path) -> None:
+    """Post-config reports should declare the UTC cutoff used for filtering."""
+    old_headers = base_headers("0-1", "Old Opening", "ilovecatgirl", "OldBot")
+    old_headers["UTCTime"] = "09:00:00"
+    write_pgn(tmp_path, "old-loss.pgn", old_headers, "1. d4 Nf6 0-1")
+    new_headers = base_headers("1-0", "New Opening", "ilovecatgirl", "NewBot")
+    new_headers["UTCTime"] = "11:00:00"
+    write_pgn(tmp_path, "new-win.pgn", new_headers, "1. e4 c6 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", since_utc=datetime(2026, 6, 8, 10, 30, tzinfo=UTC))
+    markdown = render_markdown(summary)
+
+    assert summary.total_games == 1
+    assert summary.result_counts == {"win": 1}
+    assert "Since UTC: `2026-06-08T10:30:00+00:00`" in markdown
 
 
 def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
@@ -264,6 +282,37 @@ def test_render_markdown__shows_high_clock_normal_losses(tmp_path: Path) -> None
     assert "`87s` left in `high-clock-normal-loss.pgn` vs `Cheszter`: Queen's Gambit Accepted" in high_clock_section
     assert "low-clock-normal-loss.pgn" not in high_clock_section
     assert "high-clock-time-forfeit-loss.pgn" not in high_clock_section
+
+
+def test_render_markdown__shows_focused_high_clock_normal_loss_contexts(tmp_path: Path) -> None:
+    """Focused high-clock loss contexts should separate current controls from abandoned historical controls."""
+    current_headers = base_headers("1-0", "Queen's Gambit Accepted", "Cheszter", "ilovecatgirl")
+    current_headers["TimeControl"] = "60+2"
+    write_pgn(
+        tmp_path,
+        "current-control-loss.pgn",
+        current_headers,
+        "1. d4 { [%clk 0:01:01] } d5 { [%clk 0:01:27] } 1-0",
+    )
+    abandoned_headers = base_headers("1-0", "Caro-Kann Defense", "SlowBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "300+2"
+    write_pgn(
+        tmp_path,
+        "abandoned-control-loss.pgn",
+        abandoned_headers,
+        "1. e4 { [%clk 0:05:00] } c6 { [%clk 0:05:00] } 1-0",
+    )
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", focus_time_controls={"60+2"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_high_clock_normal_loss_contexts == [("Queen's Gambit Accepted | black | bullet | 60+2", 1)]
+    assert "Focused High-Clock Normal Loss Contexts" in markdown
+    assert "`1` x `Queen's Gambit Accepted | black | bullet | 60+2`" in markdown
+    focused_section = markdown.split("## Focused High-Clock Normal Loss Contexts", maxsplit=1)[1].split(
+        "## High-Clock Normal Loss Contexts",
+    )[0]
+    assert "300+2" not in focused_section
 
 
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:

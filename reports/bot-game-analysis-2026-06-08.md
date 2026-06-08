@@ -206,6 +206,15 @@
 - gap `427` vs `prokopakop` (2513) in `prokopakop vs ilovecatgirl - SO2bW34b.pgn`: Sicilian Defense: Najdorf Variation
 - gap `419` vs `prokopakop` (2511) in `prokopakop vs ilovecatgirl - ZnbOQOsf.pgn`: Sicilian Defense: Najdorf Variation
 
+## Focused High-Clock Normal Loss Contexts
+
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 120+1`
+- `1` x `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`
+- `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 60+1`
+- `1` x `Scotch Game: Mieses Variation | white | bullet | 60+1`
+
 ## High-Clock Normal Loss Contexts
 
 - `5` x `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 300+2`

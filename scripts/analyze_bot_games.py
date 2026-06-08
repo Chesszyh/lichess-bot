@@ -46,6 +46,7 @@ class GameSummary:
     """Aggregated evidence from local bot-vs-bot PGNs."""
 
     bot_name: str
+    since_utc: datetime | None
     total_games: int
     result_counts: dict[str, int]
     results_by_speed: list[tuple[str, int]]
@@ -67,6 +68,7 @@ class GameSummary:
     lower_rated_draw_contexts: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
     high_clock_normal_losses: list[GameRecord]
+    focused_high_clock_normal_loss_contexts: list[tuple[str, int]]
     high_clock_normal_loss_contexts: list[tuple[str, int]]
     recent_losses: list[GameRecord]
 
@@ -98,6 +100,13 @@ def parse_since_utc(value: str | None) -> datetime | None:
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+def parse_focus_time_controls(value: str | None) -> set[str]:
+    """Parse a comma-separated list of exact time controls to highlight."""
+    if not value:
+        return set()
+    return {item.strip() for item in value.split(",") if item.strip()}
 
 
 def time_control_base_seconds(time_control: str) -> int | None:
@@ -255,6 +264,7 @@ def summarize_records(records_dir: Path,
                       max_base_seconds: int = 300,
                       control_min_games: int = 10,
                       high_clock_loss_threshold_seconds: int = 60,
+                      focus_time_controls: set[str] | None = None,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
     records: list[GameRecord] = []
@@ -343,9 +353,15 @@ def summarize_records(records_dir: Path,
         f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
         for record in high_clock_normal_losses
     ).most_common()
+    focused_high_clock_normal_loss_contexts = Counter(
+        f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}"
+        for record in high_clock_normal_losses
+        if focus_time_controls and record.time_control in focus_time_controls
+    ).most_common()
 
     return GameSummary(
         bot_name=bot_name,
+        since_utc=since_utc,
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
         results_by_speed=results_by_speed,
@@ -367,6 +383,7 @@ def summarize_records(records_dir: Path,
         lower_rated_draw_contexts=lower_rated_draw_contexts,
         lower_rated_draws=lower_rated_draws[:10],
         high_clock_normal_losses=high_clock_normal_losses[:10],
+        focused_high_clock_normal_loss_contexts=focused_high_clock_normal_loss_contexts,
         high_clock_normal_loss_contexts=high_clock_normal_loss_contexts,
         recent_losses=recent_losses,
     )
@@ -463,6 +480,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         f"- {opening_risk_gate_line(summary, risk_threshold)}",
         "- No local engine analysis was run.",
     ]
+    if summary.since_utc is not None:
+        lines.insert(5, f"- Since UTC: `{summary.since_utc.isoformat()}`")
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")
     append_count_section(
@@ -534,6 +553,14 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
 
     append_count_section(
         lines,
+        "Focused High-Clock Normal Loss Contexts",
+        summary.focused_high_clock_normal_loss_contexts,
+        empty_text="No focused high-clock normal loss contexts found.",
+        quote_item=True,
+    )
+
+    append_count_section(
+        lines,
         "High-Clock Normal Loss Contexts",
         summary.high_clock_normal_loss_contexts,
         empty_text="No high-clock normal loss contexts found.",
@@ -572,6 +599,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="Minimum scored games for exact-clock score-rate clusters.")
     parser.add_argument("--high-clock-loss-threshold-seconds", type=int, default=60,
                         help="Minimum remaining bot clock for non-time loss examples.")
+    parser.add_argument("--focus-time-controls",
+                        help="Comma-separated exact time controls to highlight in focused sections.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
     return parser.parse_args(argv)
@@ -588,6 +617,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         max_base_seconds=args.max_base_seconds,
         control_min_games=args.control_min_games,
         high_clock_loss_threshold_seconds=args.high_clock_loss_threshold_seconds,
+        focus_time_controls=parse_focus_time_controls(args.focus_time_controls),
         since_utc=parse_since_utc(args.since_utc),
     )
     markdown = render_markdown(summary, risk_threshold=args.risk_threshold)
