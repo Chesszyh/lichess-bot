@@ -42,6 +42,10 @@ The refreshed bot-game report now tracks loss terminations. Across `2354` fast b
 
 The refreshed bot-game report now splits results by Lichess speed bucket and exact time control. Historical bullet bot games show `242` wins, `269` draws, and `79` losses, while blitz shows `205` wins, `1128` draws, and `386` losses. This supports keeping the outgoing matchmaking bias toward increment bullet while treating blitz as the weaker pool to diagnose rather than increasing blitz volume.
 
+## Exact Clock Evidence
+
+The exact-clock score table shows `180+0 black` at `24.7%` and `180+0 white` at `31.5%`, the two weakest scored controls with at least ten games. The contextual loss-prefix table also keeps the Najdorf English Attack separated by color, speed, and termination, showing that the largest non-clock opening leak remains Black blitz Najdorf positions. This reinforces the current no-`+0` private matchmaking policy and the Black fast-bot book disable while collecting cleaner increment-only samples.
+
 ## Why This Is Safer
 
 The previous live config had `challenge_timeout: 1`, which validates but triggers the repository warning about potentially using the 100 bot-vs-bot games/day allowance quickly. The revised config encourages more games through broader incoming acceptance and better time-control coverage, without increasing outgoing challenge frequency.
