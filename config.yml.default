@@ -298,6 +298,7 @@ matchmaking:
   allow_during_games: false        # Set it to 'true' to create challenges during long games.
   challenge_variant: "random"      # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
   challenge_timeout: 30            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
+  decline_cooldown_minutes: 360    # Wait this many minutes before retrying a bot that declined a challenge.
   outgoing_challenge_cooldown_minutes: 720  # Wait this many minutes before retrying an opponent that did not answer an outgoing challenge.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60

@@ -1153,6 +1153,68 @@ def test_add_challenge_filter__uses_short_default_decline_cooldown() -> None:
     assert matchmaking.challenge_type_acceptable[("ResoluteBot", "")].duration == hours(6)
 
 
+def test_add_challenge_filter__uses_configured_decline_cooldown() -> None:
+    """Sparse target pools should be able to retry ordinary declines sooner than six hours."""
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "decline_cooldown_minutes": 180,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    matchmaking.add_challenge_filter("ResoluteBot", "")
+
+    assert matchmaking.challenge_type_acceptable[("ResoluteBot", "")].duration == hours(3)
+
+
+def test_declined_challenge__keeps_mode_decline_global_cooldown_at_six_hours() -> None:
+    """Rated/casual mode conflicts should not use the shorter ordinary decline cooldown."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "challenge_mode": "rated",
+            "decline_cooldown_minutes": 180,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 3058},
+            "destUser": {"name": "ResoluteBot", "title": "BOT", "rating": 3019},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "Please challenge me to a casual game",
+            "declineReasonKey": "casual",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.challenge_type_acceptable[("ResoluteBot", "rated")].duration == hours(3)
+    assert matchmaking.challenge_type_acceptable[("ResoluteBot", "")].duration == hours(6)
+    assert matchmaking.challenge_filter_sources[("ResoluteBot", "")] == "mode_decline"
+
+
 def test_matchmaking_state__persists_plain_rate_limit_backoff_across_restart(tmp_path) -> None:
     """Challenge endpoint cooldown should survive process restarts."""
     state_file = tmp_path / "matchmaking_state.json"

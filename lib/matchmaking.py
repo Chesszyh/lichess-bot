@@ -21,6 +21,7 @@ PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 30
 PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 1440
 PLAIN_RATE_LIMIT_TARGET_COOLDOWN = days(1)
 DEFAULT_DECLINE_COOLDOWN = hours(6)
+DEFAULT_DECLINE_COOLDOWN_MINUTES = 360
 DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES = 720
 NO_CANDIDATE_DELAY = minutes(15)
 
@@ -425,7 +426,9 @@ class Matchmaking:
         challenge. If the parameter is empty, that is equivalent to adding the opponent to the block list.
         :param timeout: The amount of time to not challenge an opponent. If None, the default is six hours.
         """
-        self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or DEFAULT_DECLINE_COOLDOWN)
+        default_timeout = minutes(self.matchmaking_cfg.lookup("decline_cooldown_minutes")
+                                  or DEFAULT_DECLINE_COOLDOWN_MINUTES)
+        self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or default_timeout)
         self.challenge_filter_sources[(username, game_aspect)] = source
         self.save_state()
 
@@ -587,9 +590,10 @@ class Matchmaking:
             return
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
-        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game for 6 hours.")
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game for "
+                    f"{self.challenge_type_acceptable[(opponent.name, game_problem)].duration}.")
         if reason_key in {"rated", "casual"} and challenge_mode != "random":
-            self.add_challenge_filter(opponent.name, "", source="mode_decline")
+            self.add_challenge_filter(opponent.name, "", DEFAULT_DECLINE_COOLDOWN, "mode_decline")
             logger.info(f"Will not challenge {opponent} again for 6 hours because only "
                         f"{challenge_mode} matchmaking is configured.")
 
