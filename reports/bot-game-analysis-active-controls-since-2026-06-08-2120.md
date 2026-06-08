@@ -2,11 +2,11 @@
 
 ## Scope
 
-- Games analyzed: `2`
+- Games analyzed: `3`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T13:20:00+00:00`
-- Results: `{'draw': 1, 'loss': 1}`
+- Results: `{'draw': 2, 'loss': 1}`
 - Opening risk gate: passed (1 < 3)
 - No local engine analysis was run.
 
@@ -20,79 +20,91 @@
 
 ## Results by Mode
 
+- `2` x rated draw
 - `1` x rated loss
-- `1` x rated draw
 
 ## Results by Speed
 
+- `2` x bullet draw
 - `1` x bullet loss
-- `1` x bullet draw
 
 ## Results by Time Control
 
 - `1` x 120+1 loss
 - `1` x 120+1 draw
+- `1` x 90+1 draw
 
 ## Rating Impact by Mode
 
-- `rated`: `-6` rating over `2` games
+- `rated`: `-4` rating over `3` games
 
 ## Rating Impact by Speed
 
-- `bullet`: `-6` rating over `2` games
+- `bullet`: `-4` rating over `3` games
 
 ## Rating Impact by Time Control
 
 - `120+1 black`: `-6` rating over `1` games
 - `120+1 white`: `+0` rating over `1` games
+- `90+1 white`: `+2` rating over `1` games
 
 ## Rating Impact by Opening
 
 - `Semi-Slav Defense: Anti-Moscow Gambit`: `-6` rating over `1` games
 - `Petrov's Defense: Nimzowitsch Attack`: `+0` rating over `1` games
+- `Ruy Lopez: Berlin Defense, Rio Gambit Accepted`: `+2` rating over `1` games
 
 ## Rating Impact by Opening Context
 
 - `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet`: `-6` rating over `1` games
 - `Petrov's Defense: Nimzowitsch Attack | white | bullet`: `+0` rating over `1` games
+- `Ruy Lopez: Berlin Defense, Rio Gambit Accepted | white | bullet`: `+2` rating over `1` games
 
 ## Rating Impact by Opponent
 
 - `Fischer_Bot | bullet | 120+1`: `-6` rating over `1` games
 - `CupchessBot | bullet | 120+1`: `+0` rating over `1` games
+- `abdcebot | bullet | 90+1`: `+2` rating over `1` games
 
 ## Score by Opponent
 
 - `Fischer_Bot | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `CupchessBot | bullet | 120+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
+- `abdcebot | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Time Control
 
 - `120+1`: `-6` rating over `2` games
+- `90+1`: `+2` rating over `1` games
 
 ## Focused Score by Time Control
 
 - `120+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
+- `90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opening Context
 
 - `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`: `-6` rating over `1` games
 - `Petrov's Defense: Nimzowitsch Attack | white | bullet | 120+1`: `+0` rating over `1` games
+- `Ruy Lopez: Berlin Defense, Rio Gambit Accepted | white | bullet | 90+1`: `+2` rating over `1` games
 
 ## Focused Score by Opening Context
 
 - `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Petrov's Defense: Nimzowitsch Attack | white | bullet | 120+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
+- `Ruy Lopez: Berlin Defense, Rio Gambit Accepted | white | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opponent
 
 - `Fischer_Bot | bullet | 120+1`: `-6` rating over `1` games
 - `CupchessBot | bullet | 120+1`: `+0` rating over `1` games
+- `abdcebot | bullet | 90+1`: `+2` rating over `1` games
 
 ## Focused Score by Opponent
 
 - `Fischer_Bot | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `CupchessBot | bullet | 120+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
+- `abdcebot | bullet | 90+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Worst Scoring Controls
 
