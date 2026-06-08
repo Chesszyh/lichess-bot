@@ -121,6 +121,26 @@ def test_render_markdown__shows_loss_termination_distribution(tmp_path: Path) ->
     assert "`1` x Time forfeit" in markdown
 
 
+def test_render_markdown__clusters_time_forfeit_losses_by_time_control_and_color(tmp_path: Path) -> None:
+    """Time-forfeit losses should show whether a clock setting or color is concentrated."""
+    for index in range(2):
+        loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", f"ClockBot{index}")
+        loss_headers["Termination"] = "Time forfeit"
+        loss_headers["TimeControl"] = "180+0"
+        write_pgn(tmp_path, f"white-180-zero-loss-{index}.pgn", loss_headers, "1. d4 Nf6 0-1")
+    black_loss_headers = base_headers("1-0", "Sicilian Defense", "StrongBot", "ilovecatgirl")
+    black_loss_headers["Termination"] = "Time forfeit"
+    black_loss_headers["TimeControl"] = "60+1"
+    write_pgn(tmp_path, "black-60-one-loss.pgn", black_loss_headers, "1. e4 c5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary)
+
+    assert summary.time_forfeit_loss_controls[0] == ("180+0 white", 2)
+    assert "Time Forfeit Loss Controls" in markdown
+    assert "`2` x 180+0 white" in markdown
+
+
 def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     """The report should expose the total lower-rated draw count, not only the top examples."""
     for index in range(2):

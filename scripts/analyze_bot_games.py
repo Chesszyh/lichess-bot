@@ -48,6 +48,7 @@ class GameSummary:
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
     losses_by_termination: list[tuple[str, int]]
+    time_forfeit_loss_controls: list[tuple[str, int]]
     loss_prefixes: list[tuple[str, int]]
     lower_rated_draw_count: int
     lower_rated_draws_by_opening: list[tuple[str, int]]
@@ -191,6 +192,9 @@ def summarize_records(records_dir: Path,
     losses_by_opening = Counter(record.opening for record in losses).most_common()
     losses_by_color = Counter(record.bot_color for record in losses).most_common()
     losses_by_termination = Counter(record.termination for record in losses).most_common()
+    time_forfeit_loss_controls = Counter(
+        f"{record.time_control} {record.bot_color}" for record in losses if record.termination == "Time forfeit"
+    ).most_common()
     loss_prefixes = Counter(record.move_prefix for record in losses if record.move_prefix).most_common()
     lower_rated_draws = [
         record for record in records
@@ -212,6 +216,7 @@ def summarize_records(records_dir: Path,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
         losses_by_termination=losses_by_termination,
+        time_forfeit_loss_controls=time_forfeit_loss_controls,
         loss_prefixes=loss_prefixes,
         lower_rated_draw_count=len(lower_rated_draws),
         lower_rated_draws_by_opening=lower_rated_draws_by_opening,
@@ -268,6 +273,12 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")
+    append_count_section(
+        lines,
+        "Time Forfeit Loss Controls",
+        summary.time_forfeit_loss_controls,
+        empty_text="No time-forfeit losses found.",
+    )
     append_count_section(
         lines,
         "Loss Prefixes",

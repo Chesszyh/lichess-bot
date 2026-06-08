@@ -30,6 +30,19 @@
 - `333` x Normal
 - `132` x Time forfeit
 
+## Time Forfeit Loss Controls
+
+- `27` x 180+0 white
+- `22` x 180+0 black
+- `10` x 180+1 black
+- `5` x 180+2 black
+- `5` x 60+0 white
+- `5` x 240+0 white
+- `5` x 240+2 white
+- `4` x 120+2 black
+- `4` x 180+1 white
+- `3` x 60+2 black
+
 ## Loss Prefixes
 
 - `58` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
