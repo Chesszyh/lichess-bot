@@ -1019,7 +1019,10 @@ def get_game_specific_polyglot_cfg(polyglot_cfg: Configuration, game: model.Game
     opponent_selection_cfg = polyglot_cfg.lookup("opponent_selection") or Configuration({})
     opponent_key = "bot" if game.opponent.is_bot else "human"
     opponent_cfg = opponent_selection_cfg.lookup(opponent_key) or Configuration({})
-    return polyglot_cfg | opponent_cfg
+    game_cfg = polyglot_cfg | opponent_cfg
+    color_selection_cfg = game_cfg.lookup("color_selection") or Configuration({})
+    color_cfg = color_selection_cfg.lookup(game.my_color) or Configuration({})
+    return game_cfg | color_cfg
 
 
 def get_book_move(board: chess.Board, game: model.Game,
@@ -1029,7 +1032,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     polyglot_cfg = get_game_specific_polyglot_cfg(polyglot_cfg, game)
     use_book = polyglot_cfg.enabled
     max_depth_by_speed = polyglot_cfg.lookup("max_depth_by_speed") or Configuration({})
-    speed_max_depth = max_depth_by_speed.lookup(game.speed)
+    speed_max_depth = max_depth_by_speed.lookup(game.speed) if game.speed else None
     max_depth = speed_max_depth if speed_max_depth is not None else polyglot_cfg.max_depth
     max_game_length = max_depth * 2 - 1
     if not use_book or len(board.move_stack) > max_game_length:

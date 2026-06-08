@@ -33,6 +33,11 @@ engine:                            # Engine settings.
         max_depth_by_speed:        # Optional speed-specific book depths for sharp bot-vs-bot games.
           bullet: 4
           blitz: 4
+        color_selection:           # Optional overrides by the bot's color after opponent-specific settings are applied.
+          black:
+            max_depth_by_speed:    # Black-side bot games often enter sharper booked defenses; 0 disables local book.
+              bullet: 0
+              blitz: 0
 #     human:
 #       selection: "uniform_random"
 #       min_weight: 25

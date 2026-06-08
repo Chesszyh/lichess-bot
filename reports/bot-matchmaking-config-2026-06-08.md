@@ -16,6 +16,7 @@ Recorded in local config history:
 - `.config-history` commit `6766e56`: throttle outgoing bot challenges safely.
 - `.config-history` commit `a0ff1a0`: prefer `3000+` outgoing bot opponents when available.
 - `.config-history` commit `67e850e`: bias outgoing bot matchmaking toward bullet time controls.
+- `.config-history` commit `40bbf63`: disable the fast bot opening book when playing Black.
 
 Effective private config intent:
 
@@ -29,6 +30,7 @@ Effective private config intent:
   pool.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
+- Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
 ## Why This Is Safer

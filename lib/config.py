@@ -87,8 +87,33 @@ def validate_polyglot_max_depth_by_speed(section: CONFIG_DICT_TYPE, path: str) -
     config_assert(all(speed in VALID_SPEEDS for speed in max_depth_by_speed),
                   f"`{path}:max_depth_by_speed` must only contain {VALID_SPEEDS}.")
     config_assert(all(isinstance(max_depth, int) and max_depth >= 0
-                      for max_depth in max_depth_by_speed.values()),
+                  for max_depth in max_depth_by_speed.values()),
                   f"`{path}:max_depth_by_speed` depths must be non-negative integers.")
+
+
+def validate_polyglot_color_selection(section: CONFIG_DICT_TYPE, path: str,
+                                      selection_choices: list[str], fallback_selection: str | None,
+                                      fallback_normalization: str | None) -> None:
+    """Validate optional color-specific polyglot overrides."""
+    color_selection = section.get("color_selection") or {}
+    config_assert(isinstance(color_selection, dict),
+                  f"`{path}:color_selection` must be a dictionary.")
+    for color_key, color_cfg in color_selection.items():
+        color_path = f"{path}:color_selection:{color_key}"
+        config_assert(color_key in ["white", "black"],
+                      f"`{color_key}` is not a valid `{path}:color_selection` key. "
+                      "Please choose from ['white', 'black'].")
+        config_assert(isinstance(color_cfg, dict),
+                      f"`{color_path}` must be a dictionary.")
+        selection = color_cfg.get("selection", fallback_selection)
+        config_assert(selection in selection_choices,
+                      f"`{selection}` is not a valid `{color_path}:selection` value. "
+                      f"Please choose from {selection_choices}.")
+        normalization = color_cfg.get("normalization", fallback_normalization)
+        config_assert(normalization in ["none", "max", "sum"],
+                      f"`{normalization}` is not a valid choice for `{color_path}:normalization`. "
+                      "Please choose from ['none', 'max', 'sum'].")
+        validate_polyglot_max_depth_by_speed(color_cfg, color_path)
 
 
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: type, subsection: str = "") -> None:
@@ -563,6 +588,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"`engine:polyglot:opponent_selection:{opponent_key}:normalization`. "
                       "Please choose from ['none', 'max', 'sum'].")
         validate_polyglot_max_depth_by_speed(opponent_cfg, f"engine:polyglot:opponent_selection:{opponent_key}")
+        validate_polyglot_color_selection(opponent_cfg,
+                                          f"engine:polyglot:opponent_selection:{opponent_key}",
+                                          selection_choices["polyglot"],
+                                          selection,
+                                          normalization)
 
     shallow_search_guard = CONFIG["engine"].get("shallow_search_guard") or {}
     config_assert(all(speed in VALID_SPEEDS for speed in shallow_search_guard.get("speeds", [])),

@@ -41,6 +41,35 @@
 ## Lower-Rated Draws
 
 - Lower-rated draws found: `247`
+
+## Lower-Rated Draw Openings
+
+- `25` x Sicilian Defense: Najdorf Variation, English Attack
+- `12` x Sicilian Defense: Najdorf Variation
+- `9` x Catalan Opening: Open Defense, Modern Sharp Variation
+- `8` x Sicilian Defense: Lasker-Pelikan Variation, Sveshnikov Variation, Chelyabinsk Variation
+- `6` x Semi-Slav Defense: Meran Variation, Wade Variation
+- `6` x Semi-Slav Defense: Chigorin Defense
+- `6` x Semi-Slav Defense
+- `6` x Ruy Lopez: Berlin Defense, l'Hermet Variation, Berlin Wall Defense
+- `4` x Sicilian Defense: Closed
+- `4` x Catalan Opening: Open Defense, Classical Line
+
+## Lower-Rated Draw Prefixes
+
+- `22` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
+- `8` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6`
+- `7` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5`
+- `4` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5`
+- `4` x `e4 c5 Nf3 e6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Ndb5 d6`
+- `3` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Bd3 dxc4`
+- `3` x `d4 Nf6 c4 e6 g3 d5 Nf3 dxc4 Bg2 Nc6 Qa4 Bb4+`
+- `3` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7`
+- `3` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7`
+- `3` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6`
+
+## Largest Lower-Rated Draw Gaps
+
 - gap `576` vs `GNUPassant` (2330) in `ilovecatgirl vs GNUPassant - Cdt4VUHk.pgn`: Caro-Kann Defense: Advance Variation, Short Variation
 - gap `561` vs `PeachFruit` (2381) in `ilovecatgirl vs PeachFruit - aD2Tfss0.pgn`: Sicilian Defense: Taimanov Variation, Bastrikov Variation
 - gap `528` vs `PeachFruit` (2360) in `PeachFruit vs ilovecatgirl - nWc2j90j.pgn`: Catalan Opening: Open Defense, Modern Sharp Variation

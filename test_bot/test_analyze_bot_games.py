@@ -115,3 +115,26 @@ def test_render_markdown__shows_lower_rated_draw_count(tmp_path: Path) -> None:
     markdown = render_markdown(summarize_records(tmp_path, "ilovecatgirl"))
 
     assert "Lower-rated draws found: `2`" in markdown
+
+
+def test_render_markdown__clusters_lower_rated_draw_openings_and_prefixes(tmp_path: Path) -> None:
+    """Repeated lower-rated draw openings should be visible as actionable clusters."""
+    for index in range(2):
+        draw_headers = base_headers("1/2-1/2", "French Defense", "ilovecatgirl", f"LowerBot{index}")
+        draw_headers["WhiteElo"] = "2940"
+        draw_headers["BlackElo"] = str(2939 - index)
+        write_pgn(tmp_path, f"lower-french-draw-{index}.pgn", draw_headers, "1. e4 e6 2. d4 d5 1/2-1/2")
+    caro_headers = base_headers("1/2-1/2", "Caro-Kann Defense", "ilovecatgirl", "LowerCaroBot")
+    caro_headers["WhiteElo"] = "2940"
+    caro_headers["BlackElo"] = "2930"
+    write_pgn(tmp_path, "lower-caro-draw.pgn", caro_headers, "1. e4 c6 2. d4 d5 1/2-1/2")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", max_prefix_plies=4)
+    markdown = render_markdown(summary)
+
+    assert summary.lower_rated_draws_by_opening[0] == ("French Defense", 2)
+    assert summary.lower_rated_draw_prefixes[0] == ("e4 e6 d4 d5", 2)
+    assert "Lower-Rated Draw Openings" in markdown
+    assert "`2` x French Defense" in markdown
+    assert "Lower-Rated Draw Prefixes" in markdown
+    assert "`2` x `e4 e6 d4 d5`" in markdown

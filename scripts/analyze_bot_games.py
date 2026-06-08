@@ -49,6 +49,8 @@ class GameSummary:
     losses_by_color: list[tuple[str, int]]
     loss_prefixes: list[tuple[str, int]]
     lower_rated_draw_count: int
+    lower_rated_draws_by_opening: list[tuple[str, int]]
+    lower_rated_draw_prefixes: list[tuple[str, int]]
     lower_rated_draws: list[GameRecord]
     recent_losses: list[GameRecord]
 
@@ -192,6 +194,8 @@ def summarize_records(records_dir: Path,
         record for record in records
         if record.bot_result == "draw" and record.rating_gap is not None and record.rating_gap >= lower_rated_draw_gap
     ]
+    lower_rated_draws_by_opening = Counter(record.opening for record in lower_rated_draws).most_common()
+    lower_rated_draw_prefixes = Counter(record.move_prefix for record in lower_rated_draws if record.move_prefix).most_common()
     lower_rated_draws.sort(key=lambda record: record.rating_gap or 0, reverse=True)
     recent_losses = sorted(
         losses,
@@ -207,6 +211,8 @@ def summarize_records(records_dir: Path,
         losses_by_color=losses_by_color,
         loss_prefixes=loss_prefixes,
         lower_rated_draw_count=len(lower_rated_draws),
+        lower_rated_draws_by_opening=lower_rated_draws_by_opening,
+        lower_rated_draw_prefixes=lower_rated_draw_prefixes,
         lower_rated_draws=lower_rated_draws[:10],
         recent_losses=recent_losses,
     )
@@ -227,6 +233,23 @@ def opening_risk_gate_line(summary: GameSummary, risk_threshold: int) -> str:
     return f"Opening risk gate: passed ({top_loss_count} < {risk_threshold})"
 
 
+def append_count_section(lines: list[str],
+                         title: str,
+                         counts: list[tuple[str, int]],
+                         *,
+                         empty_text: str,
+                         quote_item: bool = False) -> None:
+    """Append a markdown section containing ranked count tuples."""
+    lines.extend(["", f"## {title}", ""])
+    if counts:
+        if quote_item:
+            lines.extend(f"- `{count}` x `{item}`" for item, count in counts[:10])
+        else:
+            lines.extend(f"- `{count}` x {item}" for item, count in counts[:10])
+    else:
+        lines.append(f"- {empty_text}")
+
+
 def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     """Render a markdown analysis report."""
     lines = [
@@ -238,29 +261,34 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         f"- Results: `{summary.result_counts}`",
         f"- {opening_risk_gate_line(summary, risk_threshold)}",
         "- No local engine analysis was run.",
-        "",
-        "## Loss Openings",
-        "",
     ]
-    if summary.losses_by_opening:
-        lines.extend(f"- `{count}` x {opening}" for opening, count in summary.losses_by_opening[:10])
-    else:
-        lines.append("- No losses found.")
-
-    lines.extend(["", "## Loss Colors", ""])
-    if summary.losses_by_color:
-        lines.extend(f"- `{count}` x {color}" for color, count in summary.losses_by_color)
-    else:
-        lines.append("- No losses found.")
-
-    lines.extend(["", "## Loss Prefixes", ""])
-    if summary.loss_prefixes:
-        lines.extend(f"- `{count}` x `{prefix}`" for prefix, count in summary.loss_prefixes[:10])
-    else:
-        lines.append("- No loss prefixes found.")
+    append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
+    append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
+    append_count_section(
+        lines,
+        "Loss Prefixes",
+        summary.loss_prefixes,
+        empty_text="No loss prefixes found.",
+        quote_item=True,
+    )
 
     lines.extend(["", "## Lower-Rated Draws", ""])
     lines.append(f"- Lower-rated draws found: `{summary.lower_rated_draw_count}`")
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Openings",
+        summary.lower_rated_draws_by_opening,
+        empty_text="No lower-rated draw opening clusters found.",
+    )
+    append_count_section(
+        lines,
+        "Lower-Rated Draw Prefixes",
+        summary.lower_rated_draw_prefixes,
+        empty_text="No lower-rated draw prefixes found.",
+        quote_item=True,
+    )
+
+    lines.extend(["", "## Largest Lower-Rated Draw Gaps", ""])
     if summary.lower_rated_draws:
         lines.extend(
                 f"- gap `{record.rating_gap}` vs `{record.opponent}` "

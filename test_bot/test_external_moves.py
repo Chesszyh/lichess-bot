@@ -9,7 +9,8 @@ import logging
 import chess.engine
 from datetime import timedelta
 from copy import deepcopy
-from types import SimpleNamespace
+from types import SimpleNamespace, TracebackType
+from typing import Literal
 from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.lichess_types import OnlineType, GameEventType
@@ -155,6 +156,7 @@ def download_opening_book() -> None:
                             allow_redirects=True, timeout=60)
     if response.status_code != 200:
         pytest.xfail("Could not download opening book.")
+    os.makedirs("TEMP", exist_ok=True)
     with open("./TEMP/gm2001.bin", "wb") as file:
         file.write(response.content)
 
@@ -317,7 +319,9 @@ class TestExternalMoves:
     def test_opening_book(self) -> None:
         """Test opening book."""
         download_opening_book()
-        assert get_book_move(chess.Board(self.opening_fen), self.game, self.polyglot_cfg).move == chess.Move.from_uci("h4f6")
+        assert get_book_move(chess.Board(self.opening_fen),
+                             get_human_game(),
+                             self.polyglot_cfg).move == chess.Move.from_uci("h4f6")
 
 
 class TestExternalMoveHelpers:
@@ -333,7 +337,7 @@ class TestExternalMoveHelpers:
             assert not is_op1_position(chess.Board(fen))
 
 
-def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> None:
+def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     """Human and bot opponents should use different polyglot settings."""
     human_game = get_human_game()
     bot_game = get_game()
@@ -364,25 +368,37 @@ def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> 
         def __init__(self, book_name: str) -> None:
             self.book_name = book_name
 
-        def __enter__(self) -> "FakeReader":
+        def __enter__(self) -> "FakeReader":  # noqa: PYI034 (return Self not available until 3.11)
             return self
 
-        def __exit__(self, exc_type, exc, tb) -> bool:
+        def __exit__(self, exc_type: type[BaseException] | None,
+                     exc: BaseException | None,
+                     tb: TracebackType | None) -> Literal[False]:
+            del exc_type, exc, tb
             return False
 
-        def find_all(self, board: chess.Board):
+        def find_all(self, board: chess.Board) -> list[SimpleNamespace]:
+            del board
             return [SimpleNamespace(weight=100), SimpleNamespace(weight=60)]
 
         def choice(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            del board
             calls.append((self.book_name, "choice", minimum_weight))
             return SimpleNamespace(move=chess.Move.from_uci("g1f3"))
 
         def find(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            del board
             calls.append((self.book_name, "find", minimum_weight))
             return SimpleNamespace(move=chess.Move.from_uci("e2e4"))
 
-    monkeypatch.setattr("chess.polyglot.open_reader", lambda book: FakeReader(book))
-    monkeypatch.setattr("random.shuffle", lambda books: None)
+    def open_fake_reader(book: str) -> FakeReader:
+        return FakeReader(book)
+
+    def keep_book_order(books: list[str]) -> None:
+        del books
+
+    monkeypatch.setattr("chess.polyglot.open_reader", open_fake_reader)
+    monkeypatch.setattr("random.shuffle", keep_book_order)
 
     human_move = get_book_move(board, human_game, polyglot_cfg)
     bot_move = get_book_move(board, bot_game, polyglot_cfg)
@@ -390,6 +406,81 @@ def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> 
     assert human_move.move == chess.Move.from_uci("g1f3")
     assert bot_move.move == chess.Move.from_uci("e2e4")
     assert calls == [("human.bin", "choice", 25.0), ("bot.bin", "find", 40.0)]
+
+
+def test_get_book_move__uses_color_specific_bot_polyglot_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bot profiles can tune black fast-game book policy separately from white."""
+    black_bot_game = get_game()
+    black_bot_game.speed = "blitz"
+    black_bot_game.is_white = False
+    black_bot_game.my_color = "black"
+    white_bot_game = get_game()
+    white_bot_game.speed = "blitz"
+    white_bot_game.is_white = True
+    white_bot_game.my_color = "white"
+    board = chess.Board()
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["base.bin"]},
+        "min_weight": 0,
+        "selection": "best_move",
+        "max_depth": 10,
+        "normalization": "max",
+        "opponent_selection": {
+            "bot": {
+                "book": {"standard": ["bot.bin"]},
+                "max_depth_by_speed": {"blitz": 4},
+                "color_selection": {
+                    "black": {
+                        "max_depth_by_speed": {"blitz": 0},
+                    },
+                    "white": {
+                        "book": {"standard": ["white-bot.bin"]},
+                    },
+                },
+            },
+        },
+    })
+
+    calls: list[str] = []
+
+    class FakeReader:
+        def __init__(self, book_name: str) -> None:
+            self.book_name = book_name
+
+        def __enter__(self) -> "FakeReader":  # noqa: PYI034 (return Self not available until 3.11)
+            return self
+
+        def __exit__(self, exc_type: type[BaseException] | None,
+                     exc: BaseException | None,
+                     tb: TracebackType | None) -> Literal[False]:
+            del exc_type, exc, tb
+            return False
+
+        def find_all(self, board: chess.Board) -> list[SimpleNamespace]:
+            del board
+            return [SimpleNamespace(weight=100)]
+
+        def find(self, board: chess.Board, minimum_weight: float = 0) -> SimpleNamespace:
+            del board, minimum_weight
+            calls.append(self.book_name)
+            return SimpleNamespace(move=chess.Move.from_uci("e2e4"))
+
+    def open_fake_reader(book: str) -> FakeReader:
+        return FakeReader(book)
+
+    def keep_book_order(books: list[str]) -> None:
+        del books
+
+    monkeypatch.setattr("chess.polyglot.open_reader", open_fake_reader)
+    monkeypatch.setattr("random.shuffle", keep_book_order)
+
+    black_move = get_book_move(board, black_bot_game, polyglot_cfg)
+    white_move = get_book_move(board, white_bot_game, polyglot_cfg)
+
+    assert black_move.move is None
+    assert white_move.move == chess.Move.from_uci("e2e4")
+    assert calls == ["white-bot.bin"]
 
 
 def test_get_book_move__uses_speed_specific_max_depth_for_bots(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,6 +1,7 @@
 """Test functions for config module."""
 import logging
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -99,6 +100,42 @@ def test_validate_config__invalid_opponent_specific_polyglot_speed_depths(
         config.validate_config(raw_config)
 
 
+@pytest.mark.parametrize("color_selection", [
+    {"green": {"max_depth_by_speed": {"blitz": 0}}},
+    {"black": "disable"},
+    {"black": {"selection": "bad-choice"}},
+    {"black": {"max_depth_by_speed": {"not-a-speed": 0}}},
+])
+def test_validate_config__invalid_color_specific_polyglot_profile(
+        monkeypatch: pytest.MonkeyPatch, color_selection: dict[str, object]) -> None:
+    """Color-specific bot book overrides should validate their profile shape."""
+    raw_config = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {
+            "dir": ".",
+            "name": "engine",
+            "protocol": "uci",
+            "polyglot": {
+                "enabled": True,
+                "book": {"standard": ["book.bin"]},
+                "opponent_selection": {
+                    "bot": {"color_selection": color_selection},
+                },
+            },
+        },
+        "challenge": {},
+        "matchmaking": {},
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(config.os, "access", lambda *_: True)
+
+    with pytest.raises(Exception, match="color_selection"):
+        config.validate_config(raw_config)
+
+
 def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_period() -> None:
     """Idle resource sampling should preserve legacy sample cadence unless configured."""
     raw_config = {
@@ -127,11 +164,14 @@ def test_default_config__blitz_high_clock_cap_stays_below_runaway_lc0_spend() ->
 
 def test_default_config__bot_fast_games_leave_polyglot_book_early() -> None:
     """Bot-vs-bot bullet and blitz should not follow sharp opening books too deeply."""
-    default_config = yaml.safe_load(Path("config.yml.default").read_text())
+    default_config = cast(dict[str, Any], yaml.safe_load(Path("config.yml.default").read_text()))
     bot_selection = default_config["engine"]["polyglot"]["opponent_selection"]["bot"]
+    black_selection = bot_selection["color_selection"]["black"]
 
     assert bot_selection["max_depth_by_speed"]["bullet"] <= 4
     assert bot_selection["max_depth_by_speed"]["blitz"] <= 4
+    assert black_selection["max_depth_by_speed"]["bullet"] == 0
+    assert black_selection["max_depth_by_speed"]["blitz"] == 0
 
 
 def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:
