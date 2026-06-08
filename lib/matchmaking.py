@@ -188,7 +188,7 @@ class Matchmaking:
 
     def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
         """Choose an opponent."""
-        override_choice = random.choice(self.matchmaking_cfg.overrides.keys() + [None])
+        override_choice = self.choose_override()
         logger.info(f"Using the {override_choice or 'default'} matchmaking configuration.")
         override = {} if override_choice is None else self.matchmaking_cfg.overrides.lookup(override_choice)
         match_config = self.matchmaking_cfg | override
@@ -274,6 +274,20 @@ class Matchmaking:
                 logger.error("No suitable bots found to challenge.")
 
         return bot_username, base_time, increment, num_days, variant, mode
+
+    def choose_override(self) -> str | None:
+        """Choose the base matchmaking config or one of its overrides."""
+        override_choices = self.matchmaking_cfg.overrides.keys() + [None]
+        override_weights = cast(Configuration | None, self.matchmaking_cfg.lookup("override_weights"))
+        if not override_weights:
+            return cast(str | None, random.choice(override_choices))
+
+        def weight_for(override_name: str | None) -> int | float:
+            weight = cast(int | float | None, override_weights.lookup(override_name or "default"))
+            return 1 if weight is None else weight
+
+        weights = [weight_for(override_name) for override_name in override_choices]
+        return cast(str | None, random.choices(override_choices, weights=weights)[0])
 
     def get_random_config_value(self, config: Configuration, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""

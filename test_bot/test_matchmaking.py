@@ -1,10 +1,15 @@
 """Test functions for matchmaking module."""
+import random
+from collections.abc import Sequence
+from typing import Any
 from unittest.mock import Mock
-from lib.matchmaking import game_category, Matchmaking
+
+import pytest
+
 from lib.config import Configuration
 from lib.lichess_types import UserProfileType
+from lib.matchmaking import Matchmaking, game_category
 from lib.timer import days, hours, minutes, years
-import random
 
 
 def test_game_category_standard_bullet() -> None:
@@ -343,6 +348,62 @@ def test_choose_opponent__falls_back_when_preferred_rating_pool_is_empty(monkeyp
     opponent, *_ = matchmaking.choose_opponent()
 
     assert opponent == "fallbackbot"
+
+
+def test_choose_opponent__uses_override_weights_for_bullet_first_matchmaking(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Configured override weights should make bullet default more likely than blitz fallback."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "bulletbot", "perfs": {"bullet": {"rating": 2850, "games": 50}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 2500,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "override_weights": {"default": 5, "blitz_fallback": 1},
+            "overrides": {
+                "blitz_fallback": {
+                    "challenge_initial_time": [180],
+                    "challenge_increment": [0],
+                },
+            },
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2870}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    override_choices: list[tuple[str | None, ...]] = []
+    override_weights: list[Sequence[float] | None] = []
+
+    def choose_first_weighted(seq: Sequence[Any], weights: Sequence[float] | None = None) -> list[Any]:
+        if list(seq) == ["blitz_fallback", None]:
+            override_choices.append(tuple(seq))
+            override_weights.append(weights)
+            return [None]
+        return [seq[0]]
+
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", choose_first_weighted)
+
+    opponent, base_time, increment, days, variant, mode = matchmaking.choose_opponent()
+
+    assert override_choices == [("blitz_fallback", None)]
+    assert override_weights == [[1, 5]]
+    assert opponent == "bulletbot"
+    assert (base_time, increment, days, variant, mode) == (60, 1, 0, "standard", "rated")
 
 
 def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> None:

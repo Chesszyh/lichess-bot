@@ -1,9 +1,11 @@
 """Test functions for config module."""
 import logging
+import os
 
 import pytest
 
 from lib import config
+from lib.lichess_types import CONFIG_DICT_TYPE
 
 
 def test_config_assert__false() -> None:
@@ -33,9 +35,9 @@ def test_config_warn__false(caplog: pytest.LogCaptureFixture) -> None:
         assert caplog.records[0].levelname == "WARNING"
 
 
-def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypatch) -> None:
+def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypatch: pytest.MonkeyPatch) -> None:
     """Opponent-specific polyglot overrides should validate their selection values."""
-    raw_config = {
+    raw_config: CONFIG_DICT_TYPE = {
         "token": "token",
         "url": "https://lichess.org",
         "engine": {
@@ -55,9 +57,9 @@ def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypat
         "matchmaking": {},
     }
     config.insert_default_values(raw_config)
-    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
-    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
-    monkeypatch.setattr(config.os, "access", lambda *_: True)
+    monkeypatch.setattr(os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda *_: True)
 
     with pytest.raises(Exception, match="not-a-choice"):
         config.validate_config(raw_config)
@@ -65,7 +67,7 @@ def test_validate_config__invalid_opponent_specific_polyglot_selection(monkeypat
 
 def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_period() -> None:
     """Idle resource sampling should preserve legacy sample cadence unless configured."""
-    raw_config = {
+    raw_config: CONFIG_DICT_TYPE = {
         "token": "token",
         "url": "https://lichess.org",
         "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
@@ -79,9 +81,45 @@ def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_
     assert raw_config["resource_monitor"]["idle_sample_period"] == 17
 
 
-def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch) -> None:
+def test_insert_default_values__matchmaking_override_weights_defaults_to_empty() -> None:
+    """Matchmaking override weights are optional and default to unweighted selection."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["matchmaking"]["override_weights"] == {}
+
+
+def test_validate_config__rejects_unknown_matchmaking_override_weight(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Override weights should only reference the default config or configured overrides."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {
+            "override_weights": {"blitz_fallback": 1},
+            "overrides": {},
+        },
+    }
+    config.insert_default_values(raw_config)
+    monkeypatch.setattr(os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda *_: True)
+
+    with pytest.raises(Exception, match="override_weights"):
+        config.validate_config(raw_config)
+
+
+def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:
     """Idle resource sampling period must be positive."""
-    raw_config = {
+    raw_config: CONFIG_DICT_TYPE = {
         "token": "token",
         "url": "https://lichess.org",
         "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
@@ -90,9 +128,9 @@ def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch) -> N
         "resource_monitor": {"idle_sample_period": 0},
     }
     config.insert_default_values(raw_config)
-    monkeypatch.setattr(config.os.path, "isdir", lambda _: True)
-    monkeypatch.setattr(config.os.path, "isfile", lambda _: True)
-    monkeypatch.setattr(config.os, "access", lambda *_: True)
+    monkeypatch.setattr(os.path, "isdir", lambda _: True)
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda *_: True)
 
     with pytest.raises(Exception, match="idle_sample_period"):
         config.validate_config(raw_config)

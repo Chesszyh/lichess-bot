@@ -363,14 +363,18 @@ class EngineWrapper:
         """
         time_limit = self.add_go_commands(time_limit)
         active_engine = self.engine_for_position(board)
+        search_root_moves = root_moves if isinstance(root_moves, list) else None
+        repetition_guard = engine_cfg.lookup("repetition_guard") if engine_cfg else None
+        search_root_moves = repetition_guard_root_moves(board, game, search_root_moves, repetition_guard)
         result = active_engine.play(board,
                                     time_limit,
                                     info=chess.engine.INFO_ALL,
                                     ponder=ponder,
                                     draw_offered=draw_offered,
-                                    root_moves=root_moves if isinstance(root_moves, list) else None)
+                                    root_moves=search_root_moves)
         if game and engine_cfg:
-            result = self.extend_shallow_search(active_engine, board, game, result, draw_offered, root_moves, engine_cfg)
+            result = self.extend_shallow_search(active_engine, board, game, result, draw_offered,
+                                                search_root_moves, engine_cfg)
         self.record_search_result(result, board)
         return self.offer_draw_or_resign(result, board, draw_offered, game)
 
@@ -380,7 +384,7 @@ class EngineWrapper:
                               game: model.Game,
                               result: chess.engine.PlayResult,
                               draw_offered: bool,
-                              root_moves: MOVE,
+                              root_moves: list[chess.Move] | None,
                               engine_cfg: Configuration) -> chess.engine.PlayResult:
         """Run one short follow-up search if the clock is safe and the first search was too shallow."""
         shallow_search_guard = engine_cfg.lookup("shallow_search_guard")
@@ -396,7 +400,7 @@ class EngineWrapper:
                                        info=chess.engine.INFO_ALL,
                                        ponder=False,
                                        draw_offered=draw_offered,
-                                       root_moves=root_moves if isinstance(root_moves, list) else None)
+                                       root_moves=root_moves)
         original_depth = result.info.get("depth") or 0
         follow_up_depth = follow_up.info.get("depth") or 0
         if follow_up_depth > original_depth:
@@ -899,6 +903,41 @@ def game_clock_time(board: chess.Board,
                               white_inc=to_seconds(msec(game.state["winc"])),
                               black_inc=to_seconds(msec(game.state["binc"])),
                               clock_id="real time")
+
+
+def repetition_guard_root_moves(board: chess.Board,
+                                game: model.Game | None,
+                                root_moves: list[chess.Move] | None,
+                                repetition_guard: Configuration | None) -> list[chess.Move] | None:
+    """Filter moves that would immediately trigger a threefold draw when alternatives exist."""
+    if not repetition_guard or not repetition_guard.enabled or not game:
+        return root_moves
+
+    speeds = repetition_guard.lookup("speeds") or ["bullet", "blitz"]
+    if game.speed not in speeds:
+        return root_moves
+
+    min_rating_gap = repetition_guard.lookup("min_rating_gap") or 0
+    rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0)
+    if rating_gap < min_rating_gap:
+        return root_moves
+
+    candidates = root_moves or list(board.legal_moves)
+    safe_moves: list[chess.Move] = []
+    repeated_moves: list[chess.Move] = []
+    for move in candidates:
+        candidate = board.copy(stack=True)
+        candidate.push(move)
+        if candidate.is_repetition(3):
+            repeated_moves.append(move)
+        else:
+            safe_moves.append(move)
+
+    if not repeated_moves or not safe_moves:
+        return root_moves
+
+    logger.info(f"Filtering immediate threefold repetition moves: {', '.join(map(str, repeated_moves))}")
+    return safe_moves
 
 
 def apply_bullet_time_management(board: chess.Board, game: model.Game, time_limit: chess.engine.Limit,

@@ -212,6 +212,32 @@ class DrawishFakeEngine:
         })
 
 
+class RepetitionFakeEngine:
+    """Engine protocol that exposes root move filtering behavior."""
+
+    def __init__(self, repeated_move: str) -> None:
+        """Create a fake engine that falls back to repeated_move when no root moves are supplied."""
+        self.id = {"name": "RepetitionFakeEngine"}
+        self.repeated_move = chess.Move.from_uci(repeated_move)
+        self.root_moves: list[chess.Move] | None = None
+
+    def play(self,
+             board: chess.Board,
+             _limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        """Record root moves and return the first available move."""
+        del info, ponder, draw_offered
+        self.root_moves = root_moves
+        move = root_moves[0] if root_moves else self.repeated_move
+        return chess.engine.PlayResult(move, None, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        })
+
+
 def high_rated_draw_cfg() -> Configuration:
     """Create draw config that accepts stable equal positions from elite opponents."""
     return Configuration({
@@ -470,6 +496,41 @@ def test_search__keeps_original_result_when_shallow_extension_is_worse() -> None
     assert result.move == chess.Move.from_uci("e2e4")
     assert result.info["depth"] == 8
     assert len(fake_engine.calls) == 2
+
+
+def test_search__filters_immediate_threefold_repetition_when_enabled() -> None:
+    """Against lower-rated bots, do not let the engine choose an immediate threefold repetition."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    fake_engine = RepetitionFakeEngine("d7g4")
+    wrapper.engine = fake_engine
+    board = chess.Board()
+    for move in ["e2e4", "e7e5", "g1f3", "b8c6", "d2d4", "e5d4", "f3d4", "f8c5",
+                 "c1e3", "d8f6", "c2c3", "g8e7", "f1c4", "c6e5", "c4e2", "f6g6",
+                 "e1g1", "d7d6", "f1e1", "c8h3", "e2f1", "h3g4", "f1e2", "g4h3",
+                 "e2f1", "h3g4", "d1a4", "g4d7", "a4d1"]:
+        board.push(chess.Move.from_uci(move))
+    repeated_move = chess.Move.from_uci("d7g4")
+    repeated_board = board.copy(stack=True)
+    repeated_board.push(repeated_move)
+    assert repeated_board.is_repetition(3)
+    engine_cfg = Configuration({
+        "repetition_guard": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+        },
+    })
+
+    result = wrapper.search(board,
+                            chess.engine.Limit(white_clock=60, black_clock=60),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=bullet_game(),
+                            engine_cfg=engine_cfg)
+
+    assert fake_engine.root_moves
+    assert repeated_move not in fake_engine.root_moves
+    assert result.move != repeated_move
 
 
 def test_apply_bullet_time_management__keeps_high_clock_blitz_uncapped() -> None:

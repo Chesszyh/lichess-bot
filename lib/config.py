@@ -152,7 +152,10 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "resource_monitor", key="enabled", default=False)
     set_config_default(CONFIG, "resource_monitor", key="directory", default="resource_records", force_empty_values=True)
     set_config_default(CONFIG, "resource_monitor", key="sample_period", default=5)
-    set_config_default(CONFIG, "resource_monitor", key="idle_sample_period", default=CONFIG["resource_monitor"]["sample_period"])
+    set_config_default(CONFIG,
+                       "resource_monitor",
+                       key="idle_sample_period",
+                       default=CONFIG["resource_monitor"]["sample_period"])
     set_config_default(CONFIG, "arena", key="enabled", default=False)
     set_config_default(CONFIG, "arena", key="teams", default=[], force_empty_values=True)
     change_value_to_list(CONFIG, "arena", key="teams")
@@ -257,6 +260,11 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="extra_movetime_ms", default=500)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_clock_ms", default=15000)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="min_ply", default=8)
+    set_config_default(CONFIG, "engine", "repetition_guard", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "repetition_guard", key="speeds", default=["bullet", "blitz"],
+                       force_empty_values=True)
+    change_value_to_list(CONFIG, "engine", "repetition_guard", key="speeds")
+    set_config_default(CONFIG, "engine", "repetition_guard", key="min_rating_gap", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_threshold_ms", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_mate_clock_ms", default=0)
     set_config_default(CONFIG, "engine", "bullet_time_management", key="winning_score_threshold_cp", default=0)
@@ -326,6 +334,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
     set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
     set_config_default(CONFIG, "matchmaking", key="overrides", default={}, force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="override_weights", default={}, force_empty_values=True)
     for override_config in CONFIG["matchmaking"]["overrides"].values():
         for parameter in ["challenge_initial_time", "challenge_increment", "challenge_days"]:
             if parameter in override_config:
@@ -362,6 +371,24 @@ def log_config(CONFIG: CONFIG_DICT_TYPE, alternate_log_function: Callable[[str],
     destination = alternate_log_function or logger.debug
     destination(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
     destination("====================")
+
+
+def validate_matchmaking_override_weights(matchmaking: CONFIG_DICT_TYPE) -> None:
+    """Validate optional weights for choosing matchmaking overrides."""
+    override_weights = matchmaking.get("override_weights") or {}
+    config_assert(isinstance(override_weights, dict), "`matchmaking:override_weights` must be a dictionary.")
+    override_names = set((matchmaking.get("overrides") or {}).keys())
+    valid_override_weight_names = override_names | {"default"}
+    config_assert(all(name in valid_override_weight_names for name in override_weights),
+                  "`matchmaking:override_weights` can only contain `default` or configured override names.")
+    config_assert(all(isinstance(weight, (int, float)) and not isinstance(weight, bool) and weight >= 0
+                      for weight in override_weights.values()),
+                  "`matchmaking:override_weights` values must be non-negative numbers.")
+    if override_weights:
+        effective_weights = [override_weights.get("default", 1)]
+        effective_weights.extend(override_weights.get(name, 1) for name in override_names)
+        config_assert(any(weight > 0 for weight in effective_weights),
+                      "`matchmaking:override_weights` must leave at least one selectable matchmaking configuration.")
 
 
 def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
@@ -504,6 +531,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                   f"{matchmaking.get('rating_preference')} is not a valid `matchmaking:rating_preference` option. "
                   f"Valid options are 'none', 'high', or 'low'.")
 
+    validate_matchmaking_override_weights(matchmaking)
+
     selection_choices = {"polyglot": ["weighted_random", "uniform_random", "best_move"],
                          "chessdb_book": ["all", "good", "best"],
                          "lichess_cloud_analysis": ["good", "best"],
@@ -513,8 +542,12 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
         db_config = db_section.get(db_name) or {}
         select_key = "selection" if db_name == "polyglot" else "move_quality"
+        valid_selection_choices = tuple(valid_selections)
 
-        def validate_selection(section: CONFIG_DICT_TYPE, select: str) -> None:
+        def validate_selection(section: CONFIG_DICT_TYPE,
+                               select: str,
+                               select_key: str = select_key,
+                               valid_selections: tuple[str, ...] = valid_selection_choices) -> None:
             selection = section.get(select_key)
             config_assert(selection in valid_selections,
                           f"`{selection}` is not a valid `engine:{select}` value. "
@@ -554,6 +587,12 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     for key in ["min_depth", "extra_movetime_ms", "min_clock_ms", "min_ply"]:
         config_assert(shallow_search_guard.get(key, 0) >= 0,
                       f"`engine:shallow_search_guard:{key}` must be non-negative.")
+
+    repetition_guard = CONFIG["engine"].get("repetition_guard") or {}
+    config_assert(all(speed in valid_speeds for speed in repetition_guard.get("speeds", [])),
+                  f"`engine:repetition_guard:speeds` must only contain {valid_speeds}.")
+    config_assert(repetition_guard.get("min_rating_gap", 0) >= 0,
+                  "`engine:repetition_guard:min_rating_gap` must be non-negative.")
 
     bullet_time_management = CONFIG["engine"].get("bullet_time_management") or {}
     for key in ["winning_mate_clock_threshold_ms", "winning_mate_clock_ms",

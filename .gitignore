@@ -1,5 +1,6 @@
 *.yml
 **/__pycache__
+.config-history/
 /engines/*
 !/engines/README.md
 lichess_bot_auto_logs/*

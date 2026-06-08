@@ -50,6 +50,13 @@ engine:                            # Engine settings.
     min_clock_ms: 15000
     min_ply: 8
 
+  repetition_guard:
+    enabled: false                 # Exclude moves that immediately trigger a threefold repetition when other legal moves exist.
+    speeds:
+      - bullet
+      - blitz
+    min_rating_gap: 0              # Only avoid immediate repetitions when the bot outrates the opponent by at least this many points.
+
   bullet_time_management:
     winning_mate_clock_threshold_ms: 0 # If positive, use winning_mate_clock_ms after a previous engine search found a forced mate and the bot clock is below this value.
     winning_mate_clock_ms: 0           # Exact movetime cap for converting a known forced mate in fast games.
@@ -304,7 +311,11 @@ matchmaking:
 #   - example.com/blocklist
   include_challenge_block_list: false  # Do not challenge bots in the challenge: block_list in addition to the matchmaking block list.
 
-# overrides:                       # List of overrides for the matchmaking specifications above. When a challenge is created, either the default specification above or one of the overrides will be randomly chosen.
+# override_weights:                # Optional weights for choosing the default matchmaking config or an override. Missing entries default to weight 1.
+#   default: 3                     # Use "default" for the base matchmaking config above.
+#   bullet_only_horde: 1           # Use override names for entries under overrides.
+
+# overrides:                       # List of overrides for the matchmaking specifications above. Challenges use the default spec or one override, with optional weights above.
 #   bullet_only_horde:             # Name of the override. Can be anything as long as each override has a unique name ("bullet_only_horde" and "easy_chess960" in these examples).
 #     challenge_variant: "horde"   # List of options to override. Only the options mentioned will change when making the challenge. The rest will follow the default matchmaking options above.
 #     challenge_initial_time:
