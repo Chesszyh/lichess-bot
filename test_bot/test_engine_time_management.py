@@ -108,6 +108,28 @@ class FakeEngine:
         return self._results.pop(0)
 
 
+class PonderRecordingFakeEngine:
+    """Engine protocol that records whether play was allowed to ponder."""
+
+    id = {"name": "PonderRecordingFakeEngine"}
+
+    def __init__(self) -> None:
+        self.ponder_calls: list[bool] = []
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        self.ponder_calls.append(ponder)
+        return chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        })
+
+
 class WorseFollowUpFakeEngine:
     """Engine protocol whose follow-up search is shallower than the original result."""
 
@@ -411,6 +433,25 @@ def test_search__keeps_main_engine_above_endgame_threshold() -> None:
     assert result.move == chess.Move.from_uci("e2e4")
     assert main_engine.calls == 1
     assert endgame_engine.calls == 0
+
+
+def test_search__disables_ponder_for_fast_exact_movetime() -> None:
+    """Exact movetime caps must start a fresh search instead of accepting a stale ponderhit."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    engine = PonderRecordingFakeEngine()
+    wrapper.engine = engine
+    board = chess.Board()
+    game = bullet_game(clock_ms=20_000)
+
+    wrapper.search(board,
+                   chess.engine.Limit(time=2.0, clock_id="bullet exact movetime"),
+                   ponder=True,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None),
+                   game=game,
+                   engine_cfg=disabled_external_move_cfg())
+
+    assert engine.ponder_calls == [False]
 
 
 def test_search__records_forcing_mate_for_fast_win_time_management() -> None:

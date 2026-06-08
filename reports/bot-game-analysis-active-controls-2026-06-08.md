@@ -2,10 +2,10 @@
 
 ## Scope
 
-- Games analyzed: `262`
+- Games analyzed: `263`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
-- Results: `{'draw': 122, 'loss': 21, 'unknown': 10, 'win': 109}`
+- Results: `{'draw': 123, 'loss': 21, 'unknown': 10, 'win': 109}`
 - Opening risk gate: FAILED (4 >= 3)
 - No local engine analysis was run.
 
@@ -37,21 +37,21 @@
 
 ## Results by Mode
 
-- `122` x rated draw
+- `123` x rated draw
 - `109` x rated win
 - `21` x rated loss
 - `10` x rated unknown
 
 ## Results by Speed
 
-- `122` x bullet draw
+- `123` x bullet draw
 - `109` x bullet win
 - `21` x bullet loss
 - `10` x bullet unknown
 
 ## Results by Time Control
 
-- `52` x 60+1 draw
+- `53` x 60+1 draw
 - `50` x 60+1 win
 - `45` x 120+1 draw
 - `37` x 120+1 win
@@ -141,7 +141,7 @@
 
 - `120+1`: W-D-L `37-45-7`, score `66.9%` over `89` games
 - `90+1`: W-D-L `22-25-4`, score `67.6%` over `51` games
-- `60+1`: W-D-L `50-52-10`, score `67.9%` over `112` games
+- `60+1`: W-D-L `50-53-10`, score `67.7%` over `113` games
 
 ## Focused Rating Impact by Opening Context
 
@@ -202,7 +202,7 @@
 - `90+1 black`: W-D-L `14-16-3`, score `66.7%` over `33` games
 - `120+1 black`: W-D-L `22-23-4`, score `68.4%` over `49` games
 - `90+1 white`: W-D-L `8-9-1`, score `69.4%` over `18` games
-- `60+1 white`: W-D-L `28-27-4`, score `70.3%` over `59` games
+- `60+1 white`: W-D-L `28-28-4`, score `70.0%` over `60` games
 
 ## Loss Colors
 

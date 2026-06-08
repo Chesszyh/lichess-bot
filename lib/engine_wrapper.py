@@ -379,6 +379,9 @@ class EngineWrapper:
         :return: The move to play.
         """
         time_limit = self.add_go_commands(time_limit)
+        if game and game.speed in ("bullet", "blitz") and time_limit.time is not None and ponder:
+            logger.info(f"Disabling ponder for movetime-limited {game.speed} search in game {game.id}")
+            ponder = False
         active_engine = self.engine_for_position(board)
         result = active_engine.play(board,
                                     time_limit,
