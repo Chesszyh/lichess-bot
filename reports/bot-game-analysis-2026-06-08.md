@@ -4,7 +4,7 @@
 
 - Games analyzed: `2353`
 - Results: `{'draw': 1397, 'loss': 464, 'unknown': 45, 'win': 447}`
-- Opening risk gate: not enabled
+- Opening risk gate: FAILED (66 >= 3)
 - No local engine analysis was run.
 
 ## Loss Openings
