@@ -181,6 +181,35 @@ class NamedFakeEngine:
         })
 
 
+class PonderingNamedFakeEngine(NamedFakeEngine):
+    """Engine protocol that records ping cleanup and can return a ponder move."""
+
+    def __init__(self, name: str, move: str, ponder: str | None = None) -> None:
+        """Initialize a fake engine with an optional ponder response."""
+        super().__init__(name, move)
+        self.ponder = chess.Move.from_uci(ponder) if ponder else None
+        self.pings = 0
+
+    def play(self,
+             board: chess.Board,
+             limit: chess.engine.Limit,
+             info: chess.engine.Info = chess.engine.INFO_NONE,
+             ponder: bool = False,
+             draw_offered: bool = False,
+             root_moves: list[chess.Move] | None = None) -> chess.engine.PlayResult:
+        """Record a search and return a configured move plus optional ponder."""
+        _ = limit, info, ponder, draw_offered, root_moves
+        self.calls += 1
+        return chess.engine.PlayResult(self.move, self.ponder, {
+            "depth": 12,
+            "score": chess.engine.PovScore(chess.engine.Cp(0), board.turn),
+        })
+
+    def ping(self) -> None:
+        """Record that a pending ponder search was stopped."""
+        self.pings += 1
+
+
 class MateFakeEngine:
     """Engine protocol that returns a forcing mate score."""
 
@@ -692,6 +721,31 @@ def test_search__uses_endgame_engine_for_configured_queenless_positions() -> Non
 
     assert result.move == chess.Move.from_uci("e2e3")
     assert main_engine.calls == 0
+    assert endgame_engine.calls == 1
+
+
+def test_search__stops_main_engine_ponder_before_endgame_engine_handoff() -> None:
+    """Switching to the secondary engine should not leave the main engine pondering in parallel."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    main_engine = PonderingNamedFakeEngine("main", "e2e4", "e7e5")
+    endgame_engine = PonderingNamedFakeEngine("endgame", "e2e3")
+    wrapper.engine = main_engine
+    wrapper.endgame_engine = endgame_engine
+    wrapper.endgame_engine_max_pieces = 3
+
+    wrapper.search(chess.Board(),
+                   chess.engine.Limit(white_clock=60.0, black_clock=60.0),
+                   ponder=True,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None))
+
+    wrapper.search(chess.Board("4k3/8/8/8/8/8/4K3/8 w - - 0 1"),
+                   chess.engine.Limit(time=1.0),
+                   ponder=False,
+                   draw_offered=False,
+                   root_moves=chess.engine.PlayResult(None, None))
+
+    assert main_engine.pings == 1
     assert endgame_engine.calls == 1
 
 

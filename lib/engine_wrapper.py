@@ -112,6 +112,7 @@ class EngineWrapper:
         self.endgame_engine_queenless_max_pieces = 0
         self.last_search_was_forcing_mate = False
         self.last_search_score_cp: int | None = None
+        self.pondering_engine: chess.engine.SimpleEngine | FillerEngine | None = None
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
         """
@@ -379,6 +380,12 @@ class EngineWrapper:
                 return self.endgame_engine
         return self.engine
 
+    def stop_inactive_ponder(self, active_engine: chess.engine.SimpleEngine | FillerEngine) -> None:
+        """Stop any previous ponder search that belongs to a different engine."""
+        if self.pondering_engine and self.pondering_engine is not active_engine:
+            cast(Any, self.pondering_engine).ping()
+            self.pondering_engine = None
+
     def search(self,
                board: chess.Board,
                time_limit: chess.engine.Limit,
@@ -407,6 +414,7 @@ class EngineWrapper:
             logger.info(f"Disabling ponder for exact movetime-limited {game.speed} search in game {game.id}")
             ponder = False
         active_engine = self.engine_for_position(board)
+        self.stop_inactive_ponder(active_engine)
         result = active_engine.play(board,
                                     time_limit,
                                     info=chess.engine.INFO_ALL,
@@ -415,6 +423,10 @@ class EngineWrapper:
                                     root_moves=root_moves if isinstance(root_moves, list) else None)
         if game and engine_cfg:
             result = self.extend_shallow_search(active_engine, board, game, result, draw_offered, root_moves, engine_cfg)
+        if ponder and result.ponder:
+            self.pondering_engine = active_engine
+        elif self.pondering_engine is active_engine:
+            self.pondering_engine = None
         self.record_search_result(result, board)
         return self.offer_draw_or_resign(result, board, draw_offered, game)
 
