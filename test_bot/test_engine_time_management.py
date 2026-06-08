@@ -563,6 +563,27 @@ def test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging() ->
     assert not result.draw_offered
 
 
+def test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging() -> None:
+    """A large bullet clock edge should keep the bot from offering a normal draw."""
+    wrapper = EngineWrapper({}, clock_guard_draw_cfg())
+    wrapper.engine = cast(FillerEngine, DrawishFakeEngine())
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+    game = high_rated_blitz_game(opponent_rating=3115)
+    game.speed = "bullet"
+    game.state["wtime"] = 92000
+    game.state["btime"] = 10700
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=Configuration({}))
+
+    assert not result.draw_offered
+
+
 def test_search__uses_endgame_engine_for_configured_queenless_positions() -> None:
     """Queenless technical positions can be handed to the secondary engine before low piece count."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

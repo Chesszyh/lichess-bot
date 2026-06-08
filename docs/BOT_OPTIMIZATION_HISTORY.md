@@ -291,18 +291,24 @@ Evidence game: `J7nJYTTZ`, a rated 90+1 bullet game as white against `TakticproC
 
 The bot accepted an incoming draw offer in a stable `0.00` queen endgame while holding a large clock edge. The live log showed the bot had about 97 seconds while the opponent had about 11 seconds. A target-band draw is acceptable when clocks are normal, but accepting here gives up a practical bullet win condition that is especially valuable on this 4-core ThinkPad deployment.
 
+Follow-up evidence game: `xzMGfX4n`, a rated 90+1 bullet game as black against `BlueMoonBot` rated 3115.
+
+The bot correctly declined an incoming draw offer with about 91 seconds versus 11 seconds, but later proactively offered a normal `0.00` draw with about 92 seconds versus 10 seconds. The opponent accepted. Root cause: the clock-edge guard only ran when `draw_offered` was true, so it protected incoming draw acceptance but not proactive normal draw offers.
+
 Change made:
 
 - Add `draw_or_resign.offer_draw_clock_advantage_enabled`.
 - Add speed, opponent-clock, and minimum-clock-advantage thresholds for that guard.
 - Enable the guard in the live private Stockfish config for `bullet` and `blitz`.
-- Set the live thresholds to decline normal draw offers when the opponent has at most 15 seconds and the bot has at least a 60 second clock edge.
+- Set the live thresholds to decline or skip normal draw offers when the opponent has at most 15 seconds and the bot has at least a 60 second clock edge.
+- Apply the same clock-edge guard to proactive normal draw offers, not only incoming draw offers.
 
 Regression test:
 
 - `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`
+- `test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging`
 
-Operational note: this only blocks normal draw-offer acceptance under a large clock edge. It does not stop the bot from offering or accepting ordinary equal target-band draws when both clocks are healthy or close.
+Operational note: this only blocks normal draw-offer acceptance and proactive normal draw offers under a large clock edge. It does not stop the bot from offering or accepting ordinary equal target-band draws when both clocks are healthy or close.
 
 ### Repetition Guard: Override Rating Gate With Large Clock Edge
 
@@ -376,13 +382,13 @@ git diff --check
 Latest passing result for the time-management and repetition-guard file:
 
 ```text
-32 passed
+33 passed
 ```
 
 Latest passing result for the matchmaking cooldown and config checks:
 
 ```text
-53 passed
+54 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -434,7 +440,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Sound repetition avoidance | `o1u2AXZc` showed hard avoidance can choose a losing move | Compare normal best move with non-repeating alternative and cap accepted score loss | `test_search__keeps_repetition_when_safe_alternative_loses_too_much` | Active |
 | Below-target draw offers | `dzsQr4Rh` draw by agreement vs below-target opponent | Add `draw_or_resign.offer_draw_min_rating`; live floor `3080` | `test_search__does_not_offer_normal_draw_below_target_rating_floor`; `test_search__offers_normal_draw_at_target_rating_floor` | Active |
 | Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
-| Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s | Decline normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging` | Active |
+| Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s; `xzMGfX4n` proactively offered draw with about 92s vs 10s | Decline or skip normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`; `test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging` | Active |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard | Add clock-edge override for repetition guard rating gate while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge` | Active |
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |

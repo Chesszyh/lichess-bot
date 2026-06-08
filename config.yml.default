@@ -91,7 +91,7 @@ engine:                            # Engine settings.
     offer_draw_pieces: 10          # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
     offer_draw_rating_gap_limit: 0 # If > 0, don't offer/accept normal engine-equality draws when outrating the opponent by at least this many points.
     offer_draw_min_rating: 0       # If > 0, don't proactively offer normal engine-equality draws to opponents rated below this value.
-    offer_draw_clock_advantage_enabled: false # If true, decline normal draw offers when the opponent is short on clock and the bot has a large clock edge.
+    offer_draw_clock_advantage_enabled: false # If true, avoid normal draw offers when the opponent is short on clock and the bot has a large clock edge.
     offer_draw_clock_advantage_speeds: [bullet, blitz] # Speeds where the clock-advantage draw-offer guard applies.
     offer_draw_clock_advantage_opponent_ms: 15000 # Opponent clock threshold for declining normal draw offers.
     offer_draw_clock_advantage_min_ms: 60000 # Minimum bot clock advantage for declining normal draw offers.
