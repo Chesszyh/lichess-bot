@@ -83,6 +83,8 @@ class GameSummary:
     rating_impact_by_opening_context: list[tuple[str, int, int]]
     focused_rating_impact_by_opening_context: list[tuple[str, int, int]]
     focused_score_by_opening_context: list[tuple[str, int, int, int, int, float]]
+    focused_rating_impact_by_opponent: list[tuple[str, int, int]]
+    focused_score_by_opponent: list[tuple[str, int, int, int, int, float]]
     worst_scoring_controls: list[tuple[str, int, int, int, int, float]]
     losses_by_opening: list[tuple[str, int]]
     losses_by_color: list[tuple[str, int]]
@@ -442,6 +444,14 @@ def summarize_records(records_dir: Path,
         focus_records,
         lambda record: f"{record.opening} | {record.bot_color} | {record.speed} | {record.time_control}",
     )
+    focused_rating_impact_by_opponent = rating_impact_by_group(
+        focus_records,
+        lambda record: f"{record.opponent} | {record.speed} | {record.time_control}",
+    )
+    focused_score_by_opponent = score_by_group(
+        focus_records,
+        lambda record: f"{record.opponent} | {record.speed} | {record.time_control}",
+    )
     control_results: dict[str, Counter[str]] = {}
     for record in records:
         if result_score(record.bot_result) is None:
@@ -542,6 +552,8 @@ def summarize_records(records_dir: Path,
         rating_impact_by_opening_context=rating_impact_by_opening_context,
         focused_rating_impact_by_opening_context=focused_rating_impact_by_opening_context,
         focused_score_by_opening_context=focused_score_by_opening_context,
+        focused_rating_impact_by_opponent=focused_rating_impact_by_opponent,
+        focused_score_by_opponent=focused_score_by_opponent,
         worst_scoring_controls=worst_scoring_controls,
         losses_by_opening=losses_by_opening,
         losses_by_color=losses_by_color,
@@ -749,6 +761,8 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
         summary.focused_rating_impact_by_opening_context,
     )
     append_score_section(lines, "Focused Score by Opening Context", summary.focused_score_by_opening_context)
+    append_rating_impact_section(lines, "Focused Rating Impact by Opponent", summary.focused_rating_impact_by_opponent)
+    append_score_section(lines, "Focused Score by Opponent", summary.focused_score_by_opponent)
     append_score_section(lines, "Worst Scoring Controls", summary.worst_scoring_controls)
     append_count_section(lines, "Loss Colors", summary.losses_by_color, empty_text="No losses found.")
     append_count_section(lines, "Loss Terminations", summary.losses_by_termination, empty_text="No losses found.")

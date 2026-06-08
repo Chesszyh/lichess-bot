@@ -51,6 +51,16 @@
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
+## Focused Rating Impact by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
+
+## Focused Score by Opponent
+
+- `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+
 ## Worst Scoring Controls
 
 - No scored controls found.

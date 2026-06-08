@@ -90,29 +90,55 @@
 
 ## Focused Rating Impact by Opening Context
 
-- `Sicilian Defense: Najdorf Variation, English Attack | black | blitz | 180+2`: `-25` rating over `18` games
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-16` rating over `2` games
 - `Sicilian Defense: Najdorf Variation, Poisoned Pawn Variation | black | blitz | 120+2`: `-11` rating over `1` games
 - `Sicilian Defense: Smith-Morra Gambit Accepted, Scheveningen Formation | black | blitz | 120+2`: `-11` rating over `1` games
 - `Philidor Defense: Exchange Variation | white | blitz | 120+2`: `-10` rating over `1` games
-- `French Defense: Steinitz Variation, Boleslavsky Variation | black | blitz | 180+2`: `-9` rating over `2` games
 - `Caro-Kann Defense | black | bullet | 120+1`: `-9` rating over `1` games
-- `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 180+2`: `-8` rating over `5` games
-- `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | blitz | 180+2`: `-8` rating over `3` games
 - `Scotch Game: Mieses Variation | white | bullet | 60+1`: `-8` rating over `1` games
+- `Sicilian Defense: Modern Variations | black | bullet | 90+2`: `-7` rating over `4` games
+- `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: `-7` rating over `1` games
+- `Sicilian Defense: Najdorf Variation, English Attack | black | bullet | 60+2`: `-6` rating over `5` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: `-6` rating over `1` games
 
 ## Focused Score by Opening Context
 
-- `Caro-Kann Defense: Advance Variation, Short Variation | black | blitz | 180+1`: W-D-L `0-0-3`, score `0.0%` over `3` games
-- `French Defense: Steinitz Variation, Boleslavsky Variation | black | blitz | 180+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `Indian Defense | black | blitz | 180+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `King's Indian Defense: Semi-Averbakh System | black | blitz | 180+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `Neo-Grünfeld Defense: Goglidze Attack | black | blitz | 180+3`: W-D-L `0-0-2`, score `0.0%` over `2` games
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `Queen's Gambit Declined: Exchange Variation, Positional Variation | black | blitz | 180+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `Queen's Pawn Game: London System | black | blitz | 180+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
-- `Benoni Defense: Taimanov Variation | black | blitz | 180+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
-- `Blumenfeld Countergambit Accepted | black | blitz | 180+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Caro-Kann Defense | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Carr Defense | white | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `French Defense: Rubinstein Variation | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Indian Defense: Accelerated London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Philidor Defense: Exchange Variation | white | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Queen's Pawn Game: London System | black | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+
+## Focused Rating Impact by Opponent
+
+- `ChessatronBot | blitz | 120+2`: `-11` rating over `1` games
+- `Eichkatzerl | bullet | 90+2`: `-11` rating over `1` games
+- `bot_adario | blitz | 120+2`: `-11` rating over `1` games
+- `abcd_engine | bullet | 60+1`: `-10` rating over `2` games
+- `simbelmyne-bot | blitz | 120+2`: `-10` rating over `1` games
+- `ToromBot | bullet | 90+1`: `-9` rating over `3` games
+- `Meccedo | blitz | 120+2`: `-9` rating over `2` games
+- `grail-bot | bullet | 120+1`: `-8` rating over `2` games
+- `MDBOT | bullet | 60+1`: `-7` rating over `4` games
+- `Cheszter | bullet | 60+2`: `-7` rating over `1` games
+
+## Focused Score by Opponent
+
+- `NeuroSoCute | bullet | 60+1`: W-D-L `0-0-4`, score `0.0%` over `4` games
+- `Meccedo | blitz | 120+2`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `ChessatronBot | blitz | 120+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Cheszter | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `Eichkatzerl | bullet | 90+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `NeuroSoCute | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `TakticproChess | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `bot1e | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 
 ## Worst Scoring Controls
 
@@ -208,16 +234,16 @@
 
 ## Focused Lower-Rated Draw Contexts
 
-- `5` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3 e5 | black | blitz | 180+2`
-- `2` x `d4 Nf6 c4 e6 g3 d5 Nf3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | blitz | 180+1`
-- `2` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 Bg5 Be7 e3 Nbd7 | black | blitz | 180+2`
 - `2` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+1`
-- `2` x `e4 c5 Nc3 d6 f4 Nc6 Nf3 g6 d4 cxd4 Nxd4 Bg7 | black | blitz | 180+2`
-- `2` x `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 | white | blitz | 180+2`
 - `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Bd3 dxc4 | black | bullet | 90+2`
 - `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Be2 Bd6 | black | bullet | 120+1`
-- `1` x `d4 Nf6 Nf3 g6 c4 Bg7 Nc3 d5 cxd5 Nxd5 e4 Nxc3 | black | blitz | 180+2`
 - `1` x `d4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 | black | bullet | 90+1`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 Nc3 c6 e3 Nbd7 Bd3 dxc4 | black | bullet | 60+2`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bd3 e5 | black | bullet | 60+2`
+- `1` x `d4 Nf6 Nf3 d5 c4 e6 g3 dxc4 Bg2 Nc6 Qa4 Bb4+ | black | bullet | 90+1`
+- `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | bullet | 60+2`
+- `1` x `e4 c5 Nf3 d6 b4 cxb4 Bb5+ Bd7 Qe2 g6 d4 Bg7 | black | bullet | 120+1`
+- `1` x `e4 Nc6 Nf3 g6 d4 Bg7 c3 d6 h3 e5 dxe5 Nxe5 | black | bullet | 120+1`
 
 ## Lower-Rated Draw Contexts
 
@@ -273,16 +299,14 @@
 
 ## Focused High-Clock Normal Loss Contexts
 
-- `1` x `French Defense: Steinitz Variation, Boleslavsky Variation | white | blitz | 180+3`
-- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | blitz | 180+3`
-- `1` x `Ruy Lopez: Morphy Defense, Anderssen Variation | white | blitz | 180+2`
-- `1` x `Indian Defense | black | blitz | 180+1`
-- `1` x `Sicilian Defense: Richter-Rauzer Variation, Modern Variation | black | blitz | 180+3`
-- `1` x `Sicilian Defense: Accelerated Dragon, Modern Bc4 Variation | black | blitz | 180+2`
-- `1` x `Sicilian Defense: Taimanov Variation | black | blitz | 180+3`
-- `1` x `Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation | black | blitz | 180+2`
-- `1` x `Sicilian Defense: Najdorf Variation, Main Line | black | blitz | 180+2`
-- `1` x `King's Indian Defense: Semi-Averbakh System | black | blitz | 180+1`
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 120+1`
+- `1` x `Queen's Gambit Declined: Traditional Variation | white | bullet | 120+1`
+- `1` x `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet | 60+2`
+- `1` x `Ruy Lopez: Marshall Attack, Modern Main Line | white | bullet | 120+1`
+- `1` x `Queen's Pawn Game: London System | black | bullet | 60+1`
+- `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
+- `1` x `Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted | black | bullet | 60+1`
+- `1` x `Scotch Game: Mieses Variation | white | bullet | 60+1`
 
 ## High-Clock Normal Loss Contexts
 

@@ -443,6 +443,47 @@ def test_render_markdown__shows_focused_score_by_opening_context(tmp_path: Path)
     assert "300+2" not in focused_section
 
 
+def test_render_markdown__shows_focused_opponent_impact(tmp_path: Path) -> None:
+    """Repeated active-control losses to one bot should be visible before changing matchmaking."""
+    for index in range(2):
+        loss_headers = base_headers("1-0", "Ruy Lopez: Open", f"RepeatBot{index}", "ilovecatgirl")
+        loss_headers["White"] = "MEGA-NOOB-BOT"
+        loss_headers["TimeControl"] = "90+1"
+        loss_headers["WhiteRatingDiff"] = "+5"
+        loss_headers["BlackRatingDiff"] = "-5"
+        write_pgn(tmp_path, f"repeat-opponent-loss-{index}.pgn", loss_headers, "1. e4 e5 1-0")
+    win_headers = base_headers("0-1", "Caro-Kann Defense", "OtherBot", "ilovecatgirl")
+    win_headers["TimeControl"] = "90+1"
+    win_headers["WhiteRatingDiff"] = "-4"
+    win_headers["BlackRatingDiff"] = "+4"
+    write_pgn(tmp_path, "other-opponent-win.pgn", win_headers, "1. e4 c6 0-1")
+    abandoned_headers = base_headers("1-0", "Semi-Slav Defense", "OldBot", "ilovecatgirl")
+    abandoned_headers["TimeControl"] = "300+2"
+    abandoned_headers["WhiteRatingDiff"] = "+20"
+    abandoned_headers["BlackRatingDiff"] = "-20"
+    write_pgn(tmp_path, "abandoned-opponent-loss.pgn", abandoned_headers, "1. d4 d5 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", focus_time_controls={"90+1"})
+    markdown = render_markdown(summary)
+
+    assert summary.focused_rating_impact_by_opponent == [
+        ("MEGA-NOOB-BOT | bullet | 90+1", 2, -10),
+        ("OtherBot | bullet | 90+1", 1, 4),
+    ]
+    assert summary.focused_score_by_opponent == [
+        ("MEGA-NOOB-BOT | bullet | 90+1", 0, 0, 2, 2, 0.0),
+        ("OtherBot | bullet | 90+1", 1, 0, 0, 1, 100.0),
+    ]
+    assert "Focused Rating Impact by Opponent" in markdown
+    assert "`MEGA-NOOB-BOT | bullet | 90+1`: `-10` rating over `2` games" in markdown
+    assert "Focused Score by Opponent" in markdown
+    assert "`MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-2`, score `0.0%` over `2` games" in markdown
+    focused_section = markdown.split("## Focused Rating Impact by Opponent", maxsplit=1)[1].split(
+        "## Focused Score by Opponent",
+    )[0]
+    assert "300+2" not in focused_section
+
+
 def test_render_markdown__shows_worst_scoring_controls(tmp_path: Path) -> None:
     """Score rate by exact clock and color should expose weak pools, not only raw counts."""
     loss_headers = base_headers("0-1", "Nimzo-Indian Defense", "ilovecatgirl", "ClockBot")
