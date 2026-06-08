@@ -40,3 +40,20 @@ challenge for 2026-06-08 21:23:54 CST.
 - After the endpoint-failure cadence fix was committed, the bot was safely restarted again at 2026-06-08 21:41 CST with
   `GET /api/account/playing` returning no active games. The new process scheduled its next outgoing challenge for
   2026-06-08 21:56:05 CST, preserving the 15-minute cadence under the updated code.
+
+## Permanent Opponent Errors
+
+- At 2026-06-08 23:32:41 CST, outgoing matchmaking triggered on schedule and selected `PZChessBot`.
+- Lichess rejected the challenge with `{'error': '您不能挑战 BOT PZChessBot'}`.
+- The running process did not retry another candidate in that same cycle, which indicated it had not loaded the later
+  permanent-opponent retry fix.
+- The current branch head includes `9c66755 Retry matchmaking after permanent opponent errors`, which classifies
+  "cannot challenge bot" endpoint responses as permanent opponent errors, blocks that opponent, and retries another
+  candidate in the same matchmaking cycle.
+- Before restart, `/api/account/playing` returned `ongoing_games 0`.
+- The bot was safely restarted at 2026-06-08 23:35 CST to load the current matchmaking code. The new process is PID
+  `54614` and scheduled the next outgoing challenge for 2026-06-08 23:47:48 CST, preserving the existing cadence.
+
+Verification for the current code:
+
+- `pytest test_bot/test_matchmaking.py::test_challenge__retries_next_candidate_when_opponent_cannot_be_challenged test_bot/test_matchmaking.py::test_challenge__retries_next_candidate_when_opponent_requires_friendship test_bot/test_matchmaking.py::test_challenge__retries_next_candidate_when_opponent_is_rate_limited -q`: `3 passed`
