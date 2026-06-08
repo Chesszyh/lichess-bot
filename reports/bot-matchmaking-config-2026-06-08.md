@@ -17,23 +17,23 @@ Recorded in local config history:
 - `.config-history` commit `a0ff1a0`: prefer `3000+` outgoing bot opponents when available.
 - `.config-history` commit `67e850e`: bias outgoing bot matchmaking toward bullet time controls.
 - `.config-history` commit `40bbf63`: disable the fast bot opening book when playing Black.
-- `.config-history` commit `7d5cf39`: avoid weak long blitz bot controls.
 - `.config-history` commit `7dfb401`: increase outgoing bullet matchmaking sample weight.
+- `.config-history` commit `7d5cf39`: avoid weak long blitz bot controls.
 
 Effective private config intent:
 
 - Incoming challenge queue now prefers bot challengers with `challenge.preference: bot`.
-- Incoming challenges accept `bullet`, `blitz`, and `rapid`.
+- Incoming challenges accept practical increment `bullet` and short `blitz`; `rapid` is listed but excluded by the `120` second base cap.
 - Bullet challenges must still have increment because `min_increment: 1` and `bullet_requires_increment: true`.
-- Incoming base time lower bound is `60` seconds, allowing practical `1+1` and longer bullet.
-- Outgoing matchmaking can choose `60`, `90`, `120`, `180`, or `240` second base times with `1` or `2` second increments.
+- Incoming base time is capped to `60` through `120` seconds, allowing practical `1+1` through `2+2` fast games.
+- Outgoing matchmaking can choose `60`, `90`, or `120` second base times with `1` or `2` second increments.
 - Outgoing matchmaking now weights `60`/`90`/`120` second bases and `1` second increments more heavily. This raises the
-  configured bullet share from `34/54` possible base/increment combinations to `47/60`, while keeping blitz samples in
+  configured bullet share from `47/60` possible base/increment combinations to `57/60`, while keeping short blitz samples in
   the pool.
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
-- Incoming and outgoing bot games now cap base time at `120` seconds. Outgoing samples keep the same bullet-heavy shape but replace `180` and `240` second bases with additional `120` second samples.
+- The private config file now caps incoming and outgoing bot games at `120` base seconds. This takes effect on the next safe bot restart; the current running process was started before this latest private config snapshot.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
 ## Time Forfeit Evidence
