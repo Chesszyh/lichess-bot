@@ -655,6 +655,15 @@ def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
     return game_id in (ongoing_game["gameId"] for ongoing_game in active_games)
 
 
+def game_stream_still_needed_after_error(li: lichess.Lichess, game_id: str, error: Exception) -> bool:
+    """Check activity after a stream or move error, allowing Lichess state to settle after HTTP errors."""
+    stream_still_needed = game_is_active(li, game_id)
+    if stream_still_needed and isinstance(error, HTTPError):
+        time.sleep(0.5)
+        stream_still_needed = game_is_active(li, game_id)
+    return stream_still_needed
+
+
 def start_game_thread(active_games: set[str], started_games: set[str], game_id: str,
                       play_game_args: PlayGameArgsType, pool: POOL_TYPE) -> None:
     """Start a game thread."""
@@ -902,7 +911,7 @@ def play_game(li: lichess.Lichess,
                         stay_in_game = False
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         StopIteration) as e:
-                    stream_still_needed = game_is_active(li, game.id)
+                    stream_still_needed = game_stream_still_needed_after_error(li, game.id, e)
                     stay_in_game = stream_still_needed
                     close_game_stream(response)
                     response = None
