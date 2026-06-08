@@ -5,7 +5,7 @@
 - Games analyzed: `1`
 - Since UTC: `2026-06-08T12:16:00+00:00`
 - Results: `{'draw': 1}`
-- Opening risk gate: not enabled
+- Opening risk gate: passed (0 < 3)
 - No local engine analysis was run.
 
 ## Loss Openings
