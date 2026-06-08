@@ -304,6 +304,26 @@ Regression test:
 
 Operational note: this only blocks normal draw-offer acceptance under a large clock edge. It does not stop the bot from offering or accepting ordinary equal target-band draws when both clocks are healthy or close.
 
+### Repetition Guard: Override Rating Gate With Large Clock Edge
+
+Evidence game: `nSLk3U9v`, a rated 90+1 bullet game as white against `TakticproChess` rated 3097.
+
+The bot declined multiple incoming draw offers and reached a large practical clock edge, about 101 seconds to 31 seconds, but the game still ended by threefold repetition. The log did not show `Filtering immediate threefold repetition moves` for this game. Root cause: `repetition_guard.min_rating_gap` was `-25`, while the opponent outrated the bot by about 65 points, so the repetition guard never ran even with a decisive bullet clock edge.
+
+Change made:
+
+- Add `repetition_guard.clock_advantage_override_enabled`.
+- Add speed, opponent-clock, and minimum-clock-advantage thresholds for the rating-gate override.
+- Enable the override in the live private Stockfish config for `bullet` and `blitz`.
+- Set the live thresholds to allow repetition avoidance when the opponent has at most 40 seconds and the bot has at least a 60 second clock edge.
+- Keep `repetition_guard.max_score_loss_cp: 150`, so this override does not force clearly losing non-repeating moves.
+
+Regression test:
+
+- `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`
+
+Operational note: this is a practical bullet/blitz conversion rule, not a general anti-draw setting against stronger bots. Without a large clock edge, the existing rating gate still protects high-rated target-band draws.
+
 ### Verification From This Pass
 
 Commands that passed:
@@ -324,6 +344,9 @@ Configuration loading was also checked for the live private file, confirming:
 repetition_guard.enabled=True
 repetition_guard.min_rating_gap=-25
 repetition_guard.max_score_loss_cp=150
+repetition_guard.clock_advantage_override_enabled=True
+repetition_guard.clock_advantage_override_opponent_ms=40000
+repetition_guard.clock_advantage_override_min_ms=60000
 draw_or_resign.offer_draw_min_rating=3080
 draw_or_resign.offer_draw_clock_advantage_enabled=True
 draw_or_resign.offer_draw_clock_advantage_opponent_ms=15000

@@ -701,6 +701,50 @@ def test_search__filters_immediate_threefold_repetition_when_enabled() -> None:
     assert result.move != repeated_move
 
 
+def test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge() -> None:
+    """A large clock edge should allow repetition avoidance even when the opponent outrates the bot."""
+    wrapper = EngineWrapper({}, draw_or_resign_cfg())
+    fake_engine = RepetitionFakeEngine("d7g4")
+    wrapper.engine = fake_engine
+    board = chess.Board()
+    for move in ["e2e4", "e7e5", "g1f3", "b8c6", "d2d4", "e5d4", "f3d4", "f8c5",
+                 "c1e3", "d8f6", "c2c3", "g8e7", "f1c4", "c6e5", "c4e2", "f6g6",
+                 "e1g1", "d7d6", "f1e1", "c8h3", "e2f1", "h3g4", "f1e2", "g4h3",
+                 "e2f1", "h3g4", "d1a4", "g4d7", "a4d1"]:
+        board.push(chess.Move.from_uci(move))
+    repeated_move = chess.Move.from_uci("d7g4")
+    repeated_board = board.copy(stack=True)
+    repeated_board.push(repeated_move)
+    assert repeated_board.is_repetition(3)
+    game = bullet_game()
+    game.black.rating = 3065
+    game.state["wtime"] = 101679
+    game.state["btime"] = 31320
+    engine_cfg = Configuration({
+        "repetition_guard": {
+            "enabled": True,
+            "speeds": ["bullet", "blitz"],
+            "min_rating_gap": -25,
+            "clock_advantage_override_enabled": True,
+            "clock_advantage_override_speeds": ["bullet", "blitz"],
+            "clock_advantage_override_opponent_ms": 40000,
+            "clock_advantage_override_min_ms": 60000,
+        },
+    })
+
+    result = wrapper.search(board,
+                            chess.engine.Limit(white_clock=101, black_clock=31),
+                            ponder=False,
+                            draw_offered=False,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=engine_cfg)
+
+    assert fake_engine.root_moves
+    assert repeated_move not in fake_engine.root_moves
+    assert result.move != repeated_move
+
+
 def test_search__does_not_play_filtered_repetition_if_engine_returns_it() -> None:
     """Do not trust an engine result that violates repetition-guard root moves."""
     wrapper = EngineWrapper({}, draw_or_resign_cfg())

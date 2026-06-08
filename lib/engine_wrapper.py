@@ -951,7 +951,7 @@ def repetition_guard_root_moves(board: chess.Board,
 
     min_rating_gap = repetition_guard.lookup("min_rating_gap") or 0
     rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0)
-    if rating_gap < min_rating_gap:
+    if rating_gap < min_rating_gap and not repetition_guard_clock_override_applies(repetition_guard, game):
         return root_moves
 
     candidates = root_moves or list(board.legal_moves)
@@ -970,6 +970,35 @@ def repetition_guard_root_moves(board: chess.Board,
 
     logger.info(f"Filtering immediate threefold repetition moves: {', '.join(map(str, repeated_moves))}")
     return safe_moves
+
+
+def repetition_guard_clock_override_applies(repetition_guard: Configuration, game: model.Game) -> bool:
+    """Whether a large live clock edge should override the repetition rating gate."""
+    if not repetition_guard.lookup("clock_advantage_override_enabled"):
+        return False
+
+    speeds = repetition_guard.lookup("clock_advantage_override_speeds") or ["bullet", "blitz"]
+    if game.speed not in speeds:
+        return False
+
+    white_time = game.state.get("wtime")
+    black_time = game.state.get("btime")
+    if white_time is None or black_time is None:
+        return False
+
+    opponent_threshold = int(repetition_guard.lookup("clock_advantage_override_opponent_ms") or 0)
+    min_advantage = int(repetition_guard.lookup("clock_advantage_override_min_ms") or 0)
+    if opponent_threshold <= 0 or min_advantage <= 0:
+        return False
+
+    my_time = int(white_time if game.is_white else black_time)
+    opponent_time = int(black_time if game.is_white else white_time)
+    if opponent_time <= opponent_threshold and my_time - opponent_time >= min_advantage:
+        logger.info("Allowing repetition guard despite rating gap because opponent has "
+                    f"{msec_str(msec(opponent_time))} and bot has {msec_str(msec(my_time))}.")
+        return True
+
+    return False
 
 
 def move_triggers_threefold(board: chess.Board, move: chess.Move | None) -> bool:
