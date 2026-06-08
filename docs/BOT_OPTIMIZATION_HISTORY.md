@@ -335,7 +335,7 @@ Commands that passed:
 Latest passing result for the time-management and repetition-guard file:
 
 ```text
-30 passed
+32 passed
 ```
 
 Configuration loading was also checked for the live private file, confirming:
@@ -363,10 +363,50 @@ Known verification debt:
 - `mypy --strict lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing timeout typing, homemade engine override signatures, and fake-engine assignment types.
 - These failures are not clean-room blockers for the repetition changes, but they raise the maintenance cost of further strategy work.
 
+### Pause-State Summary
+
+At the point the optimization goal was paused, the live bot was running with the latest private Stockfish config and no active engine game process. The service had restarted cleanly, logged `Engine configuration OK`, `Welcome NeuroSoCute!`, and was waiting for challenges. The live matchmaking log confirmed the current policy was searching only target-band bullet games:
+
+```text
+Seeking bullet game with opponent rating in [3080, 4000] ...
+```
+
+No new completed rated bullet or blitz games had been observed after the latest restart. The first post-restart searches found `309` online bots but `0` suitable target-band opponents after current blocklist and cooldown filters. That makes opponent-pool sparsity the next operational bottleneck, not a confirmed engine-strength regression.
+
+Optimization attempts and outcomes from this ThinkPad Stockfish pass:
+
+| Area | Evidence | Change | Test or live result | Status |
+| --- | --- | --- | --- | --- |
+| Challenge types | User request to stop rapid after current game | Accept only `bullet` and `blitz`; prefer bullet | Live log seeks bullet target-band games | Active |
+| Opening explorer depth | `scyR4oww` loss vs `CloudNetBot` | Stop deep online opening explorer guidance; cap online depth at 2; prefer stronger weighted book lines | Weighted book regression covered by commit `784d3ab`; config mirrored privately | Active |
+| Repetition filter authority | `KvLfR0la` repeated despite filtered root moves | Force search result back into allowed root moves when engine returns a filtered move | `test_search__does_not_play_filtered_repetition_if_engine_returns_it` | Active |
+| Sound repetition avoidance | `o1u2AXZc` showed hard avoidance can choose a losing move | Compare normal best move with non-repeating alternative and cap accepted score loss | `test_search__keeps_repetition_when_safe_alternative_loses_too_much` | Active |
+| Below-target draw offers | `dzsQr4Rh` draw by agreement vs below-target opponent | Add `draw_or_resign.offer_draw_min_rating`; live floor `3080` | `test_search__does_not_offer_normal_draw_below_target_rating_floor`; `test_search__offers_normal_draw_at_target_rating_floor` | Active |
+| Below-target opponent pool | `G5YWiyfP` and other low-signal draws | Raise incoming and outgoing opponent floors to `3080` | Live log confirms `[3080, 4000]` search range | Active, watch volume |
+| Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s | Decline normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging` | Active |
+| Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard | Add clock-edge override for repetition guard rating gate while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge` | Active |
+| Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Read-only pool analysis started; no policy change yet | Initial classification found very few 3080+ bullet/blitz candidates after cooldown/block filters | Needs next pass |
+
+Current private live thresholds worth preserving unless new games disprove them:
+
+- `challenge.min_rating: 3080`
+- `matchmaking.opponent_min_rating: 3080`
+- `matchmaking.preferred_opponent_min_rating: 3080`
+- `matchmaking.blitz_fallback.preferred_opponent_min_rating: 3080`
+- `draw_or_resign.offer_draw_min_rating: 3080`
+- `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 15000`
+- `draw_or_resign.offer_draw_clock_advantage_min_ms: 60000`
+- `repetition_guard.max_score_loss_cp: 150`
+- `repetition_guard.clock_advantage_override_opponent_ms: 40000`
+- `repetition_guard.clock_advantage_override_min_ms: 60000`
+
 ### Future Optimization Directions
 
 Prioritize these directions before adding heavier local experiments:
 
+- Split target-band opponent exclusions by exact source: permanent config blocklist, ten-year cooldown, daily opponent limit cooldown, unanswered outgoing challenge cooldown, and temporary online blocklists. Do this before relaxing the 3080 floor.
+- If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.
+- Add instrumentation for why each online bot was rejected from matchmaking. The latest pool check was useful but conflated config blocklist and persistent cooldown state.
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
