@@ -10,6 +10,17 @@
 - Opening risk gate: FAILED (4 >= 3)
 - No local engine analysis was run.
 
+## Actionable Opponent Leak Watchlist
+
+- `CloudNetBot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-3`, latest `2026-04-16T11:07:19+00:00`
+- `bot1e | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-3`, latest `2026-04-16T07:41:06+00:00`
+- `AggressiveStockfish | bullet | 120+1`: risk `2`, losses `0`, lower-rated draws `1`, rating-negative draws `1`, rating `-1`, latest `2026-04-22T08:20:18+00:00`
+- `AggressiveStockfish | bullet | 90+1`: risk `2`, losses `0`, lower-rated draws `1`, rating-negative draws `1`, rating `-1`, latest `2026-04-22T10:02:44+00:00`
+- `DefenchessOfficial | bullet | 90+1`: risk `2`, losses `0`, lower-rated draws `1`, rating-negative draws `1`, rating `-1`, latest `2026-04-26T12:36:39+00:00`
+- `WildorderBot | bullet | 120+1`: risk `1`, losses `0`, lower-rated draws `1`, rating-negative draws `0`, rating `+0`, latest `2026-04-17T12:53:50+00:00`
+- `friendlybot_1700 | bullet | 60+1`: risk `1`, losses `0`, lower-rated draws `1`, rating-negative draws `0`, rating `+0`, latest `2026-04-23T14:14:26+00:00`
+- `friendlybot_1700 | bullet | 90+1`: risk `1`, losses `0`, lower-rated draws `1`, rating-negative draws `0`, rating `+0`, latest `2026-04-26T11:13:12+00:00`
+
 ## Opponent Leak Watchlist
 
 - `duchessAI | bullet | 60+1`: risk `10`, losses `0`, lower-rated draws `5`, rating-negative draws `5`, rating `-10`, latest `2026-04-29T09:36:44+00:00`

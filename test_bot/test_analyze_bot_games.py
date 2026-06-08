@@ -3,7 +3,13 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from scripts.analyze_bot_games import parse_args, render_markdown, strip_pgn_variations, summarize_records
+from scripts.analyze_bot_games import (
+    blocked_opponents_from_config,
+    parse_args,
+    render_markdown,
+    strip_pgn_variations,
+    summarize_records,
+)
 
 
 def write_pgn(records_dir: Path, name: str, headers: dict[str, str], moves: str) -> None:
@@ -637,6 +643,53 @@ def test_render_markdown__ranks_combined_opponent_leaks(tmp_path: Path) -> None:
         maxsplit=1,
     )[0]
     assert "HigherBot" not in watchlist_section
+
+
+def test_render_markdown__separates_unblocked_opponent_leaks(tmp_path: Path) -> None:
+    """Reports should surface actionable leaks after known blocked opponents are filtered out."""
+    blocked_loss_headers = base_headers("1-0", "Ruy Lopez: Open", "BlockedBot", "ilovecatgirl")
+    blocked_loss_headers["TimeControl"] = "90+1"
+    blocked_loss_headers["WhiteRatingDiff"] = "+5"
+    blocked_loss_headers["BlackRatingDiff"] = "-5"
+    write_pgn(tmp_path, "blocked-loss.pgn", blocked_loss_headers, "1. e4 e5 1-0")
+
+    actionable_loss_headers = base_headers("1-0", "French Defense", "ActionBot", "ilovecatgirl")
+    actionable_loss_headers["TimeControl"] = "60+1"
+    actionable_loss_headers["WhiteRatingDiff"] = "+4"
+    actionable_loss_headers["BlackRatingDiff"] = "-4"
+    write_pgn(tmp_path, "actionable-loss.pgn", actionable_loss_headers, "1. e4 e6 1-0")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl")
+    markdown = render_markdown(summary, blocked_opponents={"blockedbot"})
+
+    assert "Actionable Opponent Leak Watchlist" in markdown
+    actionable_section = markdown.split("## Actionable Opponent Leak Watchlist", maxsplit=1)[1].split(
+        "## Opponent Leak Watchlist",
+        maxsplit=1,
+    )[0]
+    assert "ActionBot | bullet | 60+1" in actionable_section
+    assert "BlockedBot | bullet | 90+1" not in actionable_section
+    assert "BlockedBot | bullet | 90+1" in markdown
+
+
+def test_blocked_opponents_from_config__loads_challenge_and_matchmaking_lists(tmp_path: Path) -> None:
+    """Analyzer config loading should use only block-list names from private runtime config."""
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        """
+token: secret-token-that-must-not-be-rendered
+challenge:
+  block_list:
+  - BlockedChallenge
+matchmaking:
+  block_list:
+  - BlockedMatchmaking
+  - BlockedChallenge
+""",
+        encoding="utf-8",
+    )
+
+    assert blocked_opponents_from_config(config_path) == {"blockedchallenge", "blockedmatchmaking"}
 
 
 def test_render_markdown__shows_focused_rating_impact_by_opening_context(tmp_path: Path) -> None:

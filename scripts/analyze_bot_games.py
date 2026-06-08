@@ -13,6 +13,7 @@ from pathlib import Path
 import sys
 
 import chess.pgn
+import yaml
 
 
 @dataclass(frozen=True)
@@ -824,6 +825,38 @@ def opponent_leak_watchlist_for_records(
     return sorted(watchlist, key=lambda item: (-item[5], item[4], item[0]))
 
 
+def blocked_opponents_from_config(config_path: Path) -> set[str]:
+    """Return normalized challenge and matchmaking block-list names from a runtime config."""
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if not isinstance(config, dict):
+        return set()
+
+    blocked: set[str] = set()
+    for section_name in ("challenge", "matchmaking"):
+        section = config.get(section_name)
+        if not isinstance(section, dict):
+            continue
+        block_list = section.get("block_list")
+        if not isinstance(block_list, list):
+            continue
+        for opponent in block_list:
+            if isinstance(opponent, str) and opponent.strip():
+                blocked.add(opponent.strip().casefold())
+
+    return blocked
+
+
+def filtered_unblocked_watchlist(
+    watchlist: list[tuple[str, int, int, int, int, int, datetime | None]],
+    blocked_opponents: set[str],
+) -> list[tuple[str, int, int, int, int, int, datetime | None]]:
+    """Return watchlist rows whose opponent is not already blocked."""
+    return [
+        item for item in watchlist
+        if item[0].split(" | ", maxsplit=1)[0].casefold() not in blocked_opponents
+    ]
+
+
 def bot_eval_drops(records: list[GameRecord]) -> list[BotEvalDrop]:
     """Return largest drops between consecutive saved bot-side evaluations."""
     drops: list[BotEvalDrop] = []
@@ -928,9 +961,11 @@ def append_rating_impact_section(lines: list[str], title: str, impacts: list[tup
 def append_opponent_leak_watchlist_section(
     lines: list[str],
     watchlist: list[tuple[str, int, int, int, int, int, datetime | None]],
+    *,
+    title: str = "Opponent Leak Watchlist",
 ) -> None:
     """Append the combined opponent risk watchlist."""
-    lines.extend(["", "## Opponent Leak Watchlist", ""])
+    lines.extend(["", f"## {title}", ""])
     if not watchlist:
         lines.append("- No loss or costly draw opponent clusters found.")
         return
@@ -1098,7 +1133,12 @@ def append_recent_losses_section(lines: list[str], records: list[GameRecord]) ->
         lines.append(f"- `{started}` {game_link(record)} vs `{record.opponent}`: {record.opening}")
 
 
-def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
+def render_markdown(
+    summary: GameSummary,
+    *,
+    risk_threshold: int = 0,
+    blocked_opponents: set[str] | None = None,
+) -> str:
     """Render a markdown analysis report."""
     lines = [
         f"# Bot Game Analysis for {summary.bot_name}",
@@ -1121,6 +1161,12 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     if summary.speeds:
         speeds = ", ".join(sorted(summary.speeds))
         lines.insert(5, f"- Speeds: `{speeds}`")
+    if blocked_opponents is not None:
+        append_opponent_leak_watchlist_section(
+            lines,
+            filtered_unblocked_watchlist(summary.opponent_leak_watchlist, blocked_opponents),
+            title="Actionable Opponent Leak Watchlist",
+        )
     append_opponent_leak_watchlist_section(lines, summary.opponent_leak_watchlist)
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Results by Mode", summary.results_by_mode, empty_text="No games found.")
@@ -1261,8 +1307,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--speeds", help="Comma-separated Lichess speed buckets to include, e.g. bullet or blitz.")
     parser.add_argument("--modes", help="Comma-separated game modes to include, e.g. rated or rated,casual.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
+    parser.add_argument("--blocked-opponents", help="Comma-separated opponent names to hide from actionable leak rows.")
+    parser.add_argument("--block-list-config",
+                        help="YAML config whose challenge/matchmaking block_list hides already-blocked leak rows.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
     return parser.parse_args(argv)
+
+
+def parse_blocked_opponents(raw_names: str | None) -> set[str]:
+    """Parse comma-separated blocked opponent names."""
+    if not raw_names:
+        return set()
+    return {name.strip().casefold() for name in raw_names.split(",") if name.strip()}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1282,7 +1338,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         modes=parse_modes(args.modes),
         since_utc=parse_since_utc(args.since_utc),
     )
-    markdown = render_markdown(summary, risk_threshold=args.risk_threshold)
+    blocked_opponents = parse_blocked_opponents(args.blocked_opponents)
+    if args.block_list_config:
+        blocked_opponents.update(blocked_opponents_from_config(Path(args.block_list_config)))
+
+    markdown = render_markdown(
+        summary,
+        risk_threshold=args.risk_threshold,
+        blocked_opponents=blocked_opponents or None,
+    )
     if args.output:
         Path(args.output).write_text(markdown, encoding="utf-8")
     else:
