@@ -2,11 +2,11 @@
 
 ## Scope
 
-- Games analyzed: `0`
+- Games analyzed: `1`
 - Time controls: `120+1, 60+1, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T15:20:00+00:00`
-- Results: `{}`
+- Results: `{'draw': 1}`
 - Opening risk gate: passed (0 < 3)
 - No local engine analysis was run.
 
@@ -20,15 +20,15 @@
 
 ## Results by Mode
 
-- No games found.
+- `1` x rated draw
 
 ## Results by Speed
 
-- No games found.
+- `1` x bullet draw
 
 ## Results by Time Control
 
-- No games found.
+- `1` x 60+1 draw
 
 ## Rating Impact by Mode
 
@@ -56,7 +56,7 @@
 
 ## Score by Opponent
 
-- No scored controls found.
+- `abdcebot | bullet | 60+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Time Control
 
@@ -64,7 +64,7 @@
 
 ## Focused Score by Time Control
 
-- No scored controls found.
+- `60+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opening Context
 
@@ -72,7 +72,7 @@
 
 ## Focused Score by Opening Context
 
-- No scored controls found.
+- `Ruy Lopez: Berlin Defense, Rio Gambit Accepted | white | bullet | 60+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Focused Rating Impact by Opponent
 
@@ -80,7 +80,7 @@
 
 ## Focused Score by Opponent
 
-- No scored controls found.
+- `abdcebot | bullet | 60+1`: W-D-L `0-1-0`, score `50.0%` over `1` games
 
 ## Worst Scoring Controls
 
