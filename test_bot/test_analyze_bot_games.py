@@ -124,6 +124,28 @@ def test_render_markdown__shows_rated_mode_distribution(tmp_path: Path) -> None:
     assert "`rated`: `+5` rating over `1` games" in markdown
 
 
+def test_summarize_records__can_filter_to_rated_games(tmp_path: Path) -> None:
+    """Rating-target reports should be able to exclude historical casual games."""
+    rated_headers = base_headers("1-0", "Rated Opening", "ilovecatgirl", "RatedBot")
+    rated_headers["Event"] = "rated bullet game"
+    rated_headers["WhiteRatingDiff"] = "+5"
+    write_pgn(tmp_path, "rated-win.pgn", rated_headers, "1. e4 c5 1-0")
+    casual_headers = base_headers("0-1", "Casual Opening", "ilovecatgirl", "CasualBot")
+    casual_headers["Event"] = "casual blitz game"
+    write_pgn(tmp_path, "casual-loss.pgn", casual_headers, "1. d4 Nf6 0-1")
+
+    summary = summarize_records(tmp_path, "ilovecatgirl", modes={"rated"})
+    markdown = render_markdown(summary)
+
+    assert parse_args(["--modes", "rated"]).modes == "rated"
+    assert summary.total_games == 1
+    assert summary.modes == {"rated"}
+    assert summary.results_by_mode == [("rated win", 1)]
+    assert summary.rating_impact_by_mode == [("rated", 1, 5)]
+    assert "Modes: `rated`" in markdown
+    assert "casual" not in markdown
+
+
 def test_render_markdown__shows_loss_color_distribution(tmp_path: Path) -> None:
     """Black-loss concentration should be visible in the lightweight report."""
     write_pgn(

@@ -3,7 +3,8 @@
 ## Scope
 
 - Games analyzed: `2`
-- Since UTC: `2026-06-08T11:36:38+00:00`
+- Modes: `rated`
+- Since UTC: `2026-06-08T11:36:00+00:00`
 - Results: `{'draw': 1, 'loss': 1}`
 - Opening risk gate: passed (1 < 3)
 - No local engine analysis was run.

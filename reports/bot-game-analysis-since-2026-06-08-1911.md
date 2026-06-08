@@ -3,6 +3,7 @@
 ## Scope
 
 - Games analyzed: `3`
+- Modes: `rated`
 - Since UTC: `2026-06-08T11:11:00+00:00`
 - Results: `{'draw': 1, 'loss': 2}`
 - Opening risk gate: passed (1 < 3)

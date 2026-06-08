@@ -74,6 +74,7 @@ class GameSummary:
 
     bot_name: str
     since_utc: datetime | None
+    modes: set[str]
     total_games: int
     result_counts: dict[str, int]
     results_by_mode: list[tuple[str, int]]
@@ -149,6 +150,13 @@ def parse_focus_time_controls(value: str | None) -> set[str]:
     if not value:
         return set()
     return {item.strip() for item in value.split(",") if item.strip()}
+
+
+def parse_modes(value: str | None) -> set[str]:
+    """Parse a comma-separated list of game modes to include."""
+    if not value:
+        return set()
+    return {item.strip().casefold() for item in value.split(",") if item.strip()}
 
 
 def strip_pgn_variations(pgn_text: str) -> str:
@@ -420,6 +428,7 @@ def summarize_records(records_dir: Path,
                       clock_rich_loss_base_fraction: float = 0.35,
                       eval_drop_recent_loss_limit: int = 50,
                       focus_time_controls: set[str] | None = None,
+                      modes: set[str] | None = None,
                       since_utc: datetime | None = None) -> GameSummary:
     """Summarize local bot-vs-bot PGN records."""
     records: list[GameRecord] = []
@@ -436,6 +445,8 @@ def summarize_records(records_dir: Path,
         if not is_fast_time_control(record.time_control, max_base_seconds):
             continue
         if since_utc is not None and (record.utc_started is None or record.utc_started < since_utc):
+            continue
+        if modes and record.mode not in modes:
             continue
         records.append(record)
 
@@ -580,6 +591,7 @@ def summarize_records(records_dir: Path,
     return GameSummary(
         bot_name=bot_name,
         since_utc=since_utc,
+        modes=modes or set(),
         total_games=len(records),
         result_counts=dict(sorted(result_counts.items())),
         results_by_mode=results_by_mode,
@@ -893,6 +905,9 @@ def render_markdown(summary: GameSummary, *, risk_threshold: int = 0) -> str:
     ]
     if summary.since_utc is not None:
         lines.insert(5, f"- Since UTC: `{summary.since_utc.isoformat()}`")
+    if summary.modes:
+        modes = ", ".join(sorted(summary.modes))
+        lines.insert(5, f"- Modes: `{modes}`")
     append_count_section(lines, "Loss Openings", summary.losses_by_opening, empty_text="No losses found.")
     append_count_section(lines, "Results by Mode", summary.results_by_mode, empty_text="No games found.")
     append_count_section(lines, "Results by Speed", summary.results_by_speed, empty_text="No games found.")
@@ -1001,6 +1016,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="Minimum remaining bot clock for non-time loss examples.")
     parser.add_argument("--focus-time-controls",
                         help="Comma-separated exact time controls to highlight in focused sections.")
+    parser.add_argument("--modes", help="Comma-separated game modes to include, e.g. rated or rated,casual.")
     parser.add_argument("--risk-threshold", type=int, default=0, help="Fail when any loss opening reaches this count.")
     parser.add_argument("--output", help="Optional markdown output path. Defaults to stdout.")
     return parser.parse_args(argv)
@@ -1018,6 +1034,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         control_min_games=args.control_min_games,
         high_clock_loss_threshold_seconds=args.high_clock_loss_threshold_seconds,
         focus_time_controls=parse_focus_time_controls(args.focus_time_controls),
+        modes=parse_modes(args.modes),
         since_utc=parse_since_utc(args.since_utc),
     )
     markdown = render_markdown(summary, risk_threshold=args.risk_threshold)
