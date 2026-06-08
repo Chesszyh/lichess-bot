@@ -314,6 +314,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "correspondence", key="disconnect_time", default=300)
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
+    set_config_default(CONFIG, "matchmaking", key="outgoing_challenge_cooldown_minutes", default=720,
+                       force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="online_block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="include_challenge_block_list", default=False, force_empty_values=True)

@@ -1024,6 +1024,30 @@ def test_cancelled_challenge__handles_minimal_cancel_event() -> None:
     assert not matchmaking.should_accept_challenge("BusyBot", "")
 
 
+def test_cancelled_challenge__uses_configured_outgoing_cooldown() -> None:
+    """Sparse target pools should be able to retry unanswered challenges sooner than 12 hours."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "outgoing_challenge_cooldown_minutes": 180,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    matchmaking.challenge_id = "abc123"
+    matchmaking.challenge_targets["abc123"] = "BusyBot"
+    matchmaking.cancelled_challenge({"challenge": {"id": "abc123"}})
+
+    assert matchmaking.challenge_type_acceptable[("BusyBot", "")].duration == hours(3)
+
+
 def test_should_create_challenge__blocks_opponent_when_outgoing_challenge_expires(monkeypatch) -> None:
     """An expired outgoing challenge should cool down that opponent before creating another one."""
     mock_li = Mock()

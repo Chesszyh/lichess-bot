@@ -21,7 +21,7 @@ PLAIN_RATE_LIMIT_INITIAL_DELAY_MINUTES = 30
 PLAIN_RATE_LIMIT_MAX_DELAY_MINUTES = 1440
 PLAIN_RATE_LIMIT_TARGET_COOLDOWN = days(1)
 DEFAULT_DECLINE_COOLDOWN = hours(6)
-OUTGOING_CHALLENGE_COOLDOWN = hours(12)
+DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES = 720
 NO_CANDIDATE_DELAY = minutes(15)
 
 
@@ -512,8 +512,12 @@ class Matchmaking:
         if not opponent:
             return
 
-        self.add_challenge_filter(opponent, "", OUTGOING_CHALLENGE_COOLDOWN)
-        logger.info(f"Will not challenge {opponent} again for 12 hours after an unanswered outgoing challenge.")
+        cooldown = minutes(self.matchmaking_cfg.lookup("outgoing_challenge_cooldown_minutes")
+                           or DEFAULT_OUTGOING_CHALLENGE_COOLDOWN_MINUTES)
+        self.add_challenge_filter(opponent, "", cooldown)
+        cooldown_minutes = int(cooldown.total_seconds() / 60)
+        logger.info(f"Will not challenge {opponent} again for {cooldown_minutes} minutes "
+                    "after an unanswered outgoing challenge.")
 
     def accepted_challenge(self, event: EventType) -> None:
         """
