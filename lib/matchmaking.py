@@ -145,6 +145,8 @@ class Matchmaking:
             logger.info(f"Challenge endpoint is rate limited; backing off for {delay.total_seconds() / 60:.0f} minutes.")
         else:
             self.add_challenge_filter(username, "")
+            self.retryable_challenge_error = True
+            logger.info(f"Will not challenge {username} again for 6 hours after a challenge response without an id.")
         self.save_state()
         self.show_earliest_challenge_time()
 

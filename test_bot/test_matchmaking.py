@@ -713,7 +713,7 @@ def test_challenge__retries_next_candidate_when_opponent_requires_friendship(mon
     mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
     matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
     monkeypatch.setattr(random, "choice", lambda seq: seq[0])
-    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0] if weights is None else seq[0]])
+    monkeypatch.setattr(random, "choices", lambda seq, **_kwargs: [seq[0]])
     monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
     monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
     monkeypatch.setattr(matchmaking.no_candidate_timer, "is_expired", lambda: True)
@@ -765,7 +765,7 @@ def test_challenge__retries_next_candidate_when_opponent_cannot_be_challenged(mo
     mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
     matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
     monkeypatch.setattr(random, "choice", lambda seq: seq[0])
-    monkeypatch.setattr(random, "choices", lambda seq, weights=None: [seq[0] if weights is None else seq[0]])
+    monkeypatch.setattr(random, "choices", lambda seq, **_kwargs: [seq[0]])
     monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
     monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
     monkeypatch.setattr(matchmaking.no_candidate_timer, "is_expired", lambda: True)
@@ -778,6 +778,57 @@ def test_challenge__retries_next_candidate_when_opponent_cannot_be_challenged(mo
     assert matchmaking.challenge_id == "ready123"
     assert not matchmaking.should_accept_challenge("CannotChallengeBot", "")
     assert matchmaking.challenge_type_acceptable[("CannotChallengeBot", "")].duration == years(10)
+
+
+def test_challenge__retries_next_candidate_when_challenge_response_has_no_id(monkeypatch: MonkeyPatch) -> None:
+    """A target-specific no-id challenge response should not waste the whole matchmaking cycle."""
+    mock_li = Mock()
+    mock_li.get_online_bots.return_value = [
+        {"username": "NoIdBot", "perfs": {"bullet": {"rating": 3010, "games": 100}}},
+        {"username": "ReadyBot", "perfs": {"bullet": {"rating": 3005, "games": 100}}},
+    ]
+    mock_li.get_public_data.side_effect = lambda username: {"username": username}
+    mock_li.challenge.side_effect = [
+        {},
+        {"id": "ready123"},
+    ]
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "allow_during_games": False,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_variant": "standard",
+            "challenge_mode": "rated",
+            "challenge_initial_time": [60],
+            "challenge_increment": [1],
+            "challenge_days": [None],
+            "opponent_min_rating": 2700,
+            "opponent_max_rating": 4000,
+            "opponent_rating_difference": 1000,
+            "preferred_opponent_min_rating": 3000,
+            "rating_preference": "none",
+            "challenge_filter": "fine",
+            "overrides": {},
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 3058}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
+    monkeypatch.setattr(random, "choices", lambda seq, **_kwargs: [seq[0]])
+    monkeypatch.setattr(matchmaking.last_game_ended_delay, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(matchmaking.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    matchmaking.challenge(set(), [], 1)
+
+    assert mock_li.challenge.call_args_list[0].args[0] == "NoIdBot"
+    assert mock_li.challenge.call_args_list[1].args[0] == "ReadyBot"
+    assert matchmaking.challenge_id == "ready123"
+    assert not matchmaking.should_accept_challenge("NoIdBot", "")
 
 
 def test_challenge_sequence__creation_then_cancellation_clears_metadata_and_cools_down(monkeypatch) -> None:
