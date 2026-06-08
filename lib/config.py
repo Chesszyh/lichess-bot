@@ -192,7 +192,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "resource_monitor", key="enabled", default=False)
     set_config_default(CONFIG, "resource_monitor", key="directory", default="resource_records", force_empty_values=True)
     set_config_default(CONFIG, "resource_monitor", key="sample_period", default=5)
-    set_config_default(CONFIG, "resource_monitor", key="idle_sample_period", default=CONFIG["resource_monitor"]["sample_period"])
+    set_config_default(CONFIG, "resource_monitor", key="idle_sample_period",
+                       default=CONFIG["resource_monitor"]["sample_period"])
     set_config_default(CONFIG, "arena", key="enabled", default=False)
     set_config_default(CONFIG, "arena", key="teams", default=[], force_empty_values=True)
     change_value_to_list(CONFIG, "arena", key="teams")
@@ -249,6 +250,12 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_moves", default=2)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_score", default=25)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_pieces", default=32)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_clock_pressure_enabled",
+                       default=False)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_clock_pressure_own_clock_ms",
+                       default=30000)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_clock_pressure_opponent_clock_ms",
+                       default=15000)
     set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
     set_config_default(CONFIG, "engine", "online_moves", key="max_retries", default=2, force_empty_values=True)
     set_config_default(CONFIG, "engine", "online_moves", key="max_depth", default=math.inf, force_empty_values=True)

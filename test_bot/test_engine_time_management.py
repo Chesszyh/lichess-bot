@@ -694,6 +694,43 @@ def test_search__does_not_accept_high_rated_draw_offer_when_opponent_is_in_clock
     assert not result.draw_offered
 
 
+def test_search__accepts_higher_rated_draw_offer_when_bot_is_in_clock_pressure() -> None:
+    """Accept stable draw offers from stronger bots when our bullet clock is critical."""
+    wrapper = EngineWrapper({}, Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_moves": 10,
+        "offer_draw_score": 0,
+        "offer_draw_pieces": 10,
+        "high_rated_accept_draw_enabled": True,
+        "high_rated_accept_draw_min_rating": 3100,
+        "high_rated_accept_draw_moves": 2,
+        "high_rated_accept_draw_score": 25,
+        "high_rated_accept_draw_pieces": 32,
+        "high_rated_accept_draw_clock_pressure_enabled": True,
+        "high_rated_accept_draw_clock_pressure_own_clock_ms": 30000,
+        "high_rated_accept_draw_clock_pressure_opponent_clock_ms": 15000,
+        "resign_enabled": False,
+        "resign_moves": 3,
+        "resign_score": -1000,
+    }))
+    wrapper.engine = DrawishFakeEngine()
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(5), chess.WHITE)]
+    game = high_rated_blitz_game(opponent_rating=3075)
+    game.me.rating = 3029
+    game.state["wtime"] = 9_459
+    game.state["btime"] = 21_850
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=True,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=Configuration({}))
+
+    assert result.draw_offered
+
+
 def test_search__does_not_accept_incoming_draw_via_generic_offer_rule() -> None:
     """The proactive draw rule must not accept an incoming offer from a non-elite opponent."""
     wrapper = EngineWrapper({}, generic_draw_offer_cfg())

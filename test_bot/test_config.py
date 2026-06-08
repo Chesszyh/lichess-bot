@@ -152,6 +152,24 @@ def test_insert_default_values__resource_monitor_idle_period_defaults_to_sample_
     assert raw_config["resource_monitor"]["idle_sample_period"] == 17
 
 
+def test_insert_default_values__adds_high_rated_draw_clock_pressure_defaults() -> None:
+    """Legacy configs should get the documented high-rated draw clock-pressure defaults."""
+    raw_config: dict[str, Any] = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+    draw_or_resign = raw_config["engine"]["draw_or_resign"]
+
+    assert draw_or_resign["high_rated_accept_draw_clock_pressure_enabled"] is False
+    assert draw_or_resign["high_rated_accept_draw_clock_pressure_own_clock_ms"] == 30000
+    assert draw_or_resign["high_rated_accept_draw_clock_pressure_opponent_clock_ms"] == 15000
+
+
 def test_default_config__blitz_high_clock_cap_stays_below_runaway_lc0_spend() -> None:
     """The sample Lc0 blitz profile should not allow repeated 45s high-clock searches."""
     default_config = yaml.safe_load(Path("config.yml.default").read_text())

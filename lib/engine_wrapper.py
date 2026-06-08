@@ -302,20 +302,48 @@ class EngineWrapper:
                 return abs(actual(score)) <= score_range
             return len(scores) == len(list(filter(score_near_draw, scores)))
 
-        def opponent_in_clock_pressure() -> bool:
-            if not game or not self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_enabled"):
-                return False
+        def clock_pressure_enabled() -> bool:
+            return bool(self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_enabled"))
+
+        def remaining_clocks() -> tuple[int, int] | None:
+            if not game:
+                return None
             if board.turn == chess.WHITE:
-                own_clock = game.state.get("wtime", 0)
-                opponent_clock = game.state.get("btime", 0)
-            else:
-                own_clock = game.state.get("btime", 0)
-                opponent_clock = game.state.get("wtime", 0)
+                return int(game.state.get("wtime", 0)), int(game.state.get("btime", 0))
+            return int(game.state.get("btime", 0)), int(game.state.get("wtime", 0))
+
+        def clock_pressure_thresholds() -> tuple[int, int]:
             own_threshold = int(self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_own_clock_ms") or 0)
             opponent_threshold = int(
                 self.draw_or_resign.lookup("high_rated_accept_draw_clock_pressure_opponent_clock_ms") or 0,
             )
+            return own_threshold, opponent_threshold
+
+        def opponent_in_clock_pressure() -> bool:
+            clocks = remaining_clocks()
+            if not clocks or not clock_pressure_enabled():
+                return False
+            own_clock, opponent_clock = clocks
+            own_threshold, opponent_threshold = clock_pressure_thresholds()
             return own_clock >= own_threshold and opponent_clock <= opponent_threshold
+
+        def bot_in_clock_pressure() -> bool:
+            clocks = remaining_clocks()
+            if not clocks or not clock_pressure_enabled():
+                return False
+            own_clock, opponent_clock = clocks
+            own_threshold, opponent_threshold = clock_pressure_thresholds()
+            return own_clock <= own_threshold and opponent_clock > opponent_threshold
+
+        def higher_rated_bot_clock_pressure_draw(opponent_rating: int) -> bool:
+            own_rating = game.me.rating if game else None
+            return bool(game
+                        and game.mode == "rated"
+                        and game.speed in ["bullet", "blitz"]
+                        and game.opponent.is_bot
+                        and own_rating is not None
+                        and opponent_rating > own_rating
+                        and bot_in_clock_pressure())
 
         can_offer_draw = self.draw_or_resign.offer_draw_enabled
         draw_offer_moves = self.draw_or_resign.offer_draw_moves
@@ -343,7 +371,9 @@ class EngineWrapper:
             elite_score_range: int = self.draw_or_resign.high_rated_accept_draw_score
             elite_piece_count: int = self.draw_or_resign.high_rated_accept_draw_pieces
             opponent_rating = game.opponent.rating or 0
-            if (opponent_rating >= elite_min_rating
+            accept_by_rating = (opponent_rating >= elite_min_rating
+                                or higher_rated_bot_clock_pressure_draw(opponent_rating))
+            if (accept_by_rating
                     and pieces_on_board <= elite_piece_count
                     and len(self.scores) >= elite_draw_moves
                     and not opponent_in_clock_pressure()
