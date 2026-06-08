@@ -33,7 +33,8 @@ Effective private config intent:
 - Outgoing challenge cadence is throttled to `challenge_timeout: 15`, so proactive challenges should not burn through the bot-vs-bot daily quota quickly.
 - Outgoing matchmaking now prefers opponents rated at least `3000` when the ready pool has them, falling back to the broader pool otherwise. This avoids spending too many samples on sub-3000 draws while keeping the bot from getting stuck when the high pool is empty.
 - Fast bot games now leave the local opening book immediately as Black in bullet and blitz, while preserving the bot-specific fast-book cap for White. This targets the observed Black-side Najdorf loss cluster without weakening human-game book behavior.
-- The private config file now caps incoming and outgoing bot games at `120` base seconds. This takes effect on the next safe bot restart; the current running process was started before this latest private config snapshot.
+- The private config file now caps incoming and outgoing bot games at `120` base seconds. This took effect after a safe
+  restart at 2026-06-08 18:53 CST, after game `ZiJe1OaC` had ended and all game engine processes had exited.
 - Existing Lichess rate-limit handling remains in place: structured 429 timeout handling, exponential fallback for plain "too many requests", target cooldowns, and persistent matchmaking state.
 
 ## Time Forfeit Evidence
