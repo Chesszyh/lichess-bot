@@ -1344,6 +1344,133 @@ def test_matchmaking_state__persists_outgoing_challenge_cadence_across_restart(t
     assert restarted.should_create_challenge()
 
 
+def test_matchmaking_state__caps_restored_cadence_to_current_config(tmp_path: Path,
+                                                                    monkeypatch: MonkeyPatch) -> None:
+    """A reduced challenge timeout should cap older persisted post-game waits after restart."""
+    state_file = tmp_path / "matchmaking_state.json"
+    old_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    new_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 10,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), old_config, mock_user_profile)
+    first.game_done()
+    first.last_game_ended_delay.starting_time -= minutes(11).total_seconds()
+    first.save_state()
+
+    restarted = Matchmaking(Mock(), new_config, mock_user_profile)
+    monkeypatch.setattr(restarted.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    assert restarted.should_create_challenge()
+
+
+def test_matchmaking_state__keeps_original_start_after_restored_save(tmp_path: Path) -> None:
+    """Saving restored state should not restart a partially elapsed post-game wait."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.game_done()
+    first.last_game_ended_delay.starting_time -= minutes(11).total_seconds()
+    first.save_state()
+
+    Matchmaking(Mock(), mock_config, mock_user_profile)
+    restarted_again = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert restarted_again.last_game_ended_delay.duration < minutes(5)
+
+
+def test_matchmaking_state__expired_current_schema_wait_stays_expired_after_save(tmp_path: Path,
+                                                                                 monkeypatch: MonkeyPatch) -> None:
+    """Saving an expired current-schema post-game wait should not create a fresh wait."""
+    state_file = tmp_path / "matchmaking_state.json"
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 15,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    first = Matchmaking(Mock(), mock_config, mock_user_profile)
+    first.game_done()
+    first.last_game_ended_delay.starting_time -= minutes(16).total_seconds()
+    first.save_state()
+
+    Matchmaking(Mock(), mock_config, mock_user_profile)
+    restarted_again = Matchmaking(Mock(), mock_config, mock_user_profile)
+    monkeypatch.setattr(restarted_again.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted_again.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted_again.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    assert restarted_again.should_create_challenge()
+
+
+def test_matchmaking_state__old_schema_post_game_wait_does_not_block_restart(tmp_path: Path,
+                                                                             monkeypatch: MonkeyPatch) -> None:
+    """Old saved post-game waits without a start time should not preserve stale cadence after upgrade."""
+    state_file = tmp_path / "matchmaking_state.json"
+    state_file.write_text('{"cooldowns": [], "last_game_ended_expires_at": "2999-01-01T00:00:00+00:00", '
+                          '"plain_rate_limit_failures": 0, "rate_limit_expires_at": null}',
+                          encoding="utf-8")
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 10,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    restarted = Matchmaking(Mock(), mock_config, mock_user_profile)
+    monkeypatch.setattr(restarted.rate_limit_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.no_candidate_timer, "is_expired", lambda: True)
+    monkeypatch.setattr(restarted.last_challenge_created_delay, "time_since_reset", lambda: minutes(2))
+
+    assert restarted.should_create_challenge()
+
+
 def test_game_done__uses_full_cadence_after_restored_partial_cadence(tmp_path: Path,
                                                                      monkeypatch: MonkeyPatch) -> None:
     """After restart, a completed game should reset to the configured full challenge timeout."""
