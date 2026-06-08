@@ -91,6 +91,15 @@ def test_default_config__blitz_high_clock_cap_stays_below_runaway_lc0_spend() ->
     assert blitz_time_management["force_movetime_threshold_ms"] >= 60000
 
 
+def test_default_config__bot_fast_games_leave_polyglot_book_early() -> None:
+    """Bot-vs-bot bullet and blitz should not follow sharp opening books too deeply."""
+    default_config = yaml.safe_load(Path("config.yml.default").read_text())
+    bot_selection = default_config["engine"]["polyglot"]["opponent_selection"]["bot"]
+
+    assert bot_selection["max_depth_by_speed"]["bullet"] <= 4
+    assert bot_selection["max_depth_by_speed"]["blitz"] <= 6
+
+
 def test_validate_config__invalid_resource_monitor_idle_period(monkeypatch: pytest.MonkeyPatch) -> None:
     """Idle resource sampling period must be positive."""
     raw_config = {

@@ -1011,7 +1011,9 @@ def get_book_move(board: chess.Board, game: model.Game,
     no_book_move = chess.engine.PlayResult(None, None)
     polyglot_cfg = get_game_specific_polyglot_cfg(polyglot_cfg, game)
     use_book = polyglot_cfg.enabled
-    max_game_length = polyglot_cfg.max_depth * 2 - 1
+    max_depth_by_speed = polyglot_cfg.lookup("max_depth_by_speed") or Configuration({})
+    max_depth = max_depth_by_speed.lookup(game.speed) or polyglot_cfg.max_depth
+    max_game_length = max_depth * 2 - 1
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 

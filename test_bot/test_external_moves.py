@@ -390,3 +390,38 @@ def test_get_book_move__uses_opponent_specific_polyglot_profile(monkeypatch) -> 
     assert human_move.move == chess.Move.from_uci("g1f3")
     assert bot_move.move == chess.Move.from_uci("e2e4")
     assert calls == [("human.bin", "choice", 25.0), ("bot.bin", "find", 40.0)]
+
+
+def test_get_book_move__uses_speed_specific_max_depth_for_bots(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bot profiles can leave sharp blitz books earlier while keeping the base depth."""
+    bot_game = get_game()
+    bot_game.speed = "blitz"
+    board = chess.Board()
+    board.push(chess.Move.from_uci("e2e4"))
+    board.push(chess.Move.from_uci("c7c5"))
+    board.push(chess.Move.from_uci("g1f3"))
+    board.push(chess.Move.from_uci("d7d6"))
+    board.push(chess.Move.from_uci("d2d4"))
+    board.push(chess.Move.from_uci("c5d4"))
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["bot.bin"]},
+        "min_weight": 0,
+        "selection": "best_move",
+        "max_depth": 10,
+        "normalization": "max",
+        "opponent_selection": {
+            "bot": {
+                "max_depth_by_speed": {"blitz": 3},
+            },
+        },
+    })
+
+    def fail_if_book_is_opened(book: str) -> None:
+        raise AssertionError(f"book should be skipped, got {book}")
+
+    monkeypatch.setattr("chess.polyglot.open_reader", fail_if_book_is_opened)
+
+    move = get_book_move(board, bot_game, polyglot_cfg)
+
+    assert move.move is None

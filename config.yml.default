@@ -29,6 +29,10 @@ engine:                            # Engine settings.
     max_depth: 20                  # How many moves from the start to take from the book.
     normalization: "none"          # Normalization method for the book weights. One of "none", "sum", or "max".
     opponent_selection:            # Optional overrides by opponent type. Any omitted key falls back to the base polyglot config above.
+      bot:
+        max_depth_by_speed:        # Optional speed-specific book depths for sharp bot-vs-bot games.
+          bullet: 4
+          blitz: 6
 #     human:
 #       selection: "uniform_random"
 #       min_weight: 25
