@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Covers tracked work from `9124fdd` through `0d96dc5`, plus the continuation pass that safely restarted the bot and refreshed the aggregate to include `PxsslsQe`.
+- Covers tracked work from `9124fdd` through `1ae59f3`, plus the continuation pass that safely restarted the bot and refreshed the aggregate to include `D78oWQu6`.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
 - Game `KZlP9dMr` was active during the first stop pass and was deliberately not waited on or analyzed, per stop request.
@@ -22,6 +22,8 @@
 - Later refreshed the aggregate from `69` to `70` rated fast games, adding the `PxsslsQe` `CCI-6` bullet loss.
 - Later safely restarted LaunchAgent `org.chesszyh987.lichess-bot` so the coda/codabot blocklist config is loaded by the current process.
 - Later applied a local ignored config change to reduce `120+1` exposure, but did not restart because game `D78oWQu6` was active.
+- Later `D78oWQu6` ended as a rated `180+2` blitz draw, then a safe idle restart loaded the `120+1` exposure reduction.
+- Later refreshed the aggregate from `70` to `71` rated fast games.
 
 ## Continuation After Stop Summary
 
@@ -46,6 +48,17 @@
 - Bullet is now `-66` over `32` scored games; blitz remains `-2` over `21` scored games.
 - The newest loss is another `120+1` black-side Ruy Lopez Open Classical sample, not a coda/codabot sample.
 
+## Config Load and D78 Evidence
+
+- `D78oWQu6` ended as a normal rated `180+2` blitz draw by agreement against `Bot1nokk`, rating diff `+1`.
+- Pre-restart `/api/account/playing` check returned `active_count=0`.
+- LaunchAgent PID changed from `28441` to `78929`.
+- Post-restart log confirmed startup, engine configuration check, account login, and Lichess connection.
+- Post-restart `/api/account/playing` check returned `active_count=0`.
+- Latest aggregate result state is `45` draws, `21` losses, `4` unknown, and `1` win.
+- Overall scored rating impact is now `-67` over `54` games.
+- Bullet remains `-66` over `32` scored games; blitz improves to `-1` over `22` scored games.
+
 ## Local Runtime Config
 
 - Ignored `config.yml` and `.config-history/config.yml` remain aligned.
@@ -55,6 +68,7 @@
 - `blitz_probe` override remains active for `180/240/300` base with `+2/+3` increments.
 - `coda_bot` and `codabot` are now present in local ignored challenge and matchmaking blocklists.
 - Incoming challenge `max_base` is locally changed from `120` to `90`.
+- The current LaunchAgent process `78929` was started after these local config changes.
 
 ## Runtime Actions
 
@@ -65,13 +79,16 @@
 - Runtime PID changed from `39567` to `28441`.
 - Post-restart checks confirmed reconnect and idle state.
 - No restart was performed after the `120+1` exposure reduction because `/api/account/playing` returned `active_count=1` for `D78oWQu6`.
+- Performed a later safe idle LaunchAgent restart after `D78oWQu6` ended and `/api/account/playing` returned `active_count=0`.
+- Runtime PID changed from `28441` to `78929`.
+- Post-restart checks confirmed reconnect and idle state.
 
 ## Evidence State
 
-- Latest aggregate: `70` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
-- Overall scored rating impact: `-68` over `53` scored games.
+- Latest aggregate: `71` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
+- Overall scored rating impact: `-67` over `54` scored games.
 - Bullet is the clear leak: `-66` over `32` scored games.
-- Blitz is slightly negative: `-2` over `21` scored games.
+- Blitz is slightly negative: `-1` over `22` scored games.
 - Worst current opponent/control watchlist starts with `coda_bot | bullet | 120+1`: risk `9`, `3` losses, rating `-15`.
 - Second actionable opponent/control watchlist item is `codabot | bullet | 60+1`: risk `5`, `1` loss, `1` lower-rated/rating-negative draw, rating `-8`.
 - New repeated opening leak strengthened: Ruy Lopez Open structures as black, especially `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`.
@@ -85,5 +102,5 @@
 - Confirm `coda_bot` and `codabot` are not accepted/challenged after the PID `28441` restart.
 - After the restart evidence is available, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
 - The next non-blind behavior change candidate was applied locally: reduce exposure to `120+1` black-side Ruy Lopez Open by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`.
-- This latest config change still needs a future safe idle restart before it is live.
+- This latest config change is live in PID `78929`; next verification should confirm no new outgoing `120+1` challenges appear.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.

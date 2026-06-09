@@ -2,12 +2,12 @@
 
 ## Scope
 
-- Games analyzed: `70`
+- Games analyzed: `71`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 44, 'loss': 21, 'unknown': 4, 'win': 1}`
+- Results: `{'draw': 45, 'loss': 21, 'unknown': 4, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -52,14 +52,14 @@
 
 ## Results by Mode
 
-- `44` x rated draw
+- `45` x rated draw
 - `21` x rated loss
 - `4` x rated unknown
 - `1` x rated win
 
 ## Results by Speed
 
-- `27` x blitz draw
+- `28` x blitz draw
 - `17` x bullet draw
 - `16` x bullet loss
 - `5` x blitz loss
@@ -68,9 +68,9 @@
 
 ## Results by Time Control
 
+- `8` x 180+2 draw
 - `7` x 120+1 loss
 - `7` x 60+1 draw
-- `7` x 180+2 draw
 - `6` x 300+3 draw
 - `5` x 60+1 loss
 - `5` x 90+1 draw
@@ -81,12 +81,12 @@
 
 ## Rating Impact by Mode
 
-- `rated`: `-68` rating over `53` games
+- `rated`: `-67` rating over `54` games
 
 ## Rating Impact by Speed
 
 - `bullet`: `-66` rating over `32` games
-- `blitz`: `-2` rating over `21` games
+- `blitz`: `-1` rating over `22` games
 
 ## Rating Impact by Time Control
 
@@ -160,7 +160,7 @@
 - `90+1`: `-9` rating over `8` games
 - `240+2`: `-6` rating over `4` games
 - `180+3`: `-3` rating over `3` games
-- `180+2`: `-1` rating over `6` games
+- `180+2`: `+0` rating over `7` games
 - `240+3`: `+2` rating over `2` games
 - `300+2`: `+2` rating over `2` games
 - `300+3`: `+4` rating over `4` games
@@ -173,7 +173,7 @@
 - `240+2`: W-D-L `0-4-2`, score `33.3%` over `6` games
 - `180+3`: W-D-L `0-3-1`, score `37.5%` over `4` games
 - `240+3`: W-D-L `0-4-1`, score `40.0%` over `5` games
-- `180+2`: W-D-L `0-7-1`, score `43.8%` over `8` games
+- `180+2`: W-D-L `0-8-1`, score `44.4%` over `9` games
 - `300+3`: W-D-L `0-6-0`, score `50.0%` over `6` games
 - `300+2`: W-D-L `0-3-0`, score `50.0%` over `3` games
 

@@ -55,7 +55,11 @@ This combines Candidate A and the effective part of Candidate B: the bot should 
 
 ## Deployment State
 
-- The change is not live yet.
-- `/api/account/playing` returned `active_count=1` for game `D78oWQu6` after the config edit.
-- Do not restart while `D78oWQu6` or any other game is active.
-- After a future safe idle restart, verify logs no longer show outgoing `120+1` challenges and incoming `120+1` challenges are declined by the challenge filter.
+- The change is now live.
+- `/api/account/playing` returned `active_count=1` for game `D78oWQu6` after the config edit, so the bot was not restarted while that game was active.
+- `D78oWQu6` later ended as a rated `180+2` blitz draw against `Bot1nokk`.
+- `/api/account/playing` returned `active_count=0` immediately before restart.
+- LaunchAgent `org.chesszyh987.lichess-bot` changed from PID `28441` to PID `78929`.
+- Startup log confirmed `Engine configuration OK`, `Welcome ilovecatgirl!`, and connection to Lichess.
+- `/api/account/playing` returned `post_restart_active_count=0` after restart.
+- Next verification target: logs should no longer show outgoing `120+1` challenges, and incoming `120+1` challenges should be declined by the challenge filter.
