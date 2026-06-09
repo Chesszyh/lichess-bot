@@ -2,27 +2,27 @@
 
 ## Scope
 
-- Games analyzed: `69`
+- Games analyzed: `70`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 44, 'loss': 20, 'unknown': 4, 'win': 1}`
+- Results: `{'draw': 44, 'loss': 21, 'unknown': 4, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
 ## Actionable Opponent Leak Watchlist
 
-- `coda_bot | bullet | 120+1`: risk `9`, losses `3`, lower-rated draws `0`, rating-negative draws `0`, rating `-15`, latest `2026-06-09T01:44:33+00:00`
-- `codabot | bullet | 60+1`: risk `5`, losses `1`, lower-rated draws `1`, rating-negative draws `1`, rating `-8`, latest `2026-06-09T00:28:52+00:00`
 - `Cheszter | bullet | 60+2`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-7`, latest `2026-06-08T10:47:09+00:00`
 - `CupchessBot | bullet | 90+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`, latest `2026-06-08T18:54:11+00:00`
 - `ArasanX | blitz | 180+3`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T08:51:21+00:00`
+- `CCI-6 | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-09T08:11:15+00:00`
 - `Cheszter | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T19:34:04+00:00`
 - `abdcebot | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T17:33:09+00:00`
 - `friendlybot_1700 | bullet | 90+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-09T01:59:31+00:00`
 - `Cheszter | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-4`, latest `2026-06-08T21:21:08+00:00`
 - `Void_Bot | blitz | 180+2`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-4`, latest `2026-06-09T06:24:52+00:00`
+- `Void_Bot | blitz | 240+2`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-4`, latest `2026-06-09T04:12:11+00:00`
 
 ## Opponent Leak Watchlist
 
@@ -34,12 +34,12 @@
 - `Fischer_Bot | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`, latest `2026-06-08T14:14:40+00:00`
 - `MEGA-NOOB-BOT | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-6`, latest `2026-06-08T11:28:35+00:00`
 - `ArasanX | blitz | 180+3`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T08:51:21+00:00`
+- `CCI-6 | bullet | 120+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-09T08:11:15+00:00`
 - `Cheszter | bullet | 60+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T19:34:04+00:00`
-- `MEGA-NOOB-BOT | bullet | 90+1`: risk `3`, losses `1`, lower-rated draws `0`, rating-negative draws `0`, rating `-5`, latest `2026-06-08T11:52:50+00:00`
 
 ## Loss Openings
 
-- `5` x Ruy Lopez: Open, Classical Defense
+- `6` x Ruy Lopez: Open, Classical Defense
 - `3` x Nimzo-Indian Defense: Normal Variation, Classical Defense
 - `2` x Ruy Lopez: Open, Bernstein Variation
 - `1` x Sicilian Defense: Najdorf Variation, English Attack
@@ -53,7 +53,7 @@
 ## Results by Mode
 
 - `44` x rated draw
-- `20` x rated loss
+- `21` x rated loss
 - `4` x rated unknown
 - `1` x rated win
 
@@ -61,16 +61,16 @@
 
 - `27` x blitz draw
 - `17` x bullet draw
-- `15` x bullet loss
+- `16` x bullet loss
 - `5` x blitz loss
 - `4` x blitz unknown
 - `1` x bullet win
 
 ## Results by Time Control
 
+- `7` x 120+1 loss
 - `7` x 60+1 draw
 - `7` x 180+2 draw
-- `6` x 120+1 loss
 - `6` x 300+3 draw
 - `5` x 60+1 loss
 - `5` x 90+1 draw
@@ -81,17 +81,17 @@
 
 ## Rating Impact by Mode
 
-- `rated`: `-63` rating over `52` games
+- `rated`: `-68` rating over `53` games
 
 ## Rating Impact by Speed
 
-- `bullet`: `-61` rating over `31` games
+- `bullet`: `-66` rating over `32` games
 - `blitz`: `-2` rating over `21` games
 
 ## Rating Impact by Time Control
 
+- `120+1 black`: `-29` rating over `7` games
 - `60+1 white`: `-25` rating over `10` games
-- `120+1 black`: `-24` rating over `6` games
 - `90+1 black`: `-12` rating over `6` games
 - `60+2 black`: `-7` rating over `1` games
 - `240+2 black`: `-6` rating over `4` games
@@ -104,7 +104,7 @@
 ## Rating Impact by Opening
 
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense`: `-21` rating over `3` games
-- `Ruy Lopez: Open, Classical Defense`: `-14` rating over `3` games
+- `Ruy Lopez: Open, Classical Defense`: `-19` rating over `4` games
 - `Ruy Lopez: Open, Bernstein Variation`: `-10` rating over `2` games
 - `Queen's Gambit Accepted: Central Variation, Greco Variation`: `-7` rating over `1` games
 - `Ruy Lopez: Morphy Defense, Anderssen Variation`: `-6` rating over `2` games
@@ -117,8 +117,8 @@
 ## Rating Impact by Opening Context
 
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet`: `-21` rating over `3` games
+- `Ruy Lopez: Open, Classical Defense | black | bullet`: `-15` rating over `3` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet`: `-10` rating over `2` games
-- `Ruy Lopez: Open, Classical Defense | black | bullet`: `-10` rating over `2` games
 - `Queen's Gambit Accepted: Central Variation, Greco Variation | black | bullet`: `-7` rating over `1` games
 - `Ruy Lopez: Morphy Defense, Anderssen Variation | white | bullet`: `-6` rating over `2` games
 - `Italian Game: Giuoco Pianissimo, Italian Four Knights Variation | black | bullet`: `-6` rating over `1` games
@@ -137,12 +137,13 @@
 - `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
 - `CupchessBot | bullet | 90+1`: `-5` rating over `2` games
 - `ArasanX | blitz | 180+3`: `-5` rating over `1` games
+- `CCI-6 | bullet | 120+1`: `-5` rating over `1` games
 - `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
-- `friendlybot_1700 | bullet | 90+1`: `-5` rating over `1` games
 
 ## Score by Opponent
 
 - `ArasanX | blitz | 180+3`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `CCI-6 | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Cheszter | bullet | 60+2`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Fischer_Bot | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
@@ -151,12 +152,11 @@
 - `abcd_engine | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `friendlybot_1700 | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `coda_bot | bullet | 120+1`: W-D-L `1-0-3`, score `25.0%` over `4` games
-- `Cheszter | bullet | 120+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
 
 ## Focused Rating Impact by Time Control
 
 - `60+1`: `-30` rating over `11` games
-- `120+1`: `-15` rating over `11` games
+- `120+1`: `-20` rating over `12` games
 - `90+1`: `-9` rating over `8` games
 - `240+2`: `-6` rating over `4` games
 - `180+3`: `-3` rating over `3` games
@@ -167,7 +167,7 @@
 
 ## Focused Score by Time Control
 
-- `120+1`: W-D-L `1-5-6`, score `29.2%` over `12` games
+- `120+1`: W-D-L `1-5-7`, score `26.9%` over `13` games
 - `60+1`: W-D-L `0-7-5`, score `29.2%` over `12` games
 - `90+1`: W-D-L `0-5-3`, score `31.2%` over `8` games
 - `240+2`: W-D-L `0-4-2`, score `33.3%` over `6` games
@@ -180,20 +180,20 @@
 ## Focused Rating Impact by Opening Context
 
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: `-21` rating over `3` games
+- `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`: `-10` rating over `2` games
 - `Ruy Lopez: Morphy Defense, Anderssen Variation | white | bullet | 60+1`: `-7` rating over `1` games
 - `Italian Game: Giuoco Pianissimo, Italian Four Knights Variation | black | bullet | 90+1`: `-6` rating over `1` games
 - `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`: `-6` rating over `1` games
 - `English Opening: King's English Variation | black | bullet | 60+1`: `-5` rating over `1` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 120+1`: `-5` rating over `1` games
 - `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`: `-5` rating over `1` games
-- `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`: `-5` rating over `1` games
 - `Ruy Lopez: Open, Classical Defense | black | bullet | 90+1`: `-5` rating over `1` games
 - `Semi-Slav Defense: Accelerated Meran Variation | black | bullet | 120+1`: `-5` rating over `1` games
 
 ## Focused Score by Opening Context
 
 - `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`: W-D-L `0-0-3`, score `0.0%` over `3` games
-- `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`: W-D-L `0-0-2`, score `0.0%` over `2` games
+- `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`: W-D-L `0-0-3`, score `0.0%` over `3` games
 - `English Opening: King's English Variation | black | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Italian Game: Giuoco Pianissimo, Italian Four Knights Variation | black | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Queen's Gambit Accepted: Classical Defense, Main Line | black | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
@@ -212,13 +212,14 @@
 - `MEGA-NOOB-BOT | bullet | 60+1`: `-6` rating over `1` games
 - `CupchessBot | bullet | 90+1`: `-5` rating over `2` games
 - `ArasanX | blitz | 180+3`: `-5` rating over `1` games
+- `CCI-6 | bullet | 120+1`: `-5` rating over `1` games
 - `MEGA-NOOB-BOT | bullet | 90+1`: `-5` rating over `1` games
 - `friendlybot_1700 | bullet | 90+1`: `-5` rating over `1` games
-- `Cheszter | bullet | 60+1`: `-4` rating over `2` games
 
 ## Focused Score by Opponent
 
 - `ArasanX | blitz | 180+3`: W-D-L `0-0-1`, score `0.0%` over `1` games
+- `CCI-6 | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `Fischer_Bot | bullet | 120+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `MEGA-NOOB-BOT | bullet | 60+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `MEGA-NOOB-BOT | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
@@ -227,7 +228,6 @@
 - `friendlybot_1700 | bullet | 90+1`: W-D-L `0-0-1`, score `0.0%` over `1` games
 - `coda_bot | bullet | 120+1`: W-D-L `1-0-3`, score `25.0%` over `4` games
 - `Cheszter | bullet | 120+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
-- `Cheszter | bullet | 60+1`: W-D-L `0-1-1`, score `25.0%` over `2` games
 
 ## Worst Scoring Controls
 
@@ -235,12 +235,12 @@
 
 ## Loss Colors
 
-- `16` x black
+- `17` x black
 - `4` x white
 
 ## Loss Terminations
 
-- `19` x Normal
+- `20` x Normal
 - `1` x Time forfeit
 
 ## Time Forfeit Loss Controls
@@ -260,7 +260,7 @@
 
 ## Loss Prefixes
 
-- `7` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`
+- `8` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`
 - `3` x `d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5 a3 dxc4`
 - `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5`
 - `1` x `c4 e5 d3 Nf6 g3 Bb4+ Nd2 a5 Nf3 d6 Bg2 Nc6`
@@ -273,7 +273,7 @@
 
 ## Loss Prefix Contexts
 
-- `5` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 | black | bullet | Normal`
+- `6` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 | black | bullet | Normal`
 - `2` x `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 | black | blitz | Normal`
 - `2` x `d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5 a3 dxc4 | white | bullet | Normal`
 - `1` x `e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 | black | blitz | Normal`
@@ -354,6 +354,7 @@
 
 ## Clock-Rich Normal Loss Contexts
 
+- `2` x `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`
 - `2` x `Nimzo-Indian Defense: Normal Variation, Classical Defense | white | bullet | 60+1`
 - `1` x `Ruy Lopez: Open, Classical Defense | black | blitz | 240+3`
 - `1` x `Ruy Lopez: Open, Classical Defense | black | blitz | 240+2`
@@ -363,7 +364,6 @@
 - `1` x `Semi-Slav Defense: Anti-Moscow Gambit | black | bullet | 120+1`
 - `1` x `Ruy Lopez: Open, Classical Defense | black | bullet | 90+1`
 - `1` x `Ruy Lopez: Open, Bernstein Variation | black | bullet | 90+1`
-- `1` x `Ruy Lopez: Open, Classical Defense | black | bullet | 120+1`
 
 ## Clock-Rich Normal Losses
 
@@ -428,7 +428,7 @@
 
 ## Largest Bot Eval Drops
 
-- `-388.86` after `Kc6` in `coda_bot vs ilovecatgirl - HefYDfeq.pgn` vs `coda_bot`: `-11.06` to `-399.92` (Semi-Slav Defense: Accelerated Meran Variation | black | 120+1)
+- `-387.07` after `Rxg8` in `CCI-6 vs ilovecatgirl - PxsslsQe.pgn` vs `CCI-6`: `-12.89` to `-399.96` (Ruy Lopez: Open, Classical Defense | black | 120+1)
 - `-382.77` after `Rd5` in `Void_Bot vs ilovecatgirl - bufSyi0P.pgn` vs `Void_Bot`: `-17.17` to `-399.94` (Ruy Lopez: Open, Classical Defense | black | 240+2)
 - `-375.31` after `Ng3` in `ilovecatgirl vs codabot - 3S2Fhkzu.pgn` vs `codabot`: `-24.66` to `-399.97` (Ruy Lopez: Morphy Defense, Anderssen Variation | white | 60+1)
 - `-339.42` after `Kd6` in `coda_bot vs ilovecatgirl - UbcqNII4.pgn` vs `coda_bot`: `-60.51` to `-399.93` (Ruy Lopez: Open, Classical Defense | black | 120+1)
@@ -441,6 +441,7 @@
 
 ## Recent Losses
 
+- `2026-06-09 08:11:15+00:00` `CCI-6 vs ilovecatgirl - PxsslsQe.pgn` vs `CCI-6`: Ruy Lopez: Open, Classical Defense
 - `2026-06-09 06:24:52+00:00` `Void_Bot vs ilovecatgirl - TcX5N1Bx.pgn` vs `Void_Bot`: Semi-Slav Defense: Marshall Gambit, Main Line
 - `2026-06-09 04:12:11+00:00` `Void_Bot vs ilovecatgirl - bufSyi0P.pgn` vs `Void_Bot`: Ruy Lopez: Open, Classical Defense
 - `2026-06-09 02:55:20+00:00` `friendlybot_1700 vs ilovecatgirl - HFQm4YjK.pgn` vs `friendlybot_1700`: Ruy Lopez: Open, Classical Defense
@@ -450,4 +451,3 @@
 - `2026-06-09 01:29:53+00:00` `coda_bot vs ilovecatgirl - H2VcKOTB.pgn` vs `coda_bot`: Ruy Lopez: Open, Bernstein Variation
 - `2026-06-08 21:48:34+00:00` `ilovecatgirl vs codabot - 3S2Fhkzu.pgn` vs `codabot`: Ruy Lopez: Morphy Defense, Anderssen Variation
 - `2026-06-08 21:21:08+00:00` `Cheszter vs ilovecatgirl - xH8WOy3n.pgn` vs `Cheszter`: Queen's Gambit Accepted: Classical Defense, Main Line
-- `2026-06-08 20:00:28+00:00` `coda_bot vs ilovecatgirl - HefYDfeq.pgn` vs `coda_bot`: Semi-Slav Defense: Accelerated Meran Variation
