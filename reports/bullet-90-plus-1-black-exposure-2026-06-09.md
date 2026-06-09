@@ -61,4 +61,5 @@ Recent rated `90+1` games in the current analysis window:
 - Do not block `CupchessBot` or `friendlybot_1700` from the current evidence alone.
 - Do not re-enable black bullet/blitz books in this pass, because prior evidence intentionally kept black book disabled while isolating the white-book fix.
 - The immediate low-risk behavior change was to narrow `blitz_probe` to `300+2`/`300+3`, where the current aggregate has the strongest blitz evidence.
+- First outgoing default challenge after PID `33763` used rated bullet `90+1` against `Moment-That-Inspires` and was canceled unanswered, confirming the default bullet path still avoids `60+1` and `120+1`.
 - If the black Open Ruy pattern recurs at longer blitz, the next behavior candidate is opening-specific design rather than another broad time-control filter.

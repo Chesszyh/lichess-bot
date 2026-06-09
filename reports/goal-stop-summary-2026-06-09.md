@@ -148,6 +148,7 @@
 - A later immediate pre-restart `/api/account/playing` check timed out; post-restart `/api/account/playing` returned `post_restart_active_count=0`.
 - Runtime PID changed from `54477` to `33763`.
 - Post-restart config log confirmed `blitz_probe.challenge_initial_time == [300]`.
+- First outgoing challenge after PID `33763` used default rated bullet `90+1` against `Moment-That-Inspires`; it was canceled unanswered and produced no game.
 - No additional restart was attempted.
 
 ## Closeout State
@@ -181,6 +182,7 @@
 - Incoming `120+1` rejection still remains to be observed directly.
 - The later `60+1` exposure reduction is live in PID `33763`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
 - `M8ZpgJQe` now confirms the black Open Ruy pattern in blitz; `blitz_probe` has been narrowed to longer `300+2`/`300+3` controls.
+- Outgoing default bullet verification passed once after PID `33763`: default matchmaking used `90+1`, not `60+1` or `120+1`.
 - The next `blitz_probe` verification target is an outgoing `300+2` or `300+3` challenge.
 - If black Open Ruy losses recur at `300+2`/`300+3`, the next behavior candidate should be opening-specific design rather than another blind blocklist, book re-enable, or broad time-control filter.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.

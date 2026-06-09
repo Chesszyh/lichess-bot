@@ -56,6 +56,9 @@ This narrows `blitz_probe` to `300+2` and `300+3`, preserving the best current b
 
 ## Next Verification Target
 
+- First outgoing challenge after PID `33763` used the default matchmaking path:
+  - `17:50:53`: default matchmaking selected rated bullet `90+1` against `Moment-That-Inspires`.
+  - Challenge `ZcX9cNbB` was canceled unanswered at `17:51:26`.
+  - This verifies the default bullet path remains `90+1` after the `blitz_probe` narrowing.
 - The next `blitz_probe` outgoing challenge should be `300+2` or `300+3`, not `180+2`, `180+3`, `240+2`, or `240+3`.
-- The next default bullet outgoing challenge should still be `90+1`.
 - If another black Open Ruy loss appears at `300+2` or `300+3`, stop treating longer blitz as safer and move to an opening-specific design rather than more time-control filtering.
