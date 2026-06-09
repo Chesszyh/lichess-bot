@@ -74,3 +74,9 @@ This makes the default bullet pool `90+1` only while preserving the blitz probe.
 - The next default matchmaking challenge should be rated `90+1`, not `60+1`.
 - Incoming `60+1` challenges should be declined by the challenge filter because `min_base == max_base == 90`.
 - If a fresh post-change `90+1` bullet game is completed, refresh the aggregate and compare it against the old `60+1` leak.
+
+## Non-Waiting Closeout
+
+- The latest observed game before this closeout was `M8ZpgJQe`, rated `180+3` blitz as black against `friendlybot_1700`.
+- It came from `blitz_probe`, not from the default bullet path, so it does not verify the `90+1`-only bullet default.
+- Per the latest continuation request, this pass did not wait for `M8ZpgJQe`, did not refresh the aggregate from an unfinished game, and did not restart the bot.

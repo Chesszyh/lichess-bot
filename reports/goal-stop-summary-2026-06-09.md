@@ -2,12 +2,13 @@
 
 ## Scope
 
-- Covers tracked work from `9124fdd` through `8218779`, plus this closeout pass.
+- Covers tracked work from `9124fdd` through `d67e3bf`, plus this non-waiting closeout pass.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
 - Game `KZlP9dMr` was active during the first stop pass and was deliberately not waited on or analyzed, per stop request.
 - Later continuation first did not wait for the active game; after it finished, a separate API check returned idle and the bot was safely restarted.
 - This closeout pass did not wait on any game or make another runtime change.
+- Game `M8ZpgJQe` was active or at least unresolved in local evidence during this pass and was deliberately not waited on or analyzed, per the latest continuation request.
 
 ## Tracked Changes
 
@@ -26,8 +27,14 @@
 - Later `D78oWQu6` ended as a rated `180+2` blitz draw, then a safe idle restart loaded the `120+1` exposure reduction.
 - Later refreshed the aggregate from `70` to `71` rated fast games.
 - Later verified the first two outgoing challenges after PID `78929` startup avoided `120+1`.
+- Later applied a local ignored config change to reduce `60+1` exposure, making incoming fast challenges `90+1` only and the default outgoing bullet pool `90+1` only.
+- Later safely restarted LaunchAgent `org.chesszyh987.lichess-bot`; runtime PID changed from `78929` to `54477`.
+- Later documented post-restart `blitz_probe` evidence: game `2ACAIGvE`, rated `300+2` blitz against `friendlybot_1700`, ended as a normal draw.
+- Latest aggregate was refreshed from `71` to `72` rated fast games after `2ACAIGvE`.
+- Latest observed unresolved game before this closeout was `M8ZpgJQe`, rated `180+3` blitz as black against `friendlybot_1700`, started from `blitz_probe`.
 - Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
-- This closeout pass only updates documentation; no runtime code, engine config, or ignored local config was changed.
+- Confirmed commit `d67e3bf` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
+- This closeout pass only updates documentation; no runtime code, engine config, ignored local config, restart, or heavy local engine experiment was performed.
 
 ## Post-Pause Modification Summary
 
@@ -36,7 +43,36 @@
 - Ignored runtime config was changed to reduce `120+1` exposure by removing outgoing `120` bases and setting incoming `challenge.max_base` to `90`.
 - Two safe idle LaunchAgent restarts loaded the blocklist and then the `120+1` exposure reduction; no restart was done while `D78oWQu6` was active.
 - Fresh evidence added one `120+1` bullet loss sample, one `180+2` blitz draw sample, and two clean outgoing post-restart challenge-control checks.
+- Fresh later evidence added the `60+1` exposure reduction, a safe restart into PID `54477`, and one `300+2` blitz draw sample.
+- The latest unresolved `180+3` blitz game `M8ZpgJQe` is intentionally excluded from aggregate and result conclusions until a finished PGN/result is available.
 - No tracked runtime code was changed in this post-pause interval; all committed changes are reports.
+
+## Post-Closeout Modification Audit
+
+- Baseline after the first stop summary (`1272542`) to current pre-pass head (`d67e3bf`) includes only tracked report updates.
+- Files changed in that interval:
+  - `reports/blitz-matchmaking-probe-2026-06-09.md`
+  - `reports/bot-game-analysis-recent-fast-2026-06-09.md`
+  - `reports/bullet-60-plus-1-exposure-reduction-2026-06-09.md`
+  - `reports/coda-bot-bullet-blocklist-2026-06-09.md`
+  - `reports/goal-stop-summary-2026-06-09.md`
+  - `reports/ruy-lopez-open-1201-black-leak-2026-06-09.md`
+- Commits in that interval:
+  - `258bfa8` clarified that stopped/active games were excluded from conclusions.
+  - `0d96dc5` documented the local `coda_bot`/`codabot` blocklist decision.
+  - `d37c5d5` documented the blocklist restart and the Ruy Lopez `120+1` black leak.
+  - `1ae59f3` documented pending `120+1` exposure reduction while a game was active.
+  - `34fcc97` documented safe restart and aggregate refresh after `D78oWQu6`.
+  - `8218779` documented post-restart challenge-control verification.
+  - `2e0d220` documented the previous closeout state.
+  - `a4eeadc` documented the `60+1` bullet exposure reduction and safe restart.
+  - `d67e3bf` documented the post-change `300+2` blitz draw and aggregate refresh.
+- Narrow baseline after the previous closeout commit (`2e0d220`) to current pre-pass head (`d67e3bf`) includes only three report files:
+  - `reports/blitz-matchmaking-probe-2026-06-09.md`
+  - `reports/bot-game-analysis-recent-fast-2026-06-09.md`
+  - `reports/bullet-60-plus-1-exposure-reduction-2026-06-09.md`
+- Runtime/config changes in the narrow interval were ignored local config only: default bullet exposure was reduced from `60+1`/`90+1` to `90+1` only, then loaded by safe idle restart.
+- No tracked Python code, tests, engine binaries, opening books, or generated runtime artifact paths were intentionally changed.
 
 ## Continuation After Stop Summary
 
@@ -81,11 +117,11 @@
 - Ignored `config.yml` and `.config-history/config.yml` remain aligned.
 - Bot-vs-bot polyglot selection is `best_move`; human selection remains `uniform_random`.
 - Bot black bullet/blitz book depth remains disabled at `0`.
-- Matchmaking default pool is locally changed to probe `60+1` and `90+1`; `120+1` entries were removed after the `PxsslsQe` loss.
+- Matchmaking default pool is locally changed to `90+1` only; `120+1` entries were removed after the `PxsslsQe` loss and `60+1` entries were removed after the later exposure-reduction pass.
 - `blitz_probe` override remains active for `180/240/300` base with `+2/+3` increments.
 - `coda_bot` and `codabot` are now present in local ignored challenge and matchmaking blocklists.
-- Incoming challenge `max_base` is locally changed from `120` to `90`.
-- The current LaunchAgent process `78929` was started after these local config changes.
+- Incoming challenge `min_base` and `max_base` are locally set to `90`.
+- The current LaunchAgent process `54477` was started after these local config changes.
 
 ## Runtime Actions
 
@@ -99,21 +135,24 @@
 - Performed a later safe idle LaunchAgent restart after `D78oWQu6` ended and `/api/account/playing` returned `active_count=0`.
 - Runtime PID changed from `28441` to `78929`.
 - Post-restart checks confirmed reconnect and idle state.
-- This closeout pass performed one non-waiting `/api/account/playing` check and got `active_count=0`.
+- Performed a later safe idle LaunchAgent restart after the `60+1` exposure reduction.
+- Runtime PID changed from `78929` to `54477`.
+- Post-restart checks confirmed reconnect, loaded `challenge.min_base == 90`, loaded `challenge.max_base == 90`, and idle state.
+- This closeout pass performed non-waiting local evidence checks only; latest local log evidence for `M8ZpgJQe` remained `status: started`.
 - No additional restart was attempted.
 
 ## Closeout State
 
-- Current tracked branch head before this documentation update: `8218779 Verify post-restart challenge controls`.
-- `8218779` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Current tracked branch head before this documentation update: `d67e3bf Document post-change blitz draw`.
+- `d67e3bf` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
 - Worktree had no tracked modifications before this closeout update.
 - Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
-- The latest documented live process remains PID `78929`, started after the coda/codabot blocklist and `120+1` exposure reduction.
+- The latest documented live process remains PID `54477`, started after the coda/codabot blocklist, `120+1` exposure reduction, and `60+1` exposure reduction.
 - The current stop/pass handoff should not be treated as goal completion; it is a documentation and state handoff.
 
 ## Evidence State
 
-- Latest aggregate: `71` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
+- Latest aggregate: `72` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
 - Overall scored rating impact: `-67` over `54` scored games.
 - Bullet is the clear leak: `-66` over `32` scored games.
 - Blitz is slightly negative: `-1` over `22` scored games.
@@ -127,8 +166,10 @@
 
 - Do not mark the optimization goal complete.
 - Before any future restart, re-check active games; do not wait on an active game just to complete documentation.
-- Confirm `coda_bot` and `codabot` are not accepted/challenged after the PID `28441` restart.
-- After the restart evidence is available, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
-- The next non-blind behavior change candidate was applied locally: reduce exposure to `120+1` black-side Ruy Lopez Open by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`.
-- This latest config change is live in PID `78929`; outgoing challenge verification has started cleanly, and incoming `120+1` challenge rejection remains to be observed.
+- `coda_bot` and `codabot` are blocked in the live ignored config; continue watching for any accepted/challenged leakage after PID `54477`.
+- After the blocklist and exposure reductions, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
+- The `120+1` exposure reduction was applied locally by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`; that state was later superseded by the `60+1` reduction in PID `54477`.
+- Incoming `120+1` rejection still remains to be observed directly.
+- The later `60+1` exposure reduction is live in PID `54477`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
+- Do not draw conclusions from `M8ZpgJQe` until it has a finished result; the latest request explicitly says not to wait for that game.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.
