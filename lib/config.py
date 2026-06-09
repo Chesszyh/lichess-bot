@@ -262,6 +262,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
     set_config_default(CONFIG, "engine", "polyglot", key="avoid_moves", default=[], force_empty_values=True)
+    set_config_default(CONFIG, "engine", "polyglot", key="book_exit_lockout_plies", default=0)
     set_config_default(CONFIG, "engine", "polyglot", key="opponent_selection", default={}, force_empty_values=True)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="enabled", default=False)
     set_config_default(CONFIG, "engine", "shallow_search_guard", key="speeds", default=["bullet"], force_empty_values=True)
@@ -584,6 +585,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(polyglot_section.get("normalization") in ["none", "max", "sum"],
                   f"`{polyglot_section.get('normalization')}` is not a valid choice for "
                   f"`engine:polyglot:normalization`. Please choose from ['none', 'max', 'sum'].")
+    book_exit_lockout_plies = polyglot_section.get("book_exit_lockout_plies", 0)
+    config_assert(isinstance(book_exit_lockout_plies, int) and not isinstance(book_exit_lockout_plies, bool)
+                  and book_exit_lockout_plies >= 0,
+                  "`engine:polyglot:book_exit_lockout_plies` must be a non-negative integer.")
     opponent_selection = polyglot_section.get("opponent_selection") or {}
     config_assert(isinstance(opponent_selection, dict),
                   "`engine:polyglot:opponent_selection` must be a dictionary.")
@@ -603,6 +608,12 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"`{normalization}` is not a valid choice for "
                       f"`engine:polyglot:opponent_selection:{opponent_key}:normalization`. "
                       "Please choose from ['none', 'max', 'sum'].")
+        book_exit_lockout_plies = opponent_cfg.get("book_exit_lockout_plies",
+                                                   polyglot_section.get("book_exit_lockout_plies", 0))
+        config_assert(isinstance(book_exit_lockout_plies, int) and not isinstance(book_exit_lockout_plies, bool)
+                      and book_exit_lockout_plies >= 0,
+                      f"`engine:polyglot:opponent_selection:{opponent_key}:book_exit_lockout_plies` "
+                      "must be a non-negative integer.")
 
     shallow_search_guard = CONFIG["engine"].get("shallow_search_guard") or {}
     valid_speeds = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]

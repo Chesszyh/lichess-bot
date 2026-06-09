@@ -29,6 +29,7 @@ engine:                            # Engine settings.
     max_depth: 20                  # How many moves from the start to take from the book.
     normalization: "none"          # Normalization method for the book weights. One of "none", "sum", or "max".
     avoid_moves: []                # Optional list of book moves to skip after a SAN move sequence, e.g. [{after: "e4 e5", moves: ["Nf3"]}].
+    book_exit_lockout_plies: 0     # After avoid_moves filter every current book move, skip Polyglot for this many plies. 0 disables this.
     opponent_selection:            # Optional overrides by opponent type. Any omitted key falls back to the base polyglot config above.
 #     human:
 #       selection: "uniform_random"
@@ -41,6 +42,7 @@ engine:                            # Engine settings.
 #       selection: "best_move"
 #       min_weight: 20
 #       max_depth: 12
+#       book_exit_lockout_plies: 4
 #       avoid_moves:
 #         - after: "e4 e5 Nf3 Nc6"
 #           moves: ["Bb5"]

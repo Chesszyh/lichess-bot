@@ -205,6 +205,8 @@ Additional private config change:
 
 Later evidence showed that leaving `Nb8` active still forced a repeated Ruy Lopez Closed Breyer path. Games `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c` drew from the same `...h3 Nb8 d4 Nbd7 ...` family, and `UJlBX5Z5` lost from the same family after an early negative first search. The live book at the exact `...h3` tabiya contained `Na5`, `Nb8`, `Bb7`, `h6`, `Re8`, `Nd7`, and `Be6`; the private config now filters all of those current book moves so `get_book_move` returns no book move and Stockfish searches the position directly.
 
+Follow-up evidence from live game `yiF82zTL` showed that the full `...h3` avoid list worked in the narrow sense: at the tabiya, no book move was played, and Stockfish searched before choosing `9...Bb7` with about `-0.41`, `45.5%`, depth 24. The game still drew because Polyglot immediately re-entered the adjacent Ruy Lopez Closed/Flohr path for `...Re8` and `...Bf8` after the engine's `...Bb7`. The follow-up code change adds `book_exit_lockout_plies`; the live bot-specific value is `6`, which skips the next two bot book turns after an avoid filter exhausts every current book candidate.
+
 Follow-up evidence: the next live target-band game `IBkQluUF` as white against `Cheszter` reached `Italian Game: Two Knights Defense, Polerio Defense, Bishop Check Line` and drew by threefold. This repeated the same white-side `4. Ng5` Two Knights family seen in `ol8VgVif`, and the final repetition guard allowed the draw only because the best non-repeating move lost `214 cp`, above the live `150 cp` limit.
 
 Additional private config change:
@@ -553,6 +555,20 @@ service restarted at 2026-06-09 09:21:07 UTC, PID 2807672
 startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
 ```
 
+Latest passing result for the Polyglot avoid-exhausted lockout:
+
+```text
+6 passed in 0.34s
+28 passed, 1 xfailed in 6.81s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+config.yml book_exit_lockout_plies=6
+.config-history/config.yml book_exit_lockout_plies=6
+real config/book check: first_get_book_move=None, lockout_until=23, follow_up_get_book_move=None
+service restarted at 2026-06-09 09:47:05 UTC, PID 3063380
+startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
+```
+
 Configuration loading was also checked for the live private file, confirming:
 
 ```text
@@ -580,6 +596,7 @@ matchmaking.legacy_unknown_cooldown_max_minutes=360
 matchmaking.dynamic_nobot_cooldown_max_minutes=360
 engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
 engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
+engine.polyglot.opponent_selection.bot.book_exit_lockout_plies=6
 engine.polyglot.opponent_selection.bot.avoid_moves includes after=e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 moves=Na5,Nb8,Bb7,h6,Re8,Nd7,Be6
 engine.polyglot.opponent_selection.bot.avoid_moves includes after=e4 e5 Nf3 Nc6 Bc4 Bc5 moves=b4
 ```
@@ -596,6 +613,12 @@ At the Ruy Lopez `...h3` tabiya, the same live private book profile now returns 
 get_book_move=None
 ```
 
+With the new live six-ply lockout, the follow-up position after engine-chosen `...Bb7` and White's `d4` also returns no Polyglot move:
+
+```text
+follow_up_get_book_move=None
+```
+
 Known verification debt:
 
 - `ruff check --config test_bot/ruff.toml lib/engine_wrapper.py test_bot/test_engine_time_management.py` still fails on existing complexity, docstring, mutable class attribute, and unused fake-engine argument warnings.
@@ -607,7 +630,7 @@ Known verification debt:
 
 ### Pause-State Summary
 
-At the point the optimization goal was paused, the live bot was running with the latest private Stockfish config. The service had restarted cleanly at `2026-06-09 09:21:07 UTC`, logged `Engine configuration OK`, `Welcome NeuroSoCute!`, and later completed live game `yiF82zTL` by draw agreement at `09:27:10`. A `2026-06-09 09:32 UTC` snapshot showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child process, and the next challenge scheduled after `2026-06-09 09:45:17 UTC`. The live matchmaking log confirmed the current policy was searching only target-band bullet games:
+At the point the optimization goal was paused, the live bot was running with the latest private Stockfish config. The service had restarted cleanly after the Polyglot lockout update at `2026-06-09 09:47:05 UTC`, logged `Engine configuration OK`, `Welcome NeuroSoCute!`, and was awaiting challenges. A `2026-06-09 09:48 UTC` snapshot showed service PID `3063380`, no `Stockfish/src/stockfish` child process, and the next challenge scheduled after `2026-06-09 09:50:07 UTC`. The live matchmaking log confirmed the current policy was searching only target-band bullet games:
 
 ```text
 Seeking bullet game with opponent rating in [3080, 4000] ...
@@ -631,7 +654,8 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Clock-edge draw refusal too aggressive | `8K19ZtZc` vs `Cheszter` declined a draw offer around 65s vs 33s with exact `0.0` evaluations, then drifted into a losing endgame and resigned after EGTB `wdl: -2` | Keep clock-edge suppression for proactive draw offers, but accept opponent draw offers when the latest bot cp score is below `offer_draw_clock_advantage_accept_min_score_cp`; live value `1` accepts exact `0.0` after the safe restart at `2026-06-09 08:49:03 UTC` | `test_search__accepts_zero_score_draw_offer_despite_clock_edge_when_configured`; config load check; `CFFJyFaz` live log accepted Black's draw offer at `0 cp < 1 cp` despite clock edge | Active, validated once live |
 | Lightweight recent-game triage | Repeated manual curls made it easy to miss the next priority loss while a live game was active | Add `scripts/recent_bot_game_report.py` to flag losses, below-floor draws, and repeated draw/loss opening families without running local engine experiments | `test_recent_bot_game_report.py`; live `--max 16` report flagged `8K19ZtZc` and `UJlBX5Z5` | Active |
 | Cheszter English losses | `8K19ZtZc` and `i6JbiFiR` were consecutive black-side losses against `Cheszter` from English Opening: Agincourt Defense after `1.c4 e6 2.g3 d5` | No opening change yet; the immediate code fix targets the clear draw-refusal failure, while Cheszter/English remains a watch item | PGN/log review only | Watch for one more repeated early-negative or losing endgame before filtering this branch |
-| Breyer-family target-band draw/loss path | `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c` drew from the same Ruy Lopez Closed Breyer path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` lost from the same family after an early negative first search | Bot-specific Polyglot profile now skips all current book moves after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3`, forcing Stockfish search at that exact tabiya instead of falling through to low-weight book alternatives | Live book check showed current book moves `Na5`, `Nb8`, `Bb7`, `h6`, `Re8`, `Nd7`, and `Be6`; after filtering them, `get_book_move` returns no book move | Active, watch next Ruy Lopez `...h3` game |
+| Breyer-family target-band draw/loss path | `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c` drew from the same Ruy Lopez Closed Breyer path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` lost from the same family after an early negative first search | Bot-specific Polyglot profile now skips all current book moves after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3`, forcing Stockfish search at that exact tabiya instead of falling through to low-weight book alternatives | Live book check showed current book moves `Na5`, `Nb8`, `Bb7`, `h6`, `Re8`, `Nd7`, and `Be6`; after filtering them, `get_book_move` returns no book move | Active, first exit validated in `yiF82zTL` |
+| Polyglot re-entry after Breyer book exit | `yiF82zTL` showed the first no-book exit worked, but after Stockfish chose `...Bb7`, Polyglot re-entered for `...Re8` and `...Bf8`, reaching another drawish Ruy Lopez Closed/Flohr path | Add `book_exit_lockout_plies`; live bot value `6` skips Polyglot for the next two bot turns after `avoid_moves` exhausts every current book candidate | New regression verifies tabiya no-book, follow-up no-book during lockout, and book resumes after the lockout; real config/book check reports `first_get_book_move=None`, `lockout_until=23`, `follow_up_get_book_move=None` | Active, needs next live Ruy Lopez `...h3` validation |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard; `xUcwqJsv` repeated with about 64s vs 24s because the bot allowed the opponent an immediate threefold claim | Add clock-edge override for repetition guard rating gate; lower live clock-edge threshold to 30s; add opt-in one-ply opponent-claim filtering while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`; `test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge` | Active |
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
 | Unanswered outgoing challenges | Scarce 3080+ candidates could be removed for 12 hours after no answer | Add `outgoing_challenge_cooldown_minutes`; live value `180` | `test_matchmaking.py` cooldown coverage; config check confirms live value | Active |
@@ -661,6 +685,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `repetition_guard.avoid_opponent_immediate_claim: true`
 - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
 - `repetition_guard.clock_advantage_override_min_ms: 30000`
+- `engine.polyglot.opponent_selection.bot.book_exit_lockout_plies: 6`
 - bot-specific Polyglot `avoid_moves` for `Bb5` after `e4 e5 Nf3 Nc6`, all current book moves in the Ruy Lopez `...h3` tabiya, `Ng5` after `e4 e5 Nf3 Nc6 Bc4 Nf6`, and `b4` after `e4 e5 Nf3 Nc6 Bc4 Bc5`
 
 ### Future Optimization Directions
@@ -680,7 +705,7 @@ Prioritize these directions before adding heavier local experiments:
 - Validate the EGTB-zero draw guard in live games like `iCfhUIsj`; equal tablebase positions should not be offered as draws when the opponent is below 45s and the bot has a 30s or larger clock edge.
 - Keep watching the 8K19ZtZc draw-refusal fix after the `CFFJyFaz` live validation. In exact `0.0` repeated endings, opponent draw offers should be accepted unless the latest bot score is at least the live `1` cp threshold.
 - Watch Cheszter English Opening: Agincourt Defense losses (`8K19ZtZc`, `i6JbiFiR`) before changing the `1.c4 e6 2.g3 d5` branch.
-- Validate the Ruy Lopez `...h3` Breyer sidestep. The bot should have no book move at that exact position; if the first Stockfish search is still materially negative, prefer a narrower searched alternative over lowering global book thresholds.
+- Validate the Ruy Lopez `...h3` Breyer sidestep plus six-ply lockout. The bot should have no book move at that exact position and no Polyglot move for the next two bot turns; if the first Stockfish search is still materially negative, prefer a narrower searched alternative over lowering global book thresholds.
 - Validate the 3080 opponent-pool floor. If game volume becomes too sparse, prefer a temporary short fallback window over permanently re-opening 3000-3079 draw sinks.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.
 - Clean up `engine_wrapper.py` complexity and test fake-engine typing before larger strategy changes, so future regressions are easier to isolate.

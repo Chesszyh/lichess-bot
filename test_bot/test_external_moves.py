@@ -540,6 +540,68 @@ def test_get_book_move__avoid_moves_filters_configured_san_line(monkeypatch: pyt
     ]
 
 
+def test_get_book_move__lockout_after_avoid_moves_exhaust_book(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Avoiding every book move in a tabiya should keep nearby follow-up positions out of book briefly."""
+    tabiya = chess.Board()
+    for san in ["e4", "e5"]:
+        tabiya.push_san(san)
+
+    follow_up = tabiya.copy()
+    for san in ["Nf3", "Nc6"]:
+        follow_up.push_san(san)
+
+    after_lockout = follow_up.copy()
+    for san in ["Bb5", "a6"]:
+        after_lockout.push_san(san)
+
+    game = get_game()
+    game.id = "polyglot-lockout"
+    polyglot_cfg = Configuration({
+        "enabled": True,
+        "book": {"standard": ["book.bin"]},
+        "min_weight": 1,
+        "selection": "best_move",
+        "max_depth": 10,
+        "normalization": "none",
+        "book_exit_lockout_plies": 4,
+        "avoid_moves": [
+            {"after": "e4 e5", "moves": ["Nf3"]},
+        ],
+    })
+    book_entry = SimpleNamespace(move=chess.Move.from_uci("g1f3"), weight=100)
+    opened_positions: list[int] = []
+
+    class FakeReader:
+        def __enter__(self) -> "FakeReader":  # noqa: PYI034 - Keep tests compatible with Python 3.10.
+            return self
+
+        def __exit__(self,
+                     exc_type: type[BaseException] | None,
+                     exc: BaseException | None,
+                     tb: TracebackType | None) -> Literal[False]:
+            del exc_type, exc, tb
+            return False
+
+        def find_all(self, board: chess.Board) -> list[SimpleNamespace]:
+            opened_positions.append(len(board.move_stack))
+            return [book_entry]
+
+    def open_fake_reader(book: str) -> FakeReader:
+        del book
+        return FakeReader()
+
+    def keep_book_order(books: list[str]) -> None:
+        del books
+
+    monkeypatch.setattr("chess.polyglot.open_reader", open_fake_reader)
+    monkeypatch.setattr("random.shuffle", keep_book_order)
+
+    assert get_book_move(tabiya, game, polyglot_cfg).move is None
+    assert get_book_move(follow_up, game, polyglot_cfg).move is None
+    assert get_book_move(after_lockout, game, polyglot_cfg).move == chess.Move.from_uci("g1f3")
+    assert opened_positions == [2, 6]
+
+
 def test_get_online_move__egtb_zero_respects_clock_edge(monkeypatch: pytest.MonkeyPatch) -> None:
     """Tablebase draws should not offer a draw while the opponent is under clock pressure."""
     game = get_game()

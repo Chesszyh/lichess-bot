@@ -190,6 +190,21 @@ def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None
     assert raw_config["engine"]["polyglot"]["avoid_moves"] == []
 
 
+def test_insert_default_values__polyglot_book_exit_lockout_defaults_to_zero() -> None:
+    """Polyglot lockout after exhausted avoid filters should be opt-in."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci", "polyglot": {}},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    assert raw_config["engine"]["polyglot"]["book_exit_lockout_plies"] == 0
+
+
 def test_insert_default_values__repetition_guard_opponent_claim_defaults_to_false() -> None:
     """One-ply repetition trap filtering should be opt-in."""
     raw_config: CONFIG_DICT_TYPE = {

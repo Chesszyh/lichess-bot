@@ -30,6 +30,7 @@ from types import TracebackType
 logger = logging.getLogger(__name__)
 
 out_of_online_opening_book_moves: Counter[str] = Counter()
+polyglot_book_lockout_until: dict[str, int] = {}
 
 
 def create_engine(engine_config: Configuration, game: model.Game | None = None) -> EngineWrapper:
@@ -1263,6 +1264,15 @@ def get_book_move(board: chess.Board, game: model.Game,
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
+    current_ply = len(board.move_stack)
+    lockout_until = polyglot_book_lockout_until.get(game.id, 0)
+    if current_ply < lockout_until:
+        logger.info(f"Skipping polyglot book for game {game.id} until ply {lockout_until} "
+                    "after avoid_moves exhausted book moves.")
+        return no_book_move
+    if lockout_until:
+        polyglot_book_lockout_until.pop(game.id, None)
+
     if board.chess960:
         variant = "chess960"
     else:
@@ -1271,6 +1281,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = list(polyglot_cfg.book.lookup(variant))
     random.shuffle(books)
+    avoid_exhausted_book = False
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
@@ -1281,7 +1292,9 @@ def get_book_move(board: chess.Board, game: model.Game,
                 entries = list(reader.find_all(board))
                 avoid_moves = get_polyglot_avoid_moves(board, polyglot_cfg)
                 if avoid_moves:
+                    entries_before_avoid = entries
                     entries = [entry for entry in entries if entry.move not in avoid_moves]
+                    avoid_exhausted_book = avoid_exhausted_book or bool(entries_before_avoid) and not entries
 
                 weights = [entry.weight for entry in entries]
                 scalar = (sum(weights) if normalization == "sum" and weights else
@@ -1303,6 +1316,12 @@ def get_book_move(board: chess.Board, game: model.Game,
         if move is not None:
             logger.info(f"Got move {move} from book {book} for game {game.id}")
             return chess.engine.PlayResult(move, None, {"string": "lichess-bot-source:Opening Book"})
+
+    lockout_plies = polyglot_cfg.lookup("book_exit_lockout_plies") or 0
+    if avoid_exhausted_book and lockout_plies > 0:
+        polyglot_book_lockout_until[game.id] = current_ply + lockout_plies
+        logger.info(f"Will skip polyglot book for game {game.id} until ply "
+                    f"{polyglot_book_lockout_until[game.id]} after avoid_moves exhausted book moves.")
 
     return no_book_move
 

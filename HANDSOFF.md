@@ -5,14 +5,14 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 ## Current Runtime State
 
 - Main repo branch: `only-stockfish`.
-- Main repo latest pushed handoff before this final documentation update: `f6517da Let stale no-bot cooldowns reenter sparse pools`.
-- Private config mirror latest committed handoff before the Breyer book-exit update: `.config-history` `d768a77 Mirror dynamic no-bot cooldown cap privately`.
+- Main repo latest pushed handoff before this final documentation update: `1302710 Keep the handoff aligned with the final idle state`.
+- Private config mirror latest committed handoff before the Polyglot lockout update: `.config-history` `45ea95a Mirror the Breyer book exit privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
-- Last checked service state after the Breyer book-exit update: `lichess-bot.service` active under PID `2807672`, started at `2026-06-09 09:21:07 UTC`.
-- Restart safety check before the Breyer book-exit update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:21:07 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
-- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, and the full Ruy Lopez `...h3` book-exit avoid list from `config.yml`.
+- Last checked service state after the Polyglot lockout update: `lichess-bot.service` active under PID `3063380`, started at `2026-06-09 09:47:04 UTC`.
+- Restart safety check before the Polyglot lockout update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:47:05 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
+- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, the full Ruy Lopez `...h3` book-exit avoid list, and bot-specific `book_exit_lockout_plies: 6` from `config.yml`.
 - State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
-- Final snapshot at `2026-06-09 09:32 UTC` showed `yiF82zTL` ended by draw agreement at `09:27:10`, logs showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 09:45:17 UTC`. This is only a snapshot; recheck before any future restart.
+- Final snapshot at `2026-06-09 09:48 UTC` showed no `Stockfish/src/stockfish` child, and the freshly restarted service was awaiting challenges with the next challenge scheduled after `2026-06-09 09:50:07 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -69,6 +69,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - Stopped relying on deep online opening explorer guidance for bot games. The live private config keeps Lichess opening explorer as a shallow `max_depth: 2` fallback, then uses local Polyglot or Stockfish search.
 - Fixed weighted-random book selection so `min_weight` filtering happens before sampling.
 - Bot-vs-bot Polyglot profile currently uses `weighted_random`, `min_weight: 50`, `normalization: max`, `max_depth: 12`.
+- Added `engine.polyglot.book_exit_lockout_plies` with default `0`; the live bot-specific profile uses `6`, so after `avoid_moves` exhausts every current book move, Polyglot is skipped for the next six plies before book use can resume.
 - Added bot-specific `avoid_moves` for repeated or losing book branches:
   - Skip `Bb5` after `e4 e5 Nf3 Nc6` to avoid repeated Berlin Wall draw channels.
   - Skip all current book moves after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3` (`Na5`, `Nb8`, `Bb7`, `h6`, `Re8`, `Nd7`, `Be6`). This stops forcing the repeated Breyer path and intentionally exits the book at that exact position instead of falling through to lower-weight book moves.
@@ -88,6 +89,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - `i6JbiFiR`: another target-band bullet loss against `Cheszter` from the English Opening: Agincourt Defense after the same unpatched clock-policy window. Treat it as evidence that Cheszter/English black games need continued watch, but do not stack a second speculative opening change on top of the draw-policy fix yet.
 - `CFFJyFaz`: live validation of the `8K19ZtZc` draw-refusal fix. The bot first skipped proactive normal draw offers while holding a huge clock edge, then accepted Black's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold.
 - `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c`: repeated target-band draws from the same Ruy Lopez Closed Breyer book path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` was a target-band loss from the same family. This led to filtering all current book moves at the `...h3` tabiya so the bot exits book and lets Stockfish search.
+- `yiF82zTL`: validated that the full `...h3` avoid list forces the first no-book exit; at the tabiya, Stockfish searched and chose `9...Bb7` with about `-0.41`, `45.5%`, depth 24. It also exposed an adjacent failure mode: after engine-chosen `...Bb7`, Polyglot immediately re-entered for `...Re8` and `...Bf8`, reaching another drawish Ruy Lopez Closed/Flohr path. This led to the six-ply `book_exit_lockout_plies` follow-up.
 - `nSLk3U9v` and `xUcwqJsv`: repetition with large clock edge; led to repetition clock override and opponent immediate-claim filtering.
 - `o1u2AXZc`: showed hard repetition avoidance can choose losing alternatives; keep the score-loss cap.
 - `KvLfR0la`: showed root-move filtering had to be enforced after search.
@@ -143,6 +145,20 @@ service restarted at 2026-06-09 09:21:07 UTC, PID 2807672
 startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
 ```
 
+Fresh verification from the Polyglot avoid-exhausted lockout:
+
+```text
+6 passed in 0.34s
+28 passed, 1 xfailed in 6.81s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+config.yml book_exit_lockout_plies=6
+.config-history/config.yml book_exit_lockout_plies=6
+real config/book check: first_get_book_move=None, lockout_until=23, follow_up_get_book_move=None
+service restarted at 2026-06-09 09:47:05 UTC, PID 3063380
+startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
+```
+
 Targeted draw-refusal/report test command:
 
 ```bash
@@ -187,14 +203,14 @@ Known verification debt is unchanged:
 
 - Full `ruff` and `mypy` are still blocked by pre-existing complexity and typing failures documented in `docs/BOT_OPTIMIZATION_HISTORY.md`.
 - No completed live game has yet validated the latest `b4 -> c3` replacement after the service restart.
-- No completed live game has yet validated the Ruy Lopez `...h3` Breyer book-exit sidestep after the service restart.
+- No completed live game has yet validated the six-ply Ruy Lopez `...h3` book-exit lockout after the latest service restart. `yiF82zTL` validated the first no-book exit but exposed immediate adjacent book re-entry before the lockout existed.
 - No completed live game has yet validated the EGTB-zero draw-offer guard or the new 30s draw-clock edge threshold.
 - Avoid heavy local Stockfish experiments while the live bot is running.
 
 ## Next Best Work
 
 - Watch the next `e4 e5 Nf3 Nc6 Bc4 Bc5 c3` bot game. If the first engine search is still materially negative, prefer a narrower branch change such as moving toward `O-O` or lowering bot book depth in that branch before changing global book randomness.
-- Watch the next Ruy Lopez `...h3` bot game. The bot should have no book move at that exact position and should let Stockfish search instead of forcing the Breyer repetition path.
+- Watch the next Ruy Lopez `...h3` bot game. The bot should have no book move at that exact position, then skip Polyglot for the next two bot turns under the live six-ply lockout before book use can resume.
 - Watch the next target-band equal EGTB ending. The bot should not offer a draw if the opponent is below 45s and the bot has at least a 30s clock edge.
 - Keep watching target-band opponent draw offers in repeated exact `0.0` endings. `CFFJyFaz` validated the current rule once; future games should continue accepting only when the latest bot score is below the live 1 cp threshold.
 - Keep `UJlBX5Z5` as evidence for possible Breyer/opening-depth tuning if the new `...h3` book exit still produces early negative first-search positions.
