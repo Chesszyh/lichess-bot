@@ -9,8 +9,9 @@
 
 ## Current Evidence
 
-- Refreshed `reports/bot-game-analysis-recent-fast-2026-06-09.md`; no new PGNs were added after `D78oWQu6`.
-- Aggregate remains `71` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
+- Initial refresh found no new PGNs after `D78oWQu6`.
+- A later refresh added `ilovecatgirl vs friendlybot_1700 - 2ACAIGvE.pgn`.
+- Aggregate now covers `72` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
 - Overall scored rating impact remains `-67` over `54` scored games.
 - Bullet remains the clear leak at `-66` over `32` scored games.
 - Blitz remains near neutral at `-1` over `22` scored games.
@@ -59,8 +60,14 @@ This makes the default bullet pool `90+1` only while preserving the blitz probe.
   - `16:54:37`: `blitz_probe` selected rated `240+2` against `Bot1nokk`.
   - Challenge `tKTROxdG` was unanswered and canceled.
   - Post-cancel `/api/account/playing` returned `active_count=0`.
+- The next two observed outgoing attempts also used `blitz_probe`:
+  - `17:05:12`: `blitz_probe` selected rated `240+2` against `styx_reckless`; declined.
+  - `17:06:15`: `blitz_probe` selected rated `300+2` against `friendlybot_1700`; game `2ACAIGvE` started.
+- `2ACAIGvE` ended as a normal rated `300+2` blitz draw at `17:18:05`.
+- Post-game `/api/account/playing` returned `active_count=0`.
+- The refreshed aggregate moved from `71` to `72` games and from `45` to `46` draws; rating impact did not worsen.
 - This verifies the restart did not break matchmaking.
-- It does not yet verify the default bullet path because the first sampled path was `blitz_probe`.
+- It does not yet verify the default bullet path because all observed post-restart sampled paths were `blitz_probe`.
 
 ## Next Verification Target
 

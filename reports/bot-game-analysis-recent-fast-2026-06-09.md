@@ -2,12 +2,12 @@
 
 ## Scope
 
-- Games analyzed: `71`
+- Games analyzed: `72`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 45, 'loss': 21, 'unknown': 4, 'win': 1}`
+- Results: `{'draw': 46, 'loss': 21, 'unknown': 4, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -52,14 +52,14 @@
 
 ## Results by Mode
 
-- `45` x rated draw
+- `46` x rated draw
 - `21` x rated loss
 - `4` x rated unknown
 - `1` x rated win
 
 ## Results by Speed
 
-- `28` x blitz draw
+- `29` x blitz draw
 - `17` x bullet draw
 - `16` x bullet loss
 - `5` x blitz loss
@@ -77,7 +77,7 @@
 - `5` x 120+1 draw
 - `4` x 240+2 draw
 - `4` x 240+3 draw
-- `3` x 90+1 loss
+- `4` x 300+2 draw
 
 ## Rating Impact by Mode
 
@@ -175,7 +175,7 @@
 - `240+3`: W-D-L `0-4-1`, score `40.0%` over `5` games
 - `180+2`: W-D-L `0-8-1`, score `44.4%` over `9` games
 - `300+3`: W-D-L `0-6-0`, score `50.0%` over `6` games
-- `300+2`: W-D-L `0-3-0`, score `50.0%` over `3` games
+- `300+2`: W-D-L `0-4-0`, score `50.0%` over `4` games
 
 ## Focused Rating Impact by Opening Context
 
