@@ -217,10 +217,32 @@ Additional private config change:
 - With live `normalization: max` and `min_weight: 50`, `d4` remains above threshold after filtering `Ng5`, so the bot stays in book while leaving the forcing Two Knights repetition channel.
 - Do not raise the repetition guard cap from this game alone; the guard behaved as configured, and the cleaner fix is to avoid the opening family that keeps producing equal repetition positions.
 
+Follow-up evidence: after the Two Knights `Ng5` filter, live game `ezGWI9wS` as white against `Cheszter` avoided that line but lost from a different Italian book branch. The game entered `Italian Game: Evans Gambit, Sokolsky Variation`:
+
+```text
+e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 d6 Bg5
+```
+
+The log showed the bot's first seven white moves came from the local Polyglot book: `e2e4`, `g1f3`, `f1c4`, `b2b4`, `c2c3`, `d2d4`, and `c1g5`. The first engine move after the book at move 8 evaluated the white position at about `-0.88` with `31.0%` winrate, and the game eventually ended in a white resignation for `-5`. That makes the Evans branch a higher-signal book loss than the surrounding target-band draws.
+
+Additional private config change:
+
+- In the bot-specific Polyglot profile, skip `b4` after:
+  - `e4 e5 Nf3 Nc6 Bc4 Bc5`
+- The real live book was checked at that position. It contains:
+  - `b4` with weight `51`.
+  - `c3` with weight `37`.
+  - `O-O` with weight `16`.
+  - `d3` with weight `5`.
+- With live `normalization: max` and `min_weight: 50`, `c3` remains above threshold after filtering `b4`, so the bot stays in book while avoiding the Evans Gambit branch that left it materially worse.
+- Do not change the global bot book threshold from this game alone; the evidence points to a specific bad branch, and the narrow avoid rule is easier to validate and revert.
+
 Verification:
 
 ```text
 bot Nb8 c6b8
+after e4 e5 Nf3 Nc6 Bc4 Bc5: b4 51, c3 37, O-O 16, d3 5
+after filtering b4 with max/50: c3 remains eligible
 ```
 
 ### Repetition Guard: Enforce Root Moves
@@ -512,6 +534,7 @@ matchmaking.try_overrides_on_empty_pool=True
 matchmaking.legacy_unknown_cooldown_max_minutes=360
 engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
 engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
+engine.polyglot.opponent_selection.bot.avoid_moves includes after=e4 e5 Nf3 Nc6 Bc4 Bc5 moves=b4
 ```
 
 The live private book profile was checked against the real Polyglot book after `e4 e5 Nf3 Nc6`; it returned:
@@ -557,6 +580,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Ordinary declines | Normal declines used a long global cooldown, reducing sparse target-band volume | Add `decline_cooldown_minutes`; live value `180`; keep mode-conflict declines at six hours | `test_add_challenge_filter__uses_short_default_decline_cooldown`; `test_add_challenge_filter__uses_configured_decline_cooldown`; mode-conflict regression | Active |
 | Repeated target-band draw sink | `xzMGfX4n` and `Wp8SbY5A` were consecutive draws against `BlueMoonBot` | Add opt-in `draw_cooldown_minutes`; live value `30` for drawn bullet/blitz games against bots | `test_game_done__cools_down_bot_after_fast_draw`; `test_game_done__does_not_cool_down_bot_after_win`; config default test | Active |
 | Repeated Berlin Wall book draws | Recent white-side bot draws repeatedly entered `e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 ... Qxd8+ Kxd8`, including `Q1poOSgG`, `Wp8SbY5A`, and `nSLk3U9v` | Add opt-in Polyglot `avoid_moves`; live bot profile skips `Bb5` after `e4 e5 Nf3 Nc6` | `test_get_book_move__avoid_moves_filters_configured_san_line`; config default test; live config mirrored privately | Active, watch if Italian/other alternatives improve conversion |
+| Evans Gambit book loss | `ezGWI9wS` as white against `Cheszter` entered `e4 e5 Nf3 Nc6 Bc4 Bc5 b4 ...`; first engine search after book was about `-0.88` and the game ended `-5` | Bot-specific Polyglot profile skips `b4` after `e4 e5 Nf3 Nc6 Bc4 Bc5` | Live book check shows `c3` remains eligible after filtering `b4`; config load check | Active, watch whether the `c3` replacement avoids early negative engine evaluations |
 | Bullet pool empty while blitz is allowed | Post-deploy logs at `18:27:48` showed default bullet searched `[3080, 4000]`, found `0` suitable opponents, and waited until `18:42:48`; no same-cycle blitz attempt happened | Add opt-in `try_overrides_on_empty_pool`; live value `true`, with default bullet weight `5` before blitz fallback weight `1` | `test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty`; config default test | Active |
 | Legacy source-unknown cooldowns | Runtime logs showed target-band candidates such as `maia3-79m_2600` blocked by `global_cooldown_unknown` for about 10 years from old state | Add opt-in `legacy_unknown_cooldown_max_minutes`; live value `360`, capped only for source-unknown global cooldowns loaded from state | `test_matchmaking_state__caps_legacy_unknown_global_cooldowns_when_configured`; configured blocklist regression keeps 10-year blocks | Active, watch pool volume |
 | No-candidate retry cadence | At `19:49:58 UTC`, Cheszter was a 3106 bullet target blocked by only `7m` of draw cooldown, but the bot scheduled the next search `15m` later | When the target-band pool is empty because of a soon-expiring cooldown, retry shortly after that cooldown expires instead of always waiting the full no-candidate interval | `test_choose_opponent__retries_when_target_band_cooldown_expires_soon`; existing no-candidate backoff tests still pass | Active, improves volume without lowering rating floor |
@@ -576,6 +600,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `repetition_guard.avoid_opponent_immediate_claim: true`
 - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
 - `repetition_guard.clock_advantage_override_min_ms: 30000`
+- bot-specific Polyglot `avoid_moves` for `Bb5` after `e4 e5 Nf3 Nc6`, `Na5` in the Chigorin tabiya, `Ng5` after `e4 e5 Nf3 Nc6 Bc4 Nf6`, and `b4` after `e4 e5 Nf3 Nc6 Bc4 Bc5`
 
 ### Future Optimization Directions
 
@@ -587,6 +612,7 @@ Prioritize these directions before adding heavier local experiments:
 - If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.
 - Reduce early drawish openings against lower-rated bots. Berlin Wall, QGD Orthodox, and highly simplified Ruy Lopez structures repeatedly reach stable `0.00` positions.
 - Add opponent-aware opening selection: preserve soundness against elite bots, but choose more asymmetric Stockfish-approved lines against lower-rated bots.
+- Watch the Italian `e4 e5 Nf3 Nc6 Bc4 Bc5 c3` replacement after the Evans filter. If it also produces early negative engine evaluations, move the bot-specific book choice toward `O-O` or reduce the bot book depth in this branch instead of adding broad book randomization.
 - Track low-rated draws by opening family and side. If one family dominates, adjust the local book or bot-specific polyglot weights first.
 - Continue validating the new one-ply repetition trap filter in target-band games. If it avoids too many sound repetitions, keep the live 30 second clock-edge gate but raise `max_score_loss_cp` only after concrete PGN evidence.
 - Validate the new draw-offer floor in live games like `dzsQr4Rh`; if too many target-band games become dead flag races, tune the floor or add a clock-aware exception.
