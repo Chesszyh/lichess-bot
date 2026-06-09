@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Covers tracked work from `9124fdd` through `d67e3bf`, plus this non-waiting closeout pass.
+- Covers tracked work from `9124fdd` through `4779fe0`, plus this M8 follow-up pass.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
 - Game `KZlP9dMr` was active during the first stop pass and was deliberately not waited on or analyzed, per stop request.
@@ -33,6 +33,9 @@
 - Latest aggregate was refreshed from `71` to `72` rated fast games after `2ACAIGvE`.
 - Latest observed unresolved game before this closeout was `M8ZpgJQe`, rated `180+3` blitz as black against `friendlybot_1700`, started from `blitz_probe`.
 - Added `reports/bullet-90-plus-1-black-exposure-2026-06-09.md` to document the current reachable default bullet leak after `60+1` and `120+1` exposure reductions.
+- Later `M8ZpgJQe` ended as a normal rated `180+3` blitz black loss by mate, rating `-5`.
+- Added `reports/m8zpgjqe-blitz-black-ruy-loss-2026-06-09.md` and refreshed the aggregate from `72` to `73` rated fast games.
+- Later narrowed the ignored local `blitz_probe` config to `300+2`/`300+3` only and restarted LaunchAgent from PID `54477` to `33763`.
 - Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - Confirmed commit `d67e3bf` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - This closeout pass only updates documentation; no runtime code, engine config, ignored local config, restart, or heavy local engine experiment was performed.
@@ -45,7 +48,7 @@
 - Two safe idle LaunchAgent restarts loaded the blocklist and then the `120+1` exposure reduction; no restart was done while `D78oWQu6` was active.
 - Fresh evidence added one `120+1` bullet loss sample, one `180+2` blitz draw sample, and two clean outgoing post-restart challenge-control checks.
 - Fresh later evidence added the `60+1` exposure reduction, a safe restart into PID `54477`, and one `300+2` blitz draw sample.
-- The latest unresolved `180+3` blitz game `M8ZpgJQe` is intentionally excluded from aggregate and result conclusions until a finished PGN/result is available.
+- The later `M8ZpgJQe` result added one `180+3` blitz black loss and confirms black Open Ruy exposure is now visible in blitz as well as bullet.
 - The latest reachable bullet slice is `90+1`, with black-side rating impact worse than the aggregate `90+1` slice; no behavior change was applied from this evidence alone.
 - No tracked runtime code was changed in this post-pause interval; all committed changes are reports.
 
@@ -120,10 +123,10 @@
 - Bot-vs-bot polyglot selection is `best_move`; human selection remains `uniform_random`.
 - Bot black bullet/blitz book depth remains disabled at `0`.
 - Matchmaking default pool is locally changed to `90+1` only; `120+1` entries were removed after the `PxsslsQe` loss and `60+1` entries were removed after the later exposure-reduction pass.
-- `blitz_probe` override remains active for `180/240/300` base with `+2/+3` increments.
+- `blitz_probe` override is now locally narrowed to `300` base with `+2/+3` increments.
 - `coda_bot` and `codabot` are now present in local ignored challenge and matchmaking blocklists.
 - Incoming challenge `min_base` and `max_base` are locally set to `90`.
-- The current LaunchAgent process `54477` was started after these local config changes.
+- The current LaunchAgent process `33763` was started after these local config changes and the later `blitz_probe` narrowing.
 
 ## Runtime Actions
 
@@ -141,23 +144,27 @@
 - Runtime PID changed from `78929` to `54477`.
 - Post-restart checks confirmed reconnect, loaded `challenge.min_base == 90`, loaded `challenge.max_base == 90`, and idle state.
 - This closeout pass performed non-waiting local evidence checks only; latest local log evidence for `M8ZpgJQe` remained `status: started`.
+- Performed a later restart after `M8ZpgJQe` ended and `blitz_probe` was narrowed to `300+2`/`300+3`.
+- A later immediate pre-restart `/api/account/playing` check timed out; post-restart `/api/account/playing` returned `post_restart_active_count=0`.
+- Runtime PID changed from `54477` to `33763`.
+- Post-restart config log confirmed `blitz_probe.challenge_initial_time == [300]`.
 - No additional restart was attempted.
 
 ## Closeout State
 
-- Current tracked branch head before this documentation update: `d67e3bf Document post-change blitz draw`.
-- `d67e3bf` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Current tracked branch head before this documentation update: `4779fe0 Document 90 plus 1 black bullet exposure`.
+- `4779fe0` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
 - Worktree had no tracked modifications before this closeout update.
 - Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
-- The latest documented live process remains PID `54477`, started after the coda/codabot blocklist, `120+1` exposure reduction, and `60+1` exposure reduction.
+- The latest documented live process remains PID `33763`, started after the coda/codabot blocklist, `120+1` exposure reduction, `60+1` exposure reduction, and `blitz_probe` narrowing.
 - The current stop/pass handoff should not be treated as goal completion; it is a documentation and state handoff.
 
 ## Evidence State
 
-- Latest aggregate: `72` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
-- Overall scored rating impact: `-67` over `54` scored games.
+- Latest aggregate: `73` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
+- Overall scored rating impact: `-72` over `55` scored games.
 - Bullet is the clear leak: `-66` over `32` scored games.
-- Blitz is slightly negative: `-1` over `22` scored games.
+- Blitz is now negative: `-6` over `23` scored games.
 - Worst current opponent/control watchlist starts with `coda_bot | bullet | 120+1`: risk `9`, `3` losses, rating `-15`.
 - Second actionable opponent/control watchlist item is `codabot | bullet | 60+1`: risk `5`, `1` loss, `1` lower-rated/rating-negative draw, rating `-8`.
 - New repeated opening leak strengthened: Ruy Lopez Open structures as black, especially `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`.
@@ -168,11 +175,12 @@
 
 - Do not mark the optimization goal complete.
 - Before any future restart, re-check active games; do not wait on an active game just to complete documentation.
-- `coda_bot` and `codabot` are blocked in the live ignored config; continue watching for any accepted/challenged leakage after PID `54477`.
+- `coda_bot` and `codabot` are blocked in the live ignored config; continue watching for any accepted/challenged leakage after PID `33763`.
 - After the blocklist and exposure reductions, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
-- The `120+1` exposure reduction was applied locally by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`; that state was later superseded by the `60+1` reduction in PID `54477`.
+- The `120+1` exposure reduction was applied locally by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`; that state was later superseded by the `60+1` reduction and remains loaded in PID `33763`.
 - Incoming `120+1` rejection still remains to be observed directly.
-- The later `60+1` exposure reduction is live in PID `54477`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
-- Do not draw conclusions from `M8ZpgJQe` until it has a finished result; the latest request explicitly says not to wait for that game.
-- If `M8ZpgJQe` confirms the black Open Ruy pattern, the next behavior candidate is a designed/tested `matchmaking.challenge_color` option rather than another blind blocklist or book change.
+- The later `60+1` exposure reduction is live in PID `33763`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
+- `M8ZpgJQe` now confirms the black Open Ruy pattern in blitz; `blitz_probe` has been narrowed to longer `300+2`/`300+3` controls.
+- The next `blitz_probe` verification target is an outgoing `300+2` or `300+3` challenge.
+- If black Open Ruy losses recur at `300+2`/`300+3`, the next behavior candidate should be opening-specific design rather than another blind blocklist, book re-enable, or broad time-control filter.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.
