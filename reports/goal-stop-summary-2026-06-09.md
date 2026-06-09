@@ -21,6 +21,7 @@
 - Added `reports/coda-bot-bullet-blocklist-2026-06-09.md` to document the local `coda_bot`/`codabot` blocklist decision.
 - Later refreshed the aggregate from `69` to `70` rated fast games, adding the `PxsslsQe` `CCI-6` bullet loss.
 - Later safely restarted LaunchAgent `org.chesszyh987.lichess-bot` so the coda/codabot blocklist config is loaded by the current process.
+- Later applied a local ignored config change to reduce `120+1` exposure, but did not restart because game `D78oWQu6` was active.
 
 ## Continuation After Stop Summary
 
@@ -50,9 +51,10 @@
 - Ignored `config.yml` and `.config-history/config.yml` remain aligned.
 - Bot-vs-bot polyglot selection is `best_move`; human selection remains `uniform_random`.
 - Bot black bullet/blitz book depth remains disabled at `0`.
-- Matchmaking default pool still probes `60+1`, `90+1`, and `120+1` bullet-style controls.
+- Matchmaking default pool is locally changed to probe `60+1` and `90+1`; `120+1` entries were removed after the `PxsslsQe` loss.
 - `blitz_probe` override remains active for `180/240/300` base with `+2/+3` increments.
 - `coda_bot` and `codabot` are now present in local ignored challenge and matchmaking blocklists.
+- Incoming challenge `max_base` is locally changed from `120` to `90`.
 
 ## Runtime Actions
 
@@ -62,6 +64,7 @@
 - Performed a later safe idle LaunchAgent restart after `/api/account/playing` again returned `active_count=0`.
 - Runtime PID changed from `39567` to `28441`.
 - Post-restart checks confirmed reconnect and idle state.
+- No restart was performed after the `120+1` exposure reduction because `/api/account/playing` returned `active_count=1` for `D78oWQu6`.
 
 ## Evidence State
 
@@ -81,5 +84,6 @@
 - Before any future restart, re-check active games; do not wait on an active game just to complete documentation.
 - Confirm `coda_bot` and `codabot` are not accepted/challenged after the PID `28441` restart.
 - After the restart evidence is available, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
-- The next non-blind behavior change candidate is reducing exposure to `120+1` black-side Ruy Lopez Open, because the leak reproduced outside coda/codabot against `CCI-6`.
+- The next non-blind behavior change candidate was applied locally: reduce exposure to `120+1` black-side Ruy Lopez Open by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`.
+- This latest config change still needs a future safe idle restart before it is live.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.

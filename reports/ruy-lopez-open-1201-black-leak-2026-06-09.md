@@ -42,3 +42,20 @@ The latest loss is not another coda/codabot sample, but it repeats the same blac
 - Candidate C: keep time controls unchanged and prepare an opening-specific mitigation for black Ruy Lopez Open only after collecting a non-live engine/book comparison.
 
 The current evidence favors Candidate A or B over changing blitz, because blitz is only slightly negative while bullet carries nearly all rating loss.
+
+## Local Config Change
+
+Applied the low-risk exposure reduction locally in ignored config mirrors:
+
+- `challenge.max_base`: `120` -> `90`
+- `matchmaking.challenge_initial_time`: removed all `120` entries
+- `matchmaking.overrides.blitz_probe`: unchanged at `180/240/300` with `+2/+3`
+
+This combines Candidate A and the effective part of Candidate B: the bot should stop initiating `120+1` games and should stop accepting incoming `120+1` challenges after the next safe idle restart.
+
+## Deployment State
+
+- The change is not live yet.
+- `/api/account/playing` returned `active_count=1` for game `D78oWQu6` after the config edit.
+- Do not restart while `D78oWQu6` or any other game is active.
+- After a future safe idle restart, verify logs no longer show outgoing `120+1` challenges and incoming `120+1` challenges are declined by the challenge filter.
