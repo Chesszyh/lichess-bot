@@ -5,7 +5,7 @@
 - Covers tracked work from `9124fdd` through `9a5e7b5`, plus the final aggregate refresh in this stop pass.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
-- Current live game `KZlP9dMr` was deliberately not waited on or analyzed, per stop request.
+- Game `KZlP9dMr` was active during this stop pass and was deliberately not waited on or analyzed, per stop request.
 
 ## Tracked Changes
 
@@ -45,6 +45,6 @@
 ## Stop Decision
 
 - Do not mark the optimization goal complete.
-- Do not restart while `KZlP9dMr` or any future active game is running.
+- Before any future restart, re-check active games; `KZlP9dMr` was not included in this stop summary.
 - Next useful work should analyze the finished post-change bullet losses, especially black-side Ruy Lopez Open and `coda_bot` `120+1`, before making another config change.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently neutral-to-positive.
