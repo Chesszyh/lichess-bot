@@ -2,13 +2,14 @@
 
 ## Scope
 
-- Covers tracked work from `9124fdd` through `4779fe0`, plus this M8 follow-up pass.
+- Covers tracked work from `9124fdd` through `02aa778`, plus this non-waiting closeout documentation pass.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
 - Game `KZlP9dMr` was active during the first stop pass and was deliberately not waited on or analyzed, per stop request.
 - Later continuation first did not wait for the active game; after it finished, a separate API check returned idle and the bot was safely restarted.
 - This closeout pass did not wait on any game or make another runtime change.
 - Game `M8ZpgJQe` was active or at least unresolved in local evidence during this pass and was deliberately not waited on or analyzed, per the latest continuation request.
+- Game `IfUsKs6H` was active in local log evidence during this final pass and was deliberately not waited on, per the latest continuation request.
 
 ## Tracked Changes
 
@@ -37,8 +38,10 @@
 - Added `reports/m8zpgjqe-blitz-black-ruy-loss-2026-06-09.md` and refreshed the aggregate from `72` to `73` rated fast games.
 - Later narrowed the ignored local `blitz_probe` config to `300+2`/`300+3` only and restarted LaunchAgent from PID `54477` to `33763`.
 - Later `DqAWzcKN` verified the narrowed `blitz_probe`: rated `300+2` white draw against `Void_Bot`, rating `+1`, aggregate refreshed from `73` to `74` rated fast games.
+- Later observed `IfUsKs6H`: rated `300+2` blitz as black against `friendlybot_1700`, started from the narrowed `blitz_probe`; latest local log evidence still had `status: started`.
 - Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - Confirmed commit `d67e3bf` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
+- Confirmed commit `02aa778` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - This closeout pass only updates documentation; no runtime code, engine config, ignored local config, restart, or heavy local engine experiment was performed.
 
 ## Post-Pause Modification Summary
@@ -50,34 +53,30 @@
 - Fresh evidence added one `120+1` bullet loss sample, one `180+2` blitz draw sample, and two clean outgoing post-restart challenge-control checks.
 - Fresh later evidence added the `60+1` exposure reduction, a safe restart into PID `54477`, and one `300+2` blitz draw sample.
 - The later `M8ZpgJQe` result added one `180+3` blitz black loss and confirms black Open Ruy exposure is now visible in blitz as well as bullet.
+- The later `DqAWzcKN` result verified the narrowed `300+2` blitz probe with a white draw; the current `IfUsKs6H` sample is not included because it was still active in local evidence.
 - The latest reachable bullet slice is `90+1`, with black-side rating impact worse than the aggregate `90+1` slice; no behavior change was applied from this evidence alone.
 - No tracked runtime code was changed in this post-pause interval; all committed changes are reports.
 
 ## Post-Closeout Modification Audit
 
-- Baseline after the first stop summary (`1272542`) to current pre-pass head (`d67e3bf`) includes only tracked report updates.
+- Baseline after the previous closeout commit (`2e0d220`) to current pre-pass head (`02aa778`) includes only tracked report updates.
 - Files changed in that interval:
   - `reports/blitz-matchmaking-probe-2026-06-09.md`
   - `reports/bot-game-analysis-recent-fast-2026-06-09.md`
   - `reports/bullet-60-plus-1-exposure-reduction-2026-06-09.md`
-  - `reports/coda-bot-bullet-blocklist-2026-06-09.md`
+  - `reports/bullet-90-plus-1-black-exposure-2026-06-09.md`
   - `reports/goal-stop-summary-2026-06-09.md`
-  - `reports/ruy-lopez-open-1201-black-leak-2026-06-09.md`
+  - `reports/m8zpgjqe-blitz-black-ruy-loss-2026-06-09.md`
 - Commits in that interval:
-  - `258bfa8` clarified that stopped/active games were excluded from conclusions.
-  - `0d96dc5` documented the local `coda_bot`/`codabot` blocklist decision.
-  - `d37c5d5` documented the blocklist restart and the Ruy Lopez `120+1` black leak.
-  - `1ae59f3` documented pending `120+1` exposure reduction while a game was active.
-  - `34fcc97` documented safe restart and aggregate refresh after `D78oWQu6`.
-  - `8218779` documented post-restart challenge-control verification.
-  - `2e0d220` documented the previous closeout state.
   - `a4eeadc` documented the `60+1` bullet exposure reduction and safe restart.
   - `d67e3bf` documented the post-change `300+2` blitz draw and aggregate refresh.
-- Narrow baseline after the previous closeout commit (`2e0d220`) to current pre-pass head (`d67e3bf`) includes only three report files:
-  - `reports/blitz-matchmaking-probe-2026-06-09.md`
-  - `reports/bot-game-analysis-recent-fast-2026-06-09.md`
-  - `reports/bullet-60-plus-1-exposure-reduction-2026-06-09.md`
-- Runtime/config changes in the narrow interval were ignored local config only: default bullet exposure was reduced from `60+1`/`90+1` to `90+1` only, then loaded by safe idle restart.
+  - `738ad23` documented a non-waiting closeout while `M8ZpgJQe` remained unresolved in local evidence.
+  - `4779fe0` documented the currently reachable `90+1` black bullet exposure after removing `60+1` and `120+1`.
+  - `869b386` documented the completed `M8ZpgJQe` `180+3` black Open Ruy loss and aggregate refresh to `73` games.
+  - `7405ee5` documented the first post-M8 default bullet verification: outgoing default matchmaking used `90+1`.
+  - `02aa778` documented the first post-narrowing blitz verification: `DqAWzcKN` `300+2` white draw and aggregate refresh to `74` games.
+- Runtime/config changes in the interval were ignored local config only: default bullet exposure was reduced from `60+1`/`90+1` to `90+1`, then `blitz_probe` was narrowed from `180/240/300` to `300` only.
+- Safe idle restarts loaded the ignored config changes when no active game was detected; no restart was attempted during the current `IfUsKs6H` active-game evidence.
 - No tracked Python code, tests, engine binaries, opening books, or generated runtime artifact paths were intentionally changed.
 
 ## Continuation After Stop Summary
@@ -151,12 +150,13 @@
 - Post-restart config log confirmed `blitz_probe.challenge_initial_time == [300]`.
 - First outgoing challenge after PID `33763` used default rated bullet `90+1` against `Moment-That-Inspires`; it was canceled unanswered and produced no game.
 - First post-narrowing `blitz_probe` challenge selected rated `300+2` against `Void_Bot`; game `DqAWzcKN` ended as a normal draw, rating `+1`.
-- No additional restart was attempted.
+- Current active/unresolved local evidence: `18:21:04` `blitz_probe` selected rated `300+2` as black against `friendlybot_1700`; game `IfUsKs6H` reached a black Open Ruy structure and latest local log tail at `18:34:05` still showed an active search/watchdog stream.
+- No additional restart was attempted, and the aggregate was not refreshed from unfinished `IfUsKs6H` evidence.
 
 ## Closeout State
 
-- Current tracked branch head before this documentation update: `7405ee5 Document post-M8 default bullet verification`.
-- `7405ee5` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Current tracked branch head before this documentation update: `02aa778 Document post-narrowing blitz draw`.
+- `02aa778` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
 - Worktree had no tracked modifications before this closeout update.
 - Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
 - The latest documented live process remains PID `33763`, started after the coda/codabot blocklist, `120+1` exposure reduction, `60+1` exposure reduction, and `blitz_probe` narrowing.
@@ -168,6 +168,7 @@
 - Overall scored rating impact: `-71` over `56` scored games.
 - Bullet is the clear leak: `-66` over `32` scored games.
 - Blitz is negative but improved after `DqAWzcKN`: `-5` over `24` scored games.
+- `IfUsKs6H` is excluded from the aggregate until it finishes; it is currently only live evidence that the narrowed probe can still create black `300+2` Ruy Lopez Open exposure.
 - Worst current opponent/control watchlist starts with `coda_bot | bullet | 120+1`: risk `9`, `3` losses, rating `-15`.
 - Second actionable opponent/control watchlist item is `codabot | bullet | 60+1`: risk `5`, `1` loss, `1` lower-rated/rating-negative draw, rating `-8`.
 - New repeated opening leak strengthened: Ruy Lopez Open structures as black, especially `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`.
@@ -186,5 +187,6 @@
 - `M8ZpgJQe` now confirms the black Open Ruy pattern in blitz; `blitz_probe` has been narrowed to longer `300+2`/`300+3` controls.
 - Outgoing default bullet verification passed once after PID `33763`: default matchmaking used `90+1`, not `60+1` or `120+1`.
 - The first post-narrowing `blitz_probe` verification passed: `DqAWzcKN` used `300+2` and ended as a normal draw with rating `+1`.
+- Do not restart or refresh aggregate from `IfUsKs6H` until it is finished; this pass intentionally stops with that game unresolved.
 - If black Open Ruy losses recur at `300+2`/`300+3`, the next behavior candidate should be opening-specific design rather than another blind blocklist, book re-enable, or broad time-control filter.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.
