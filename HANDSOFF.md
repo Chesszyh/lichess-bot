@@ -5,14 +5,14 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 ## Current Runtime State
 
 - Main repo branch: `only-stockfish`.
-- Main repo latest pushed handoff before this dynamic-nobot update: `c458c22 Keep the handoff aligned with idle close-out state`.
-- Private config mirror latest committed handoff before this dynamic-nobot update: `.config-history` `3b02615 Mirror safe equal-draw clock policy privately`.
+- Main repo latest pushed handoff before this final documentation update: `f6517da Let stale no-bot cooldowns reenter sparse pools`.
+- Private config mirror latest committed handoff before the Breyer book-exit update: `.config-history` `d768a77 Mirror dynamic no-bot cooldown cap privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
-- Last checked service state after this dynamic-nobot update: `lichess-bot.service` active under PID `2680528`, started at `2026-06-09 09:04:29 UTC`.
-- Restart safety check before the update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:04:29 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
-- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1` and `dynamic_nobot_cooldown_max_minutes: 360` from `config.yml`.
+- Last checked service state after the Breyer book-exit update: `lichess-bot.service` active under PID `2807672`, started at `2026-06-09 09:21:07 UTC`.
+- Restart safety check before the Breyer book-exit update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:21:07 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
+- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, and the full Ruy Lopez `...h3` book-exit avoid list from `config.yml`.
 - State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
-- Snapshot after the `2026-06-09 09:07 UTC` matchmaking cycle showed no active game, no `Stockfish/src/stockfish` child, `maia3-79m_2600` source `nobot` down to `357m` remaining, and the next challenge scheduled after `2026-06-09 09:16:53 UTC`. This is only a snapshot; recheck before any future restart.
+- Snapshot at `2026-06-09 09:27 UTC` showed live game `yiF82zTL` in progress with a `Stockfish/src/stockfish` child process. Do not restart until logs show the game is over, `Process Freed. Count: 0`, and no Stockfish child remains.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -71,7 +71,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - Bot-vs-bot Polyglot profile currently uses `weighted_random`, `min_weight: 50`, `normalization: max`, `max_depth: 12`.
 - Added bot-specific `avoid_moves` for repeated or losing book branches:
   - Skip `Bb5` after `e4 e5 Nf3 Nc6` to avoid repeated Berlin Wall draw channels.
-  - Skip `Na5` after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3` to sidestep the repeated Chigorin tabiya.
+  - Skip all current book moves after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3` (`Na5`, `Nb8`, `Bb7`, `h6`, `Re8`, `Nd7`, `Be6`). This stops forcing the repeated Breyer path and intentionally exits the book at that exact position instead of falling through to lower-weight book moves.
   - Skip `Ng5` after `e4 e5 Nf3 Nc6 Bc4 Nf6` to leave the Two Knights repetition channel.
   - Skip `b4` after `e4 e5 Nf3 Nc6 Bc4 Bc5` after `ezGWI9wS`; the live book then selects `c3`.
 
@@ -83,9 +83,11 @@ systemctl --user status lichess-bot.service --no-pager -l
 - `Q1poOSgG`, `Wp8SbY5A`, `nSLk3U9v`: repeated Berlin Wall draw channels; led to the `Bb5` filter.
 - `J7nJYTTZ` and `xzMGfX4n`: draw agreements/offers despite large clock edge; led to clock-aware draw-offer guards.
 - `iCfhUIsj`: target-band bullet draw against `Cheszter` after Lichess EGTB returned `wdl: 0`; the bot offered a draw with about 52s vs 16s, showing EGTB-zero draw offers bypassed the normal draw clock guard. This led to the EGTB guard and the live 30s minimum clock-edge threshold.
-- `UJlBX5Z5`: target-band bullet loss against `TakticproChess`. The book left the bot around `-0.51` / 43.6% after a Breyer line and later stayed around `-0.3` to `-0.5`; no narrow config fix has been applied because the signal is not yet specific enough.
+- `UJlBX5Z5`: target-band bullet loss against `TakticproChess`. The book left the bot around `-0.51` / 43.6% after a Breyer line and later stayed around `-0.3` to `-0.5`; later repeated Breyer-family draws made this part of the signal for the full `...h3` book-exit avoid list.
 - `8K19ZtZc`: target-band bullet loss against `Cheszter`. The bot declined a draw offer around 65s vs 33s with repeated exact `0.0` evaluations, then drifted into a losing endgame and resigned at EGTB `wdl: -2`. This led to `offer_draw_clock_advantage_accept_min_score_cp: 1`, so exact `0.0` opponent draw offers are no longer rejected solely on clock edge.
 - `i6JbiFiR`: another target-band bullet loss against `Cheszter` from the English Opening: Agincourt Defense after the same unpatched clock-policy window. Treat it as evidence that Cheszter/English black games need continued watch, but do not stack a second speculative opening change on top of the draw-policy fix yet.
+- `CFFJyFaz`: live validation of the `8K19ZtZc` draw-refusal fix. The bot first skipped proactive normal draw offers while holding a huge clock edge, then accepted Black's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold.
+- `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c`: repeated target-band draws from the same Ruy Lopez Closed Breyer book path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` was a target-band loss from the same family. This led to filtering all current book moves at the `...h3` tabiya so the bot exits book and lets Stockfish search.
 - `nSLk3U9v` and `xUcwqJsv`: repetition with large clock edge; led to repetition clock override and opponent immediate-claim filtering.
 - `o1u2AXZc`: showed hard repetition avoidance can choose losing alternatives; keep the score-loss cap.
 - `KvLfR0la`: showed root-move filtering had to be enforced after search.
@@ -114,6 +116,7 @@ config.yml offer_draw_clock_advantage_accept_min_score_cp=1
 recent_bot_game_report.py flags i6JbiFiR, 8K19ZtZc, and UJlBX5Z5 as priority losses
 service restarted at 2026-06-09 08:49:03 UTC, PID 2531217
 startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
+live game CFFJyFaz accepted Black's draw offer at exact 0 cp despite clock edge because 0 cp < 1 cp
 ```
 
 Fresh verification from the dynamic `nobot` cooldown cap:
@@ -127,6 +130,17 @@ config.yml dynamic_nobot_cooldown_max_minutes=360
 service restarted at 2026-06-09 09:04:29 UTC, PID 2680528
 runtime_state maia3-79m_2600 source=nobot expires_at=2026-06-09T15:04:32.203579+00:00
 09:07 matchmaking log shows maia3-79m_2600 source=nobot remaining=357m
+```
+
+Fresh verification from the Ruy Lopez `...h3` Breyer book-exit sidestep:
+
+```text
+config.yml avoid list=Na5,Nb8,Bb7,h6,Re8,Nd7,Be6
+.config-history/config.yml avoid list=Na5,Nb8,Bb7,h6,Re8,Nd7,Be6
+real book moves at the tabiya=Na5,Nb8,Nd7,h6,Be6,Bb7,Re8
+get_book_move=None after filtering all current book moves
+service restarted at 2026-06-09 09:21:07 UTC, PID 2807672
+startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
 ```
 
 Targeted draw-refusal/report test command:
@@ -173,16 +187,17 @@ Known verification debt is unchanged:
 
 - Full `ruff` and `mypy` are still blocked by pre-existing complexity and typing failures documented in `docs/BOT_OPTIMIZATION_HISTORY.md`.
 - No completed live game has yet validated the latest `b4 -> c3` replacement after the service restart.
+- No completed live game has yet validated the Ruy Lopez `...h3` Breyer book-exit sidestep after the service restart.
 - No completed live game has yet validated the EGTB-zero draw-offer guard or the new 30s draw-clock edge threshold.
-- No completed live game has yet validated the 8K19ZtZc draw-refusal fix after restart.
 - Avoid heavy local Stockfish experiments while the live bot is running.
 
 ## Next Best Work
 
 - Watch the next `e4 e5 Nf3 Nc6 Bc4 Bc5 c3` bot game. If the first engine search is still materially negative, prefer a narrower branch change such as moving toward `O-O` or lowering bot book depth in that branch before changing global book randomness.
+- Watch the next Ruy Lopez `...h3` bot game. The bot should have no book move at that exact position and should let Stockfish search instead of forcing the Breyer repetition path.
 - Watch the next target-band equal EGTB ending. The bot should not offer a draw if the opponent is below 45s and the bot has at least a 30s clock edge.
-- Watch the next target-band opponent draw offer in a repeated exact `0.0` ending. If the latest bot score is below 1 cp, the bot should accept instead of rejecting solely on clock edge.
-- Keep `UJlBX5Z5` as evidence for possible Breyer/opening-depth tuning, but do not overfit it without another loss or repeated early negative first-search positions from the same family.
+- Keep watching target-band opponent draw offers in repeated exact `0.0` endings. `CFFJyFaz` validated the current rule once; future games should continue accepting only when the latest bot score is below the live 1 cp threshold.
+- Keep `UJlBX5Z5` as evidence for possible Breyer/opening-depth tuning if the new `...h3` book exit still produces early negative first-search positions.
 - Watch Cheszter English Opening: Agincourt Defense games (`8K19ZtZc`, `i6JbiFiR`). If another early negative or losing endgame appears, prefer a narrow black-side `1.c4 e6 2.g3 d5` book/explorer adjustment over broad book randomization.
 - Track whether the 3080 floor makes volume too sparse. If it does, prefer a temporary, explicitly logged `3060-3079` fallback window over permanently reopening 3000-3079.
 - Keep using the target-band blocker logs to separate real pool scarcity from stale cooldowns, rate limits, and mode declines.
