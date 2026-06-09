@@ -5,14 +5,14 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 ## Current Runtime State
 
 - Main repo branch: `only-stockfish`.
-- Main repo latest pushed handoff before this final documentation update: `1302710 Keep the handoff aligned with the final idle state`.
+- Main repo latest pushed handoff before this final documentation update: `21dc400 Keep avoid-exited book lines under engine control`.
 - Private config mirror latest committed handoff before the Polyglot lockout update: `.config-history` `45ea95a Mirror the Breyer book exit privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
 - Last checked service state after the Polyglot lockout update: `lichess-bot.service` active under PID `3063380`, started at `2026-06-09 09:47:04 UTC`.
 - Restart safety check before the Polyglot lockout update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:47:05 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
 - The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, the full Ruy Lopez `...h3` book-exit avoid list, and bot-specific `book_exit_lockout_plies: 6` from `config.yml`.
 - State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
-- Final snapshot at `2026-06-09 09:48 UTC` showed no `Stockfish/src/stockfish` child, and the freshly restarted service was awaiting challenges with the next challenge scheduled after `2026-06-09 09:50:07 UTC`. This is only a snapshot; recheck before any future restart.
+- Final snapshot at `2026-06-09 09:56 UTC` showed post-deploy game `VRq462VD` ended by draw agreement at `09:55:20`, logs showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 09:58:20 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -88,6 +88,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - `8K19ZtZc`: target-band bullet loss against `Cheszter`. The bot declined a draw offer around 65s vs 33s with repeated exact `0.0` evaluations, then drifted into a losing endgame and resigned at EGTB `wdl: -2`. This led to `offer_draw_clock_advantage_accept_min_score_cp: 1`, so exact `0.0` opponent draw offers are no longer rejected solely on clock edge.
 - `i6JbiFiR`: another target-band bullet loss against `Cheszter` from the English Opening: Agincourt Defense after the same unpatched clock-policy window. Treat it as evidence that Cheszter/English black games need continued watch, but do not stack a second speculative opening change on top of the draw-policy fix yet.
 - `CFFJyFaz`: live validation of the `8K19ZtZc` draw-refusal fix. The bot first skipped proactive normal draw offers while holding a huge clock edge, then accepted Black's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold.
+- `VRq462VD`: additional post-lockout-deploy validation of the clock-edge draw policy against `Cheszter`. The bot skipped proactive normal draw offers while White had about 13-16s and the bot had about 124-127s, filtered a move that allowed an immediate threefold claim, then accepted White's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold. This game did not validate the Ruy Lopez `...h3` lockout path.
 - `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c`: repeated target-band draws from the same Ruy Lopez Closed Breyer book path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` was a target-band loss from the same family. This led to filtering all current book moves at the `...h3` tabiya so the bot exits book and lets Stockfish search.
 - `yiF82zTL`: validated that the full `...h3` avoid list forces the first no-book exit; at the tabiya, Stockfish searched and chose `9...Bb7` with about `-0.41`, `45.5%`, depth 24. It also exposed an adjacent failure mode: after engine-chosen `...Bb7`, Polyglot immediately re-entered for `...Re8` and `...Bf8`, reaching another drawish Ruy Lopez Closed/Flohr path. This led to the six-ply `book_exit_lockout_plies` follow-up.
 - `nSLk3U9v` and `xUcwqJsv`: repetition with large clock edge; led to repetition clock override and opponent immediate-claim filtering.
@@ -204,7 +205,7 @@ Known verification debt is unchanged:
 - Full `ruff` and `mypy` are still blocked by pre-existing complexity and typing failures documented in `docs/BOT_OPTIMIZATION_HISTORY.md`.
 - No completed live game has yet validated the latest `b4 -> c3` replacement after the service restart.
 - No completed live game has yet validated the six-ply Ruy Lopez `...h3` book-exit lockout after the latest service restart. `yiF82zTL` validated the first no-book exit but exposed immediate adjacent book re-entry before the lockout existed.
-- No completed live game has yet validated the EGTB-zero draw-offer guard or the new 30s draw-clock edge threshold.
+- No completed live game has yet validated the EGTB-zero draw-offer guard. `VRq462VD` is additional validation of the normal draw-offer clock edge and exact-0-cp acceptance path.
 - Avoid heavy local Stockfish experiments while the live bot is running.
 
 ## Next Best Work
