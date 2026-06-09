@@ -12,7 +12,7 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 - Restart safety check waited for `DxMNDvHm` to finish. It ended in a threefold-repetition draw at `2026-06-09 08:46:21 UTC`, the process count returned to `0`, and no `Stockfish/src/stockfish` child remained.
 - The service was restarted safely at `2026-06-09 08:49:03 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
 - The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1` from `config.yml`.
-- Final close-out check at `2026-06-09 08:53 UTC` showed a new active bullet game `N1AY97NU` with `Stockfish/src/stockfish` child PID `2565693`. Do not restart again until that game ends and the Stockfish child is gone.
+- Final close-out check at `2026-06-09 08:55 UTC` showed `N1AY97NU` had ended in a threefold-repetition draw at `2026-06-09 08:54:11 UTC`; process count returned to `0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 08:57:12 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
