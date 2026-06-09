@@ -24,6 +24,7 @@ ENDPOINTS = {
     "stream": "/api/bot/game/stream/{}",
     "stream_event": "/api/stream/event",
     "move": "/api/bot/game/{}/move/{}",
+    "draw": "/api/bot/game/{}/draw/{}",
     "takeback": "/api/bot/game/{}/takeback/{}",
     "chat": "/api/bot/game/{}/chat",
     "abort": "/api/bot/game/{}/abort",
@@ -374,6 +375,15 @@ class Lichess:
         """
         self.api_post("move", game_id, str(move.move),
                       params={"offeringDraw": str(move.draw_offered).lower()})
+
+    def accept_draw(self, game_id: str, accept: bool) -> bool:
+        """Answer an opponent's draw offer."""
+        self.api_post("draw", game_id, "yes" if accept else "no")
+        if accept:
+            logger.info("Accepted opponent's draw offer.")
+        else:
+            logger.info("Declined opponent's draw offer.")
+        return accept
 
     def accept_takeback(self, game_id: str, accept: bool) -> bool:
         """Answer an opponent's move takeback request."""

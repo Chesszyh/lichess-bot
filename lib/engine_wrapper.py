@@ -202,24 +202,25 @@ class EngineWrapper:
         lichess_bot_tbs = engine_cfg.lichess_bot_tbs
 
         best_move: MOVE
+        draw_offered = check_for_draw_offer(game)
         best_move = get_book_move(board, game, polyglot_cfg)
 
         if best_move.move is None:
             best_move = get_egtb_move(board,
                                       game,
                                       lichess_bot_tbs,
-                                      draw_or_resign_cfg)
+                                      draw_or_resign_cfg,
+                                      draw_offered)
 
         if not isinstance(best_move, list) and best_move.move is None:
             best_move = get_online_move(li,
                                         board,
                                         game,
                                         online_moves_cfg,
-                                        draw_or_resign_cfg)
+                                        draw_or_resign_cfg,
+                                        draw_offered)
 
         if isinstance(best_move, list) or best_move.move is None:
-            draw_offered = check_for_draw_offer(game)
-
             time_limit, can_ponder = move_time(board, game, can_ponder,
                                                setup_timer, move_overhead,
                                                is_correspondence, correspondence_move_time)
@@ -252,7 +253,7 @@ class EngineWrapper:
         if best_move.resigned and len(board.move_stack) >= 2:
             li.resign(game.id)
         else:
-            li.make_move(game.id, best_move)
+            submit_move_or_accept_draw(li, game, best_move, draw_offered)
 
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
         """Add extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10."""
@@ -1161,6 +1162,20 @@ def check_for_draw_offer(game: model.Game) -> bool:
     return bool(game.state.get(f"{game.opponent_color[0]}draw"))
 
 
+def submit_move_or_accept_draw(li: lichess.Lichess,
+                               game: model.Game,
+                               best_move: chess.engine.PlayResult,
+                               incoming_draw_offered: bool | None = None) -> None:
+    """Submit a move or answer an incoming draw offer."""
+    if incoming_draw_offered is None:
+        incoming_draw_offered = check_for_draw_offer(game)
+
+    if best_move.draw_offered and incoming_draw_offered:
+        li.accept_draw(game.id, True)
+    else:
+        li.make_move(game.id, best_move)
+
+
 def normal_draw_clock_allows_offer(draw_or_resign_cfg: Configuration,
                                    game: model.Game | None,
                                    draw_offered: bool,
@@ -1327,7 +1342,8 @@ def get_book_move(board: chess.Board, game: model.Game,
 
 
 def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,
-                    draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult | list[chess.Move]:
+                    draw_or_resign_cfg: Configuration,
+                    incoming_draw_offered: bool | None = None) -> chess.engine.PlayResult | list[chess.Move]:
     """
     Get a move from an online source.
 
@@ -1338,7 +1354,15 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
-        clock_allows_draw = normal_draw_clock_allows_offer(draw_or_resign_cfg, game, False)
+        if incoming_draw_offered is None:
+            incoming_draw_offered = check_for_draw_offer(game)
+        draw_offered = incoming_draw_offered and wdl == 0
+        clock_allows_draw = normal_draw_clock_allows_offer(
+            draw_or_resign_cfg,
+            game,
+            draw_offered,
+            0 if draw_offered else None,
+        )
         offer_draw = can_offer_draw and offer_draw_for_zero and wdl == 0 and clock_allows_draw
 
         can_resign = draw_or_resign_cfg.resign_enabled
@@ -1560,7 +1584,8 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configuration,
-                  draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult | list[chess.Move]:
+                  draw_or_resign_cfg: Configuration,
+                  incoming_draw_offered: bool | None = None) -> chess.engine.PlayResult | list[chess.Move]:
     """
     Get a move from a local egtb.
 
@@ -1574,7 +1599,15 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configu
     if best_move:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
-        clock_allows_draw = normal_draw_clock_allows_offer(draw_or_resign_cfg, game, False)
+        if incoming_draw_offered is None:
+            incoming_draw_offered = check_for_draw_offer(game)
+        draw_offered = incoming_draw_offered and wdl == 0
+        clock_allows_draw = normal_draw_clock_allows_offer(
+            draw_or_resign_cfg,
+            game,
+            draw_offered,
+            0 if draw_offered else None,
+        )
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0 and clock_allows_draw)
 
         can_resign = draw_or_resign_cfg.resign_enabled

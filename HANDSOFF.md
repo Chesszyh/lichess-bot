@@ -5,14 +5,14 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 ## Current Runtime State
 
 - Main repo branch: `only-stockfish`.
-- Main repo latest pushed handoff before this final documentation update: `21dc400 Keep avoid-exited book lines under engine control`.
-- Private config mirror latest committed handoff before the Polyglot lockout update: `.config-history` `45ea95a Mirror the Breyer book exit privately`.
+- Main repo latest pushed handoff before the incoming-draw endpoint update: `8227385 Keep the handoff aligned with post-deploy idle state`.
+- Private config mirror latest committed handoff before the incoming-draw endpoint update: `.config-history` `03b3275 Mirror the Polyglot book-exit lockout privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
-- Last checked service state after the Polyglot lockout update: `lichess-bot.service` active under PID `3063380`, started at `2026-06-09 09:47:04 UTC`.
-- Restart safety check before the Polyglot lockout update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:47:05 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
+- Last checked service state after the incoming-draw snapshot update: `lichess-bot.service` active under PID `3469749`, started at `2026-06-09 10:50:14 UTC`.
+- Restart safety check before the incoming-draw snapshot update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 10:50:14 UTC`; startup logs showed `Engine configuration OK` at `10:50:15`, `Welcome NeuroSoCute!` at `10:50:16`, connected to Lichess, and awaiting challenges.
 - The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, the full Ruy Lopez `...h3` book-exit avoid list, and bot-specific `book_exit_lockout_plies: 6` from `config.yml`.
 - State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
-- Final snapshot at `2026-06-09 09:56 UTC` showed post-deploy game `VRq462VD` ended by draw agreement at `09:55:20`, logs showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 09:58:20 UTC`. This is only a snapshot; recheck before any future restart.
+- Final snapshot at `2026-06-09 10:50 UTC` showed no `Stockfish/src/stockfish` child after restart, service PID `3469749`, and the next challenge scheduled after `2026-06-09 10:53:17 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -52,11 +52,13 @@ systemctl --user status lichess-bot.service --no-pager -l
 ### Draw And Repetition Handling
 
 - Added `draw_or_resign.offer_draw_min_rating` and set the live floor to `3080`, so normal draw offers do not lock in below-target results.
+- Added explicit Lichess draw-offer answering via `/api/bot/game/{gameId}/draw/{yes|no}`. Incoming draw offers that the engine policy accepts now use the draw endpoint instead of making a move with `offeringDraw=true`, because the move endpoint declines a pending opponent draw offer.
 - Added clock-edge draw-offer guards for bullet/blitz:
   - Current live `offer_draw_clock_advantage_opponent_ms: 45000`
   - Current live `offer_draw_clock_advantage_min_ms: 30000`
   - Current live `offer_draw_clock_advantage_accept_min_score_cp: 1`
 - Extended the same clock-edge guard to zero-WDL Lichess EGTB draw offers. This closes the path where tablebase equality could still offer a draw while the opponent was under practical bullet clock pressure.
+- Kept incoming zero-WDL EGTB draw offers accept-safe: when the opponent has already offered a draw and the tablebase WDL is `0`, the bot marks the result for `/draw/yes` even if proactive tablebase draw offers are suppressed by a large clock edge.
 - Added repetition guard clock-edge override so the bot can avoid repetition even against higher-rated opponents when the opponent is low on clock:
   - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
   - `repetition_guard.clock_advantage_override_min_ms: 30000`
@@ -89,6 +91,9 @@ systemctl --user status lichess-bot.service --no-pager -l
 - `i6JbiFiR`: another target-band bullet loss against `Cheszter` from the English Opening: Agincourt Defense after the same unpatched clock-policy window. Treat it as evidence that Cheszter/English black games need continued watch, but do not stack a second speculative opening change on top of the draw-policy fix yet.
 - `CFFJyFaz`: live validation of the `8K19ZtZc` draw-refusal fix. The bot first skipped proactive normal draw offers while holding a huge clock edge, then accepted Black's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold.
 - `VRq462VD`: additional post-lockout-deploy validation of the clock-edge draw policy against `Cheszter`. The bot skipped proactive normal draw offers while White had about 13-16s and the bot had about 124-127s, filtered a move that allowed an immediate threefold claim, then accepted White's draw offer because the latest bot score was exactly `0 cp`, below the live `1 cp` acceptance threshold. This game did not validate the Ruy Lopez `...h3` lockout path.
+- `b5HgegKb`: first live validation of the Ruy Lopez `...h3` Polyglot lockout. Logs showed `Skipping polyglot book for game b5HgegKb until ply 23 after avoid_moves exhausted book moves`, so the avoid-exhausted lockout suppressed immediate book re-entry. The same game exposed a draw-answering bug: engine logs said it was accepting a normal draw offer at `-6 cp` / `0 cp`, but Lichess chat recorded `Black declines draw` because the bot was still sending a move with `offeringDraw=true`.
+- `pxVN1kAf`: live validation of the proactive EGTB-zero draw-offer guard. In a Lichess EGTB `wdl: 0` position, the bot repeatedly logged `Skipping normal draw offer` while holding about 132-141s against 8-18s. It also exposed the same draw-answering gap on the EGTB path: Black offered draw, the bot kept playing, and Lichess recorded `White declines draw`. The new tests now cover incoming zero-WDL EGTB offers so they become `/draw/yes` instead of implicit declines.
+- `TU3CmM4p`: live validation that the first draw-endpoint patch was still incomplete. The engine log at `2026-06-09 10:39:07 UTC` said `Accepting normal draw offer despite clock edge because bot score 0 cp is below 1 cp`, but Lichess chat immediately recorded `Black declines draw`. This showed final submission must use the incoming-draw snapshot captured before search, not a second late `game.state` read.
 - `N1AY97NU`, `h1EjQzfE`, `2R78e4KP`, `Yl9L44Tx`, and `dums3X5c`: repeated target-band draws from the same Ruy Lopez Closed Breyer book path after `...h3 Nb8 d4 Nbd7 ...`; `UJlBX5Z5` was a target-band loss from the same family. This led to filtering all current book moves at the `...h3` tabiya so the bot exits book and lets Stockfish search.
 - `yiF82zTL`: validated that the full `...h3` avoid list forces the first no-book exit; at the tabiya, Stockfish searched and chose `9...Bb7` with about `-0.41`, `45.5%`, depth 24. It also exposed an adjacent failure mode: after engine-chosen `...Bb7`, Polyglot immediately re-entered for `...Re8` and `...Bf8`, reaching another drawish Ruy Lopez Closed/Flohr path. This led to the six-ply `book_exit_lockout_plies` follow-up.
 - `nSLk3U9v` and `xUcwqJsv`: repetition with large clock edge; led to repetition clock override and opponent immediate-claim filtering.
@@ -160,6 +165,22 @@ service restarted at 2026-06-09 09:47:05 UTC, PID 3063380
 startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
 ```
 
+Fresh verification from the incoming draw-offer endpoint and EGTB-zero incoming draw fix:
+
+```text
+RED before EGTB fix: 2 failed because online and local EGTB zero-WDL incoming draw offers returned draw_offered=False
+2 passed in 0.35s
+3 passed in 0.30s
+RED before draw-offer snapshot fix: 1 failed because submit_move_or_accept_draw did not accept incoming_draw_offered
+1 passed in 0.31s
+44 passed in 0.58s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+service restarted at 2026-06-09 10:50:14 UTC after the final incoming-draw snapshot fix, PID 3469749
+startup logs showed Engine configuration OK, Welcome NeuroSoCute!, connected to Lichess, and awaiting challenges
+post-restart process check showed no Stockfish/src/stockfish child
+```
+
 Targeted draw-refusal/report test command:
 
 ```bash
@@ -200,20 +221,21 @@ Targeted test command:
   test_bot/test_external_moves.py::test_get_book_move__weighted_random_respects_min_weight -q
 ```
 
-Known verification debt is unchanged:
+Known verification debt:
 
 - Full `ruff` and `mypy` are still blocked by pre-existing complexity and typing failures documented in `docs/BOT_OPTIMIZATION_HISTORY.md`.
 - No completed live game has yet validated the latest `b4 -> c3` replacement after the service restart.
 - No completed live game has yet validated the six-ply Ruy Lopez `...h3` book-exit lockout after the latest service restart. `yiF82zTL` validated the first no-book exit but exposed immediate adjacent book re-entry before the lockout existed.
-- No completed live game has yet validated the EGTB-zero draw-offer guard. `VRq462VD` is additional validation of the normal draw-offer clock edge and exact-0-cp acceptance path.
+- `pxVN1kAf` validated that the EGTB-zero proactive draw-offer guard skips draw offers under a huge clock edge. No completed live game has yet validated the new `/draw/yes` path for incoming EGTB-zero draw offers after deployment.
+- No completed live game has yet validated the new `/draw/yes` path for incoming normal engine draw offers after deployment. `b5HgegKb` is the pre-fix bug evidence.
 - Avoid heavy local Stockfish experiments while the live bot is running.
 
 ## Next Best Work
 
 - Watch the next `e4 e5 Nf3 Nc6 Bc4 Bc5 c3` bot game. If the first engine search is still materially negative, prefer a narrower branch change such as moving toward `O-O` or lowering bot book depth in that branch before changing global book randomness.
 - Watch the next Ruy Lopez `...h3` bot game. The bot should have no book move at that exact position, then skip Polyglot for the next two bot turns under the live six-ply lockout before book use can resume.
-- Watch the next target-band equal EGTB ending. The bot should not offer a draw if the opponent is below 45s and the bot has at least a 30s clock edge.
-- Keep watching target-band opponent draw offers in repeated exact `0.0` endings. `CFFJyFaz` validated the current rule once; future games should continue accepting only when the latest bot score is below the live 1 cp threshold.
+- Watch the next target-band equal EGTB ending. The bot should not proactively offer a draw if the opponent is below 45s and the bot has at least a 30s clock edge, but it should accept an already offered zero-WDL tablebase draw through `/draw/yes`.
+- Keep watching target-band opponent draw offers in repeated exact `0.0` endings. Future games should now show Lichess accepting the draw when policy chooses acceptance, not a chat-side decline caused by sending a move.
 - Keep `UJlBX5Z5` as evidence for possible Breyer/opening-depth tuning if the new `...h3` book exit still produces early negative first-search positions.
 - Watch Cheszter English Opening: Agincourt Defense games (`8K19ZtZc`, `i6JbiFiR`). If another early negative or losing endgame appears, prefer a narrow black-side `1.c4 e6 2.g3 d5` book/explorer adjustment over broad book randomization.
 - Track whether the 3080 floor makes volume too sparse. If it does, prefer a temporary, explicitly logged `3060-3079` fallback window over permanently reopening 3000-3079.

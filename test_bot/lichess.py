@@ -174,6 +174,10 @@ class Lichess(OriginalLichess):
         """Send a move to the opponent engine thread."""
         self.move_queue.put(move.move)
 
+    def accept_draw(self, game_id: str, accept: bool) -> bool:
+        """Isn't used in tests."""
+        return accept
+
     def accept_takeback(self, game_id: str, accept: bool) -> bool:
         """Isn't used in tests."""
         return False

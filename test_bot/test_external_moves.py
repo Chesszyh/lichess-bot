@@ -17,7 +17,7 @@ from typing import Literal, cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
-from lib.engine_wrapper import get_online_move, get_book_move, is_op1_position
+from lib.engine_wrapper import get_online_move, get_book_move, get_egtb_move, is_op1_position
 
 
 class MockLichess(Lichess):
@@ -641,3 +641,91 @@ def test_get_online_move__egtb_zero_respects_clock_edge(monkeypatch: pytest.Monk
 
     assert result.move == chess.Move.from_uci("e2e3")
     assert not result.draw_offered
+
+
+def test_get_online_move__egtb_zero_accepts_incoming_draw_offer_with_clock_edge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A tablebase-zero incoming draw offer should be accepted even when proactive offers are suppressed."""
+    game = get_game()
+    game.speed = "bullet"
+    game.state["wtime"] = 18120
+    game.state["btime"] = 51509
+    game.state["wdraw"] = True
+    online_moves_cfg = Configuration({})
+    draw_or_resign_cfg = Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_for_egtb_zero": True,
+        "offer_draw_clock_advantage_enabled": True,
+        "offer_draw_clock_advantage_speeds": ["bullet", "blitz"],
+        "offer_draw_clock_advantage_opponent_ms": 45000,
+        "offer_draw_clock_advantage_min_ms": 30000,
+        "offer_draw_clock_advantage_accept_min_score_cp": 1,
+        "resign_enabled": True,
+        "resign_for_egtb_minus_two": True,
+    })
+
+    def fake_online_egtb_move(
+        li: Lichess,
+        board: chess.Board,
+        game: Game,
+        online_egtb_cfg: Configuration,
+    ) -> tuple[str, int, chess.engine.InfoDict]:
+        del li, board, game, online_egtb_cfg
+        return "e2e3", 0, {"string": "lichess-bot-source:Lichess EGTB"}
+
+    monkeypatch.setattr("lib.engine_wrapper.get_online_egtb_move", fake_online_egtb_move)
+
+    result = get_online_move_wrapper(
+        MockLichess(),
+        chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+        game,
+        online_moves_cfg,
+        draw_or_resign_cfg,
+    )
+
+    assert result.move == chess.Move.from_uci("e2e3")
+    assert result.draw_offered
+
+
+def test_get_egtb_move__egtb_zero_accepts_incoming_draw_offer_with_clock_edge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Local tablebase-zero incoming draw offers should use the same acceptance path."""
+    game = get_game()
+    game.speed = "bullet"
+    game.state["wtime"] = 18120
+    game.state["btime"] = 51509
+    game.state["wdraw"] = True
+    draw_or_resign_cfg = Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_for_egtb_zero": True,
+        "offer_draw_clock_advantage_enabled": True,
+        "offer_draw_clock_advantage_speeds": ["bullet", "blitz"],
+        "offer_draw_clock_advantage_opponent_ms": 45000,
+        "offer_draw_clock_advantage_min_ms": 30000,
+        "offer_draw_clock_advantage_accept_min_score_cp": 1,
+        "resign_enabled": True,
+        "resign_for_egtb_minus_two": True,
+    })
+
+    def fake_syzygy(
+        board: chess.Board,
+        game: Game,
+        syzygy_cfg: Configuration,
+    ) -> tuple[chess.Move, int]:
+        del board, game, syzygy_cfg
+        return chess.Move.from_uci("e2e3"), 0
+
+    monkeypatch.setattr("lib.engine_wrapper.get_syzygy", fake_syzygy)
+
+    result = get_egtb_move(
+        chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+        game,
+        Configuration({"syzygy": {}, "gaviota": {}}),
+        draw_or_resign_cfg,
+    )
+
+    assert isinstance(result, chess.engine.PlayResult)
+    assert result.move == chess.Move.from_uci("e2e3")
+    assert result.draw_offered

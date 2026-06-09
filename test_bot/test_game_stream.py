@@ -1,6 +1,7 @@
 """Tests for per-game stream resilience."""
 
 import json
+from collections.abc import Iterator
 from queue import Queue
 
 import chess
@@ -84,7 +85,7 @@ class _FakeResponse:
         self.failure = failure
         self.closed = False
 
-    def iter_lines(self):
+    def iter_lines(self) -> Iterator[bytes]:
         for event in self.events:
             game_state = event["state"] if event.get("type") == "gameFull" else event
             if game_state.get("status") != "started":
@@ -103,6 +104,7 @@ class _FakeLichess:
         self.responses = responses
         self.stream_calls = 0
         self.moves_made: list[str] = []
+        self.draw_answers: list[tuple[str, bool]] = []
         self.messages: list[tuple[str, str, str]] = []
         self.active = True
         self.baseUrl = "https://lichess.org/"
@@ -116,6 +118,11 @@ class _FakeLichess:
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
         assert game_id == GAME_ID
         self.moves_made.append(move.move.uci())
+
+    def accept_draw(self, game_id: str, accept: bool) -> bool:
+        assert game_id == GAME_ID
+        self.draw_answers.append((game_id, accept))
+        return accept
 
     def chat(self, game_id: str, room: str, text: str) -> None:
         self.messages.append((game_id, room, text))
@@ -142,7 +149,7 @@ class _FakeEngine:
         self.result_sent = False
         self._moves = iter(["e7e5", "b8c6"])
 
-    def __enter__(self) -> "_FakeEngine":
+    def __enter__(self) -> "_FakeEngine":  # noqa: PYI034 - Keep tests compatible with Python 3.10.
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:

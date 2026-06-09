@@ -6,6 +6,22 @@ import os
 import pytest
 
 
+def test_accept_draw__posts_draw_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Answering a draw offer should use Lichess's draw endpoint."""
+    calls: list[tuple[str, tuple[str, ...]]] = []
+    li = object.__new__(lichess.Lichess)
+
+    def fake_api_post(endpoint_name: str, *template_args: str, **kwargs: object) -> None:
+        del kwargs
+        calls.append((endpoint_name, template_args))
+
+    monkeypatch.setattr(li, "api_post", fake_api_post)
+
+    assert li.accept_draw("game123", True)
+    assert not li.accept_draw("game123", False)
+    assert calls == [("draw", ("game123", "yes")), ("draw", ("game123", "no"))]
+
+
 def test_lichess() -> None:
     """Test the lichess communication."""
     token = os.environ.get("LICHESS_BOT_TEST_TOKEN")

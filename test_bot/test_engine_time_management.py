@@ -7,7 +7,7 @@ import chess
 import chess.engine
 
 from lib.config import Configuration
-from lib.engine_wrapper import EngineWrapper, FillerEngine, apply_bullet_time_management
+from lib.engine_wrapper import EngineWrapper, FillerEngine, apply_bullet_time_management, submit_move_or_accept_draw
 from lib.lichess_types import GameEventType
 from lib.model import Game
 
@@ -283,6 +283,21 @@ class LosingAlternativeRepetitionFakeEngine(RepetitionFakeEngine):
         })
 
 
+class FakeDrawLichess:
+    """Capture draw answers and move submissions."""
+
+    def __init__(self) -> None:
+        self.accepted_draws: list[tuple[str, bool]] = []
+        self.moves: list[tuple[str, chess.engine.PlayResult]] = []
+
+    def accept_draw(self, game_id: str, accept: bool) -> bool:
+        self.accepted_draws.append((game_id, accept))
+        return accept
+
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+        self.moves.append((game_id, move))
+
+
 def high_rated_draw_cfg() -> Configuration:
     """Create draw config that accepts stable equal positions from elite opponents."""
     return Configuration({
@@ -359,6 +374,43 @@ def high_rated_blitz_game(opponent_rating: int = 3060) -> Game:
     game.black.title = "BOT"
     game.black.is_bot = True
     return game
+
+
+def test_submit_move_or_accept_draw__accepts_incoming_draw_without_moving() -> None:
+    """Incoming accepted draw offers require the Lichess draw endpoint, not a move with offeringDraw."""
+    game = high_rated_blitz_game(opponent_rating=3096)
+    game.state["bdraw"] = True
+    li = FakeDrawLichess()
+    move = chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, draw_offered=True)
+
+    submit_move_or_accept_draw(li, game, move)
+
+    assert li.accepted_draws == [(game.id, True)]
+    assert li.moves == []
+
+
+def test_submit_move_or_accept_draw__keeps_proactive_draw_offer_on_move() -> None:
+    """Without an incoming draw offer, draw_offered still means offer a draw with the move."""
+    game = high_rated_blitz_game(opponent_rating=3096)
+    li = FakeDrawLichess()
+    move = chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, draw_offered=True)
+
+    submit_move_or_accept_draw(li, game, move)
+
+    assert li.accepted_draws == []
+    assert li.moves == [(game.id, move)]
+
+
+def test_submit_move_or_accept_draw__uses_captured_incoming_draw_offer() -> None:
+    """A captured incoming draw offer should survive later game-state mutation before submission."""
+    game = high_rated_blitz_game(opponent_rating=3096)
+    li = FakeDrawLichess()
+    move = chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None, draw_offered=True)
+
+    submit_move_or_accept_draw(li, game, move, incoming_draw_offered=True)
+
+    assert li.accepted_draws == [(game.id, True)]
+    assert li.moves == []
 
 
 def test_search__uses_endgame_engine_under_piece_threshold() -> None:
