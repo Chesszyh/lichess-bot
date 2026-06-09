@@ -538,3 +538,44 @@ def test_get_book_move__avoid_moves_filters_configured_san_line(monkeypatch: pyt
         [chess.Move.from_uci("f1c4")],
         [chess.Move.from_uci("f1b5"), chess.Move.from_uci("f1c4")],
     ]
+
+
+def test_get_online_move__egtb_zero_respects_clock_edge(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tablebase draws should not offer a draw while the opponent is under clock pressure."""
+    game = get_game()
+    game.speed = "bullet"
+    game.state["wtime"] = 18120
+    game.state["btime"] = 51509
+    online_moves_cfg = Configuration({})
+    draw_or_resign_cfg = Configuration({
+        "offer_draw_enabled": True,
+        "offer_draw_for_egtb_zero": True,
+        "offer_draw_clock_advantage_enabled": True,
+        "offer_draw_clock_advantage_speeds": ["bullet", "blitz"],
+        "offer_draw_clock_advantage_opponent_ms": 45000,
+        "offer_draw_clock_advantage_min_ms": 30000,
+        "resign_enabled": True,
+        "resign_for_egtb_minus_two": True,
+    })
+
+    def fake_online_egtb_move(
+        li: Lichess,
+        board: chess.Board,
+        game: Game,
+        online_egtb_cfg: Configuration,
+    ) -> tuple[str, int, chess.engine.InfoDict]:
+        del li, board, game, online_egtb_cfg
+        return "e2e3", 0, {"string": "lichess-bot-source:Lichess EGTB"}
+
+    monkeypatch.setattr("lib.engine_wrapper.get_online_egtb_move", fake_online_egtb_move)
+
+    result = get_online_move_wrapper(
+        MockLichess(),
+        chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+        game,
+        online_moves_cfg,
+        draw_or_resign_cfg,
+    )
+
+    assert result.move == chess.Move.from_uci("e2e3")
+    assert not result.draw_offered

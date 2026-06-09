@@ -1308,7 +1308,8 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
-        offer_draw = can_offer_draw and offer_draw_for_zero and wdl == 0
+        clock_allows_draw = normal_draw_clock_allows_offer(draw_or_resign_cfg, game, False)
+        offer_draw = can_offer_draw and offer_draw_for_zero and wdl == 0 and clock_allows_draw
 
         can_resign = draw_or_resign_cfg.resign_enabled
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
@@ -1543,7 +1544,8 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configu
     if best_move:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
-        offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
+        clock_allows_draw = normal_draw_clock_allows_offer(draw_or_resign_cfg, game, False)
+        offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0 and clock_allows_draw)
 
         can_resign = draw_or_resign_cfg.resign_enabled
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
