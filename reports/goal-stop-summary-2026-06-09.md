@@ -2,11 +2,12 @@
 
 ## Scope
 
-- Covers tracked work from `9124fdd` through `1ae59f3`, plus the continuation pass that safely restarted the bot and refreshed the aggregate to include `D78oWQu6`.
+- Covers tracked work from `9124fdd` through `8218779`, plus this closeout pass.
 - Goal state is not complete: bullet/blitz are not stable at `3080`.
 - No heavy local engine experiments were run during an active game in this stop pass.
 - Game `KZlP9dMr` was active during the first stop pass and was deliberately not waited on or analyzed, per stop request.
 - Later continuation first did not wait for the active game; after it finished, a separate API check returned idle and the bot was safely restarted.
+- This closeout pass did not wait on any game or make another runtime change.
 
 ## Tracked Changes
 
@@ -25,6 +26,17 @@
 - Later `D78oWQu6` ended as a rated `180+2` blitz draw, then a safe idle restart loaded the `120+1` exposure reduction.
 - Later refreshed the aggregate from `70` to `71` rated fast games.
 - Later verified the first two outgoing challenges after PID `78929` startup avoided `120+1`.
+- Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
+- This closeout pass only updates documentation; no runtime code, engine config, or ignored local config was changed.
+
+## Post-Pause Modification Summary
+
+- Documentation was extended from the previous stop summary through the post-restart challenge-control verification.
+- Ignored runtime config was changed to block `coda_bot`/`codabot` in incoming and outgoing paths.
+- Ignored runtime config was changed to reduce `120+1` exposure by removing outgoing `120` bases and setting incoming `challenge.max_base` to `90`.
+- Two safe idle LaunchAgent restarts loaded the blocklist and then the `120+1` exposure reduction; no restart was done while `D78oWQu6` was active.
+- Fresh evidence added one `120+1` bullet loss sample, one `180+2` blitz draw sample, and two clean outgoing post-restart challenge-control checks.
+- No tracked runtime code was changed in this post-pause interval; all committed changes are reports.
 
 ## Continuation After Stop Summary
 
@@ -87,6 +99,17 @@
 - Performed a later safe idle LaunchAgent restart after `D78oWQu6` ended and `/api/account/playing` returned `active_count=0`.
 - Runtime PID changed from `28441` to `78929`.
 - Post-restart checks confirmed reconnect and idle state.
+- This closeout pass performed one non-waiting `/api/account/playing` check and got `active_count=0`.
+- No additional restart was attempted.
+
+## Closeout State
+
+- Current tracked branch head before this documentation update: `8218779 Verify post-restart challenge controls`.
+- `8218779` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Worktree had no tracked modifications before this closeout update.
+- Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
+- The latest documented live process remains PID `78929`, started after the coda/codabot blocklist and `120+1` exposure reduction.
+- The current stop/pass handoff should not be treated as goal completion; it is a documentation and state handoff.
 
 ## Evidence State
 
