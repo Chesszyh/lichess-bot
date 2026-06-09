@@ -607,7 +607,7 @@ Known verification debt:
 
 ### Pause-State Summary
 
-At the point the optimization goal was paused, the live bot was running with the latest private Stockfish config. The service had restarted cleanly at `2026-06-09 09:21:07 UTC`, logged `Engine configuration OK`, `Welcome NeuroSoCute!`, and then started live game `yiF82zTL` by `2026-06-09 09:24 UTC`. A `2026-06-09 09:27 UTC` snapshot showed a `Stockfish/src/stockfish` child process, so do not restart until that game is over and the process is freed. The live matchmaking log confirmed the current policy was searching only target-band bullet games:
+At the point the optimization goal was paused, the live bot was running with the latest private Stockfish config. The service had restarted cleanly at `2026-06-09 09:21:07 UTC`, logged `Engine configuration OK`, `Welcome NeuroSoCute!`, and later completed live game `yiF82zTL` by draw agreement at `09:27:10`. A `2026-06-09 09:32 UTC` snapshot showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child process, and the next challenge scheduled after `2026-06-09 09:45:17 UTC`. The live matchmaking log confirmed the current policy was searching only target-band bullet games:
 
 ```text
 Seeking bullet game with opponent rating in [3080, 4000] ...

@@ -12,7 +12,7 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 - Restart safety check before the Breyer book-exit update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:21:07 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
 - The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1`, `dynamic_nobot_cooldown_max_minutes: 360`, and the full Ruy Lopez `...h3` book-exit avoid list from `config.yml`.
 - State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
-- Snapshot at `2026-06-09 09:27 UTC` showed live game `yiF82zTL` in progress with a `Stockfish/src/stockfish` child process. Do not restart until logs show the game is over, `Process Freed. Count: 0`, and no Stockfish child remains.
+- Final snapshot at `2026-06-09 09:32 UTC` showed `yiF82zTL` ended by draw agreement at `09:27:10`, logs showed `Process Freed. Count: 0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 09:45:17 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
