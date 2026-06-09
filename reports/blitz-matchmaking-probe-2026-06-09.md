@@ -65,12 +65,13 @@ Because `config.yml` is ignored and read at startup, the LaunchAgent must be res
 - `17:05:12`: `blitz_probe` selected rated `240+2` as white against `styx_reckless` (`3025`); the outgoing challenge was declined.
 - `17:06:15`: `blitz_probe` selected rated `300+2` as white against `friendlybot_1700` (`3005`); game `2ACAIGvE` ended as a normal draw.
 - `17:28:13`: `blitz_probe` selected rated `180+3` as black against `friendlybot_1700` (`3005`); game `M8ZpgJQe` ended as a normal black loss by mate, rating `-5`.
-- The refreshed fast aggregate now covers `73` games and has blitz at `-6` rating over `23` scored games, while bullet is `-66` over `32` scored games.
+- `18:01:31`: after narrowing, `blitz_probe` selected rated `300+2` as white against `Void_Bot` (`3003`); game `DqAWzcKN` ended as a normal draw, rating `+1`.
+- The refreshed fast aggregate now covers `74` games and has blitz at `-5` rating over `24` scored games, while bullet is `-66` over `32` scored games.
 
 ## Current Decision
 
 - Runtime code was not changed.
 - After `M8ZpgJQe`, the ignored local `blitz_probe` config was narrowed from `180/240/300` to `300` only, with increments still `+2/+3`.
 - LaunchAgent `org.chesszyh987.lichess-bot` was restarted after the game ended; loaded config confirms `blitz_probe.challenge_initial_time == [300]`.
-- The next `blitz_probe` verification target is an outgoing `300+2` or `300+3` challenge.
+- The first post-narrowing `blitz_probe` verification passed with `DqAWzcKN`: outgoing `300+2`, normal draw, rating `+1`.
 - The repeated black Open Ruy pattern now spans bullet and blitz, so if it recurs at `300+2`/`300+3`, the next change should be opening-specific rather than more broad time-control filtering.

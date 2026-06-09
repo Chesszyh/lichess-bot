@@ -60,5 +60,9 @@ This narrows `blitz_probe` to `300+2` and `300+3`, preserving the best current b
   - `17:50:53`: default matchmaking selected rated bullet `90+1` against `Moment-That-Inspires`.
   - Challenge `ZcX9cNbB` was canceled unanswered at `17:51:26`.
   - This verifies the default bullet path remains `90+1` after the `blitz_probe` narrowing.
-- The next `blitz_probe` outgoing challenge should be `300+2` or `300+3`, not `180+2`, `180+3`, `240+2`, or `240+3`.
+- First `blitz_probe` challenge after narrowing selected rated `300+2`, not `180+2`, `180+3`, `240+2`, or `240+3`:
+  - `18:01:30`: default bullet challenge against `BlueMoonBot` hit opponent-side bot-vs-bot daily rate limit.
+  - Retry selected `blitz_probe`, challenged `Void_Bot` for rated `300+2`, and started game `DqAWzcKN` as white.
+  - `DqAWzcKN` ended as a normal draw, rating `+1`.
+- Aggregate after `DqAWzcKN` moved from `73` to `74` rated fast games; blitz improved from `-6` over `23` scored games to `-5` over `24`.
 - If another black Open Ruy loss appears at `300+2` or `300+3`, stop treating longer blitz as safer and move to an opening-specific design rather than more time-control filtering.

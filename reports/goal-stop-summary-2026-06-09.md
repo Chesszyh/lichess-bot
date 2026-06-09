@@ -36,6 +36,7 @@
 - Later `M8ZpgJQe` ended as a normal rated `180+3` blitz black loss by mate, rating `-5`.
 - Added `reports/m8zpgjqe-blitz-black-ruy-loss-2026-06-09.md` and refreshed the aggregate from `72` to `73` rated fast games.
 - Later narrowed the ignored local `blitz_probe` config to `300+2`/`300+3` only and restarted LaunchAgent from PID `54477` to `33763`.
+- Later `DqAWzcKN` verified the narrowed `blitz_probe`: rated `300+2` white draw against `Void_Bot`, rating `+1`, aggregate refreshed from `73` to `74` rated fast games.
 - Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - Confirmed commit `d67e3bf` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - This closeout pass only updates documentation; no runtime code, engine config, ignored local config, restart, or heavy local engine experiment was performed.
@@ -149,12 +150,13 @@
 - Runtime PID changed from `54477` to `33763`.
 - Post-restart config log confirmed `blitz_probe.challenge_initial_time == [300]`.
 - First outgoing challenge after PID `33763` used default rated bullet `90+1` against `Moment-That-Inspires`; it was canceled unanswered and produced no game.
+- First post-narrowing `blitz_probe` challenge selected rated `300+2` against `Void_Bot`; game `DqAWzcKN` ended as a normal draw, rating `+1`.
 - No additional restart was attempted.
 
 ## Closeout State
 
-- Current tracked branch head before this documentation update: `4779fe0 Document 90 plus 1 black bullet exposure`.
-- `4779fe0` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Current tracked branch head before this documentation update: `7405ee5 Document post-M8 default bullet verification`.
+- `7405ee5` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
 - Worktree had no tracked modifications before this closeout update.
 - Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
 - The latest documented live process remains PID `33763`, started after the coda/codabot blocklist, `120+1` exposure reduction, `60+1` exposure reduction, and `blitz_probe` narrowing.
@@ -162,10 +164,10 @@
 
 ## Evidence State
 
-- Latest aggregate: `73` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
-- Overall scored rating impact: `-72` over `55` scored games.
+- Latest aggregate: `74` rated bullet/blitz games since `2026-06-08T00:00:00Z`.
+- Overall scored rating impact: `-71` over `56` scored games.
 - Bullet is the clear leak: `-66` over `32` scored games.
-- Blitz is now negative: `-6` over `23` scored games.
+- Blitz is negative but improved after `DqAWzcKN`: `-5` over `24` scored games.
 - Worst current opponent/control watchlist starts with `coda_bot | bullet | 120+1`: risk `9`, `3` losses, rating `-15`.
 - Second actionable opponent/control watchlist item is `codabot | bullet | 60+1`: risk `5`, `1` loss, `1` lower-rated/rating-negative draw, rating `-8`.
 - New repeated opening leak strengthened: Ruy Lopez Open structures as black, especially `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5`.
@@ -183,6 +185,6 @@
 - The later `60+1` exposure reduction is live in PID `33763`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
 - `M8ZpgJQe` now confirms the black Open Ruy pattern in blitz; `blitz_probe` has been narrowed to longer `300+2`/`300+3` controls.
 - Outgoing default bullet verification passed once after PID `33763`: default matchmaking used `90+1`, not `60+1` or `120+1`.
-- The next `blitz_probe` verification target is an outgoing `300+2` or `300+3` challenge.
+- The first post-narrowing `blitz_probe` verification passed: `DqAWzcKN` used `300+2` and ended as a normal draw with rating `+1`.
 - If black Open Ruy losses recur at `300+2`/`300+3`, the next behavior candidate should be opening-specific design rather than another blind blocklist, book re-enable, or broad time-control filter.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.

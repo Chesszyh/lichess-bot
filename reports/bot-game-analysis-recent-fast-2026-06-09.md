@@ -2,12 +2,12 @@
 
 ## Scope
 
-- Games analyzed: `73`
+- Games analyzed: `74`
 - Speeds: `blitz, bullet`
 - Time controls: `120+0, 120+1, 120+2, 180+2, 180+3, 240+2, 240+3, 300+2, 300+3, 60+0, 60+1, 60+2, 90+1`
 - Modes: `rated`
 - Since UTC: `2026-06-08T00:00:00+00:00`
-- Results: `{'draw': 46, 'loss': 22, 'unknown': 4, 'win': 1}`
+- Results: `{'draw': 47, 'loss': 22, 'unknown': 4, 'win': 1}`
 - Opening risk gate: not enabled
 - No local engine analysis was run.
 
@@ -52,14 +52,14 @@
 
 ## Results by Mode
 
-- `46` x rated draw
+- `47` x rated draw
 - `22` x rated loss
 - `4` x rated unknown
 - `1` x rated win
 
 ## Results by Speed
 
-- `29` x blitz draw
+- `30` x blitz draw
 - `17` x bullet draw
 - `16` x bullet loss
 - `6` x blitz loss
@@ -75,18 +75,18 @@
 - `5` x 60+1 loss
 - `5` x 90+1 draw
 - `5` x 120+1 draw
+- `5` x 300+2 draw
 - `4` x 240+2 draw
 - `4` x 240+3 draw
-- `4` x 300+2 draw
 
 ## Rating Impact by Mode
 
-- `rated`: `-72` rating over `55` games
+- `rated`: `-71` rating over `56` games
 
 ## Rating Impact by Speed
 
 - `bullet`: `-66` rating over `32` games
-- `blitz`: `-6` rating over `23` games
+- `blitz`: `-5` rating over `24` games
 
 ## Rating Impact by Time Control
 
@@ -98,7 +98,7 @@
 - `240+2 black`: `-6` rating over `4` games
 - `60+1 black`: `-5` rating over `1` games
 - `180+2 black`: `-4` rating over `2` games
-- `300+2 white`: `+0` rating over `1` games
+- `300+2 white`: `+1` rating over `2` games
 - `180+3 white`: `+1` rating over `1` games
 
 ## Rating Impact by Opening
@@ -162,7 +162,7 @@
 - `240+2`: `-6` rating over `4` games
 - `180+2`: `+0` rating over `7` games
 - `240+3`: `+2` rating over `2` games
-- `300+2`: `+2` rating over `2` games
+- `300+2`: `+3` rating over `3` games
 - `300+3`: `+4` rating over `4` games
 
 ## Focused Score by Time Control
@@ -175,7 +175,7 @@
 - `240+3`: W-D-L `0-4-1`, score `40.0%` over `5` games
 - `180+2`: W-D-L `0-8-1`, score `44.4%` over `9` games
 - `300+3`: W-D-L `0-6-0`, score `50.0%` over `6` games
-- `300+2`: W-D-L `0-4-0`, score `50.0%` over `4` games
+- `300+2`: W-D-L `0-5-0`, score `50.0%` over `5` games
 
 ## Focused Rating Impact by Opening Context
 
