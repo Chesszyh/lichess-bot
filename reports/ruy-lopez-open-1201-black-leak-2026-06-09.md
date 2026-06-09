@@ -62,4 +62,8 @@ This combines Candidate A and the effective part of Candidate B: the bot should 
 - LaunchAgent `org.chesszyh987.lichess-bot` changed from PID `28441` to PID `78929`.
 - Startup log confirmed `Engine configuration OK`, `Welcome ilovecatgirl!`, and connection to Lichess.
 - `/api/account/playing` returned `post_restart_active_count=0` after restart.
-- Next verification target: logs should no longer show outgoing `120+1` challenges, and incoming `120+1` challenges should be declined by the challenge filter.
+- Initial post-restart outgoing verification passed:
+  - `16:42:01`: `blitz_probe` selected rated `180+2` (`3+2`) against `cinder-bot`; challenge was declined.
+  - `16:43:10`: default matchmaking selected rated `60+1` (`1+1`) against `SF_Bot1nok`; challenge was canceled.
+  - Log scan after PID `78929` startup found no `limit: 120` or `2+1` outgoing challenge.
+- Next verification target: incoming `120+1` challenges should be declined by the challenge filter.

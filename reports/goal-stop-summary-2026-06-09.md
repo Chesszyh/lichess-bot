@@ -24,6 +24,7 @@
 - Later applied a local ignored config change to reduce `120+1` exposure, but did not restart because game `D78oWQu6` was active.
 - Later `D78oWQu6` ended as a rated `180+2` blitz draw, then a safe idle restart loaded the `120+1` exposure reduction.
 - Later refreshed the aggregate from `70` to `71` rated fast games.
+- Later verified the first two outgoing challenges after PID `78929` startup avoided `120+1`.
 
 ## Continuation After Stop Summary
 
@@ -58,6 +59,10 @@
 - Latest aggregate result state is `45` draws, `21` losses, `4` unknown, and `1` win.
 - Overall scored rating impact is now `-67` over `54` games.
 - Bullet remains `-66` over `32` scored games; blitz improves to `-1` over `22` scored games.
+- Initial outgoing challenge verification after PID `78929` startup:
+  - `16:42:01`: `blitz_probe` used `180+2` (`3+2`) against `cinder-bot`; declined.
+  - `16:43:10`: default matchmaking used `60+1` (`1+1`) against `SF_Bot1nok`; canceled.
+  - Log scan found no outgoing `120+1`/`2+1` challenge after PID `78929` startup.
 
 ## Local Runtime Config
 
@@ -102,5 +107,5 @@
 - Confirm `coda_bot` and `codabot` are not accepted/challenged after the PID `28441` restart.
 - After the restart evidence is available, analyze whether bullet losses shift from `coda_bot/codabot` toward another repeated opponent/control/opening cluster.
 - The next non-blind behavior change candidate was applied locally: reduce exposure to `120+1` black-side Ruy Lopez Open by removing outgoing `120` matchmaking bases and lowering incoming `challenge.max_base` to `90`.
-- This latest config change is live in PID `78929`; next verification should confirm no new outgoing `120+1` challenges appear.
+- This latest config change is live in PID `78929`; outgoing challenge verification has started cleanly, and incoming `120+1` challenge rejection remains to be observed.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.
