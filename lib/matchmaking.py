@@ -500,7 +500,8 @@ class Matchmaking:
 
     def add_to_block_list(self, username: str, source: str = "configured_blocklist") -> None:
         """Add a bot to the blocklist."""
-        self.add_challenge_filter(username, "", years(10), source)
+        timer = self.capped_global_cooldown_timer(Timer(years(10)), "", source)
+        self.add_challenge_filter(username, "", timer.duration, source)
 
     def in_block_list(self, username: str) -> bool:
         """Check if an opponent is in the block list to prevent future challenges."""
@@ -558,10 +559,20 @@ class Matchmaking:
             return None
         return Timer(remaining)
 
-    def cap_legacy_unknown_cooldown(self, timer: Timer, aspect: str, source: str) -> Timer:
-        """Limit old global cooldowns that predate source tracking when configured."""
-        cap_minutes = self.matchmaking_cfg.lookup("legacy_unknown_cooldown_max_minutes") or 0
-        if source != "unknown" or aspect or cap_minutes <= 0:
+    def source_cooldown_cap_minutes(self, aspect: str, source: str) -> int:
+        """Return a configured global cooldown cap for a persisted source."""
+        if aspect:
+            return 0
+        if source == "unknown":
+            return int(self.matchmaking_cfg.lookup("legacy_unknown_cooldown_max_minutes") or 0)
+        if source == "nobot":
+            return int(self.matchmaking_cfg.lookup("dynamic_nobot_cooldown_max_minutes") or 0)
+        return 0
+
+    def capped_global_cooldown_timer(self, timer: Timer, aspect: str, source: str) -> Timer:
+        """Limit configured dynamic global cooldown sources when requested."""
+        cap_minutes = self.source_cooldown_cap_minutes(aspect, source)
+        if cap_minutes <= 0:
             return timer
 
         max_duration = minutes(cap_minutes)
@@ -612,7 +623,7 @@ class Matchmaking:
             timer = self.timer_from_expires_at(expires_at)
             if timer:
                 source = cooldown.get("source") or "unknown"
-                timer = self.cap_legacy_unknown_cooldown(timer, aspect, source)
+                timer = self.capped_global_cooldown_timer(timer, aspect, source)
                 self.challenge_type_acceptable[(username, aspect)] = timer
                 self.challenge_filter_sources[(username, aspect)] = source
 

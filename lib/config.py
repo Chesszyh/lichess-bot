@@ -331,6 +331,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="try_overrides_on_empty_pool", default=False, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="legacy_unknown_cooldown_max_minutes", default=0,
                        force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="dynamic_nobot_cooldown_max_minutes", default=0,
+                       force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="online_block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="include_challenge_block_list", default=False, force_empty_values=True)

@@ -4,6 +4,7 @@ import json
 import logging
 import random
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
@@ -638,6 +639,48 @@ def test_declined_challenge__nobot_adds_opponent_to_long_term_blocklist() -> Non
     assert matchmaking.in_block_list("NoBotGuy")
     assert not matchmaking.should_accept_challenge("NoBotGuy", "")
     assert matchmaking.challenge_type_acceptable[("NoBotGuy", "")].duration == years(10)
+
+
+def test_declined_challenge__nobot_uses_configured_dynamic_cooldown_cap() -> None:
+    """Dynamic no-bot declines can be retried after a bounded cooldown in sparse target pools."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "dynamic_nobot_cooldown_max_minutes": 360,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    event = {
+        "challenge": {
+            "id": "abc123",
+            "rated": True,
+            "variant": {"key": "standard"},
+            "perf": {"name": "Bullet"},
+            "speed": "bullet",
+            "timeControl": {"type": "clock", "limit": 60, "increment": 0},
+            "challenger": {"name": "testbot", "title": "BOT", "rating": 2874},
+            "destUser": {"name": "NoBotGuy", "title": "BOT", "rating": 2600},
+            "color": "random",
+            "finalColor": "white",
+            "declineReason": "I do not accept challenges from bots.",
+            "declineReasonKey": "nobot",
+        }
+    }
+
+    matchmaking.declined_challenge(event)
+
+    assert matchmaking.in_block_list("NoBotGuy")
+    assert not matchmaking.should_accept_challenge("NoBotGuy", "")
+    assert matchmaking.challenge_filter_sources[("NoBotGuy", "")] == "nobot"
+    duration = matchmaking.challenge_type_acceptable[("NoBotGuy", "")].duration
+    assert minutes(359) < duration <= minutes(360)
 
 
 def test_declined_challenge__rated_decline_blocks_opponent_when_only_rated_is_configured(monkeypatch) -> None:
@@ -1392,6 +1435,38 @@ def test_matchmaking_state__keeps_configured_blocklist_long_when_legacy_cap_is_e
     assert not matchmaking.should_accept_challenge("BlockedBot", "")
     assert matchmaking.challenge_filter_sources[("BlockedBot", "")] == "configured_blocklist"
     assert matchmaking.challenge_type_acceptable[("BlockedBot", "")].duration > years(9)
+
+
+def test_matchmaking_state__caps_dynamic_nobot_global_cooldowns_when_configured(tmp_path: Path) -> None:
+    """Dynamic no-bot cooldowns should not block scarce target-band candidates for years."""
+    state_file = tmp_path / "matchmaking_state.json"
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + years(10)).isoformat()
+    state_file.write_text(json.dumps({"cooldowns": [{
+        "username": "MaybeChangedBot",
+        "aspect": "",
+        "expires_at": expires_at,
+        "source": "nobot",
+    }]}), encoding="utf-8")
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30,
+            "challenge_filter": "fine",
+            "state_file": str(state_file),
+            "dynamic_nobot_cooldown_max_minutes": 360,
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {"bullet": {"rating": 2874}}}
+
+    matchmaking = Matchmaking(Mock(), mock_config, mock_user_profile)
+
+    assert not matchmaking.should_accept_challenge("MaybeChangedBot", "")
+    assert matchmaking.challenge_filter_sources[("MaybeChangedBot", "")] == "nobot"
+    duration = matchmaking.challenge_type_acceptable[("MaybeChangedBot", "")].duration
+    assert minutes(359) < duration <= minutes(360)
 
 
 def test_add_challenge_filter__uses_short_default_decline_cooldown() -> None:

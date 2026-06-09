@@ -527,6 +527,18 @@ config.yml offer_draw_clock_advantage_accept_min_score_cp=1
 recent_bot_game_report.py flags i6JbiFiR, 8K19ZtZc, and UJlBX5Z5 as priority losses
 ```
 
+Latest passing result for the dynamic `nobot` cooldown cap:
+
+```text
+69 passed in 0.42s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+config.yml dynamic_nobot_cooldown_max_minutes=360
+.config-history/config.yml dynamic_nobot_cooldown_max_minutes=360
+runtime_state maia3-79m_2600 source=nobot expires_at=2026-06-09T15:04:32.203579+00:00
+09:07 matchmaking log shows maia3-79m_2600 source=nobot remaining=357m
+```
+
 Configuration loading was also checked for the live private file, confirming:
 
 ```text
@@ -551,6 +563,7 @@ matchmaking.outgoing_challenge_cooldown_minutes=180
 matchmaking.draw_cooldown_minutes=30
 matchmaking.try_overrides_on_empty_pool=True
 matchmaking.legacy_unknown_cooldown_max_minutes=360
+matchmaking.dynamic_nobot_cooldown_max_minutes=360
 engine.polyglot.opponent_selection.bot.avoid_moves[0].after=e4 e5 Nf3 Nc6
 engine.polyglot.opponent_selection.bot.avoid_moves[0].moves=Bb5
 engine.polyglot.opponent_selection.bot.avoid_moves includes after=e4 e5 Nf3 Nc6 Bc4 Bc5 moves=b4
@@ -607,6 +620,7 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Evans Gambit book loss | `ezGWI9wS` as white against `Cheszter` entered `e4 e5 Nf3 Nc6 Bc4 Bc5 b4 ...`; first engine search after book was about `-0.88` and the game ended `-5` | Bot-specific Polyglot profile skips `b4` after `e4 e5 Nf3 Nc6 Bc4 Bc5` | Live book check shows `c3` remains eligible after filtering `b4`; config load check | Active, watch whether the `c3` replacement avoids early negative engine evaluations |
 | Bullet pool empty while blitz is allowed | Post-deploy logs at `18:27:48` showed default bullet searched `[3080, 4000]`, found `0` suitable opponents, and waited until `18:42:48`; no same-cycle blitz attempt happened | Add opt-in `try_overrides_on_empty_pool`; live value `true`, with default bullet weight `5` before blitz fallback weight `1` | `test_choose_opponent__tries_blitz_fallback_when_bullet_pool_empty`; config default test | Active |
 | Legacy source-unknown cooldowns | Runtime logs showed target-band candidates such as `maia3-79m_2600` blocked by `global_cooldown_unknown` for about 10 years from old state | Add opt-in `legacy_unknown_cooldown_max_minutes`; live value `360`, capped only for source-unknown global cooldowns loaded from state | `test_matchmaking_state__caps_legacy_unknown_global_cooldowns_when_configured`; configured blocklist regression keeps 10-year blocks | Active, watch pool volume |
+| Dynamic no-bot cooldowns | At `2026-06-09 08:57 UTC`, bullet fallback had no target-band candidates and blitz fallback showed `maia3-79m_2600` rated 3101 blocked by source `nobot` for about 10 years | Add opt-in `dynamic_nobot_cooldown_max_minutes`; live value `360`, capped only for dynamic source `nobot` global cooldowns, while configured blocklists remain 10 years | `test_declined_challenge__nobot_uses_configured_dynamic_cooldown_cap`; `test_matchmaking_state__caps_dynamic_nobot_global_cooldowns_when_configured`; configured blocklist regression | Active, improves sparse blitz target pool without lowering the 3080 floor |
 | No-candidate retry cadence | At `19:49:58 UTC`, Cheszter was a 3106 bullet target blocked by only `7m` of draw cooldown, but the bot scheduled the next search `15m` later | When the target-band pool is empty because of a soon-expiring cooldown, retry shortly after that cooldown expires instead of always waiting the full no-candidate interval | `test_choose_opponent__retries_when_target_band_cooldown_expires_soon`; existing no-candidate backoff tests still pass | Active, improves volume without lowering rating floor |
 
 Current private live thresholds worth preserving unless new games disprove them:
@@ -617,6 +631,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `matchmaking.blitz_fallback.preferred_opponent_min_rating: 3080`
 - `matchmaking.try_overrides_on_empty_pool: true`
 - `matchmaking.legacy_unknown_cooldown_max_minutes: 360`
+- `matchmaking.dynamic_nobot_cooldown_max_minutes: 360`
 - `draw_or_resign.offer_draw_min_rating: 3080`
 - `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 45000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 30000`
@@ -631,7 +646,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 
 Prioritize these directions before adding heavier local experiments:
 
-- Use the new source-specific rejection logs and target-band blocker details to watch whether `global_cooldown_unknown` shrinks after the 360-minute legacy cap and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
+- Use the new source-specific rejection logs and target-band blocker details to watch whether `global_cooldown_unknown` and `global_cooldown_nobot` shrink after their 360-minute caps and whether new cooldowns are mainly declines, unanswered challenges, or daily rate-limit blocks.
 - If the blocker log is still too terse, add an explicit one-off diagnostic command that dumps the full target-band blocked candidate set with source and remaining cooldown time.
 - If further migrating legacy `unknown` cooldowns, classify only entries with strong historical-log evidence. Do not bulk-delete or relabel unknown state.
 - If volume remains too sparse, add a temporary and explicitly logged fallback window before permanently re-opening 3000-3079. Prefer a short-lived `3060-3079` fallback over undoing the target-band policy.

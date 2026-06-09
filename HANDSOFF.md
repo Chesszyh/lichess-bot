@@ -5,14 +5,14 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 ## Current Runtime State
 
 - Main repo branch: `only-stockfish`.
-- Main repo latest pushed handoff before this EGTB update: `0acc100 Preserve the stopped Stockfish tuning handoff`.
-- Private config mirror latest committed handoff before this EGTB update: `.config-history` `116aec9 Mirror the Evans book sidestep privately`.
+- Main repo latest pushed handoff before this dynamic-nobot update: `c458c22 Keep the handoff aligned with idle close-out state`.
+- Private config mirror latest committed handoff before this dynamic-nobot update: `.config-history` `3b02615 Mirror safe equal-draw clock policy privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
-- Last checked service state after this handoff close-out: `lichess-bot.service` active under PID `2531217`, started at `2026-06-09 08:49:03 UTC`.
-- Restart safety check waited for `DxMNDvHm` to finish. It ended in a threefold-repetition draw at `2026-06-09 08:46:21 UTC`, the process count returned to `0`, and no `Stockfish/src/stockfish` child remained.
-- The service was restarted safely at `2026-06-09 08:49:03 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
-- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1` from `config.yml`.
-- Final close-out check at `2026-06-09 08:55 UTC` showed `N1AY97NU` had ended in a threefold-repetition draw at `2026-06-09 08:54:11 UTC`; process count returned to `0`, no `Stockfish/src/stockfish` child remained, and the next challenge was scheduled after `2026-06-09 08:57:12 UTC`. This is only a snapshot; recheck before any future restart.
+- Last checked service state after this dynamic-nobot update: `lichess-bot.service` active under PID `2680528`, started at `2026-06-09 09:04:29 UTC`.
+- Restart safety check before the update showed no active `Stockfish/src/stockfish` game child. The service was restarted safely at `2026-06-09 09:04:29 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
+- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1` and `dynamic_nobot_cooldown_max_minutes: 360` from `config.yml`.
+- State-load verification after restart showed `maia3-79m_2600` source `nobot` capped from a 2036 expiry to `2026-06-09T15:04:32Z`.
+- Snapshot after the `2026-06-09 09:07 UTC` matchmaking cycle showed no active game, no `Stockfish/src/stockfish` child, `maia3-79m_2600` source `nobot` down to `357m` remaining, and the next challenge scheduled after `2026-06-09 09:16:53 UTC`. This is only a snapshot; recheck before any future restart.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -45,6 +45,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - Shortened ordinary decline and unanswered outgoing challenge cooldowns to reduce sparse-pool dead time.
 - Added source-aware matchmaking cooldown metadata and target-band blocker logs.
 - Added `legacy_unknown_cooldown_max_minutes: 360` to cap stale source-unknown cooldowns without deleting configured long blocks.
+- Added `dynamic_nobot_cooldown_max_minutes: 360` to cap dynamic `nobot` cooldowns without changing configured blocklists. This followed the `2026-06-09 08:57 UTC` sparse-pool log where `maia3-79m_2600` was a 3101 blitz target-band blocker with source `nobot` and about 10 years remaining.
 - Added `draw_cooldown_minutes: 30` for repeated drawn fast bot pairings.
 - Added retry timing that waits until soon-expiring target-band cooldowns clear instead of always sleeping the full no-candidate interval.
 
@@ -115,6 +116,19 @@ service restarted at 2026-06-09 08:49:03 UTC, PID 2531217
 startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
 ```
 
+Fresh verification from the dynamic `nobot` cooldown cap:
+
+```text
+69 passed in 0.42s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+config.yml dynamic_nobot_cooldown_max_minutes=360
+.config-history/config.yml dynamic_nobot_cooldown_max_minutes=360
+service restarted at 2026-06-09 09:04:29 UTC, PID 2680528
+runtime_state maia3-79m_2600 source=nobot expires_at=2026-06-09T15:04:32.203579+00:00
+09:07 matchmaking log shows maia3-79m_2600 source=nobot remaining=357m
+```
+
 Targeted draw-refusal/report test command:
 
 ```bash
@@ -172,6 +186,7 @@ Known verification debt is unchanged:
 - Watch Cheszter English Opening: Agincourt Defense games (`8K19ZtZc`, `i6JbiFiR`). If another early negative or losing endgame appears, prefer a narrow black-side `1.c4 e6 2.g3 d5` book/explorer adjustment over broad book randomization.
 - Track whether the 3080 floor makes volume too sparse. If it does, prefer a temporary, explicitly logged `3060-3079` fallback window over permanently reopening 3000-3079.
 - Keep using the target-band blocker logs to separate real pool scarcity from stale cooldowns, rate limits, and mode declines.
+- Watch whether `maia3-79m_2600` or other dynamic `nobot` target-band blockers become retryable after the 360-minute cap; configured blocklists should still remain long-lived.
 - Keep prioritizing losses and low-signal draws against bots over broad engine tuning.
 - Clean up `engine_wrapper.py` complexity and fake-engine test typing before larger strategy changes.
 

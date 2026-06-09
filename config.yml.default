@@ -309,6 +309,7 @@ matchmaking:
   draw_cooldown_minutes: 0         # Wait this many minutes before retrying a bot after a drawn bullet/blitz game.
   try_overrides_on_empty_pool: false  # If true, try other matchmaking overrides in weight order before waiting when the selected pool is empty.
   legacy_unknown_cooldown_max_minutes: 0  # If greater than 0, cap old source-unknown global cooldowns loaded from state to this many minutes.
+  dynamic_nobot_cooldown_max_minutes: 0  # If greater than 0, cap dynamic no-bot global cooldowns to this many minutes.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60
     - 180
