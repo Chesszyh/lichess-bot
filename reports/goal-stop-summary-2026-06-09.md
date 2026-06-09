@@ -32,6 +32,7 @@
 - Later documented post-restart `blitz_probe` evidence: game `2ACAIGvE`, rated `300+2` blitz against `friendlybot_1700`, ended as a normal draw.
 - Latest aggregate was refreshed from `71` to `72` rated fast games after `2ACAIGvE`.
 - Latest observed unresolved game before this closeout was `M8ZpgJQe`, rated `180+3` blitz as black against `friendlybot_1700`, started from `blitz_probe`.
+- Added `reports/bullet-90-plus-1-black-exposure-2026-06-09.md` to document the current reachable default bullet leak after `60+1` and `120+1` exposure reductions.
 - Confirmed commit `8218779` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - Confirmed commit `d67e3bf` is present on both local `lc0+stockfish` and `origin/lc0+stockfish`.
 - This closeout pass only updates documentation; no runtime code, engine config, ignored local config, restart, or heavy local engine experiment was performed.
@@ -45,6 +46,7 @@
 - Fresh evidence added one `120+1` bullet loss sample, one `180+2` blitz draw sample, and two clean outgoing post-restart challenge-control checks.
 - Fresh later evidence added the `60+1` exposure reduction, a safe restart into PID `54477`, and one `300+2` blitz draw sample.
 - The latest unresolved `180+3` blitz game `M8ZpgJQe` is intentionally excluded from aggregate and result conclusions until a finished PGN/result is available.
+- The latest reachable bullet slice is `90+1`, with black-side rating impact worse than the aggregate `90+1` slice; no behavior change was applied from this evidence alone.
 - No tracked runtime code was changed in this post-pause interval; all committed changes are reports.
 
 ## Post-Closeout Modification Audit
@@ -172,4 +174,5 @@
 - Incoming `120+1` rejection still remains to be observed directly.
 - The later `60+1` exposure reduction is live in PID `54477`; outgoing default bullet verification should next confirm `90+1`, and incoming `60+1` rejection remains to be observed.
 - Do not draw conclusions from `M8ZpgJQe` until it has a finished result; the latest request explicitly says not to wait for that game.
+- If `M8ZpgJQe` confirms the black Open Ruy pattern, the next behavior candidate is a designed/tested `matchmaking.challenge_color` option rather than another blind blocklist or book change.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.
