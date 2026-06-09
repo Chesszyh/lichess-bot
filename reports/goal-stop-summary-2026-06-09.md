@@ -81,8 +81,8 @@
   - `e3cd3b2` documented a non-waiting goal closeout while `IfUsKs6H` remained active in local evidence.
 - Runtime/config changes in the interval were ignored local config only: default bullet exposure was reduced from `60+1`/`90+1` to `90+1`, then `blitz_probe` was narrowed from `180/240/300` to `300` only.
 - Safe idle restarts loaded the ignored config changes when no active game was detected; no restart was attempted while `IfUsKs6H` was still active in local evidence.
-- The current post-`e3cd3b2` continuation adds the `IfUsKs6H` report, refreshes aggregate/probe/summary reports, changes ignored local config mirrors, and adds ignored `engines/books/avoid-open-ruy-black.bin`.
-- No tracked Python code, tests, engine binaries, opening books, or generated runtime artifact paths were intentionally changed.
+- The post-`e3cd3b2` continuation added the `IfUsKs6H` report, refreshed aggregate/probe/summary reports, changed ignored local config mirrors, and created `engines/books/avoid-open-ruy-black.bin`.
+- This follow-up tracks the 16-byte custom book in git so the active mitigation is reproducible; no tracked Python code, tests, or generated runtime artifact paths were intentionally changed.
 
 ## Continuation After Stop Summary
 
@@ -126,7 +126,7 @@
 
 - Ignored `config.yml` and `.config-history/config.yml` remain aligned.
 - Bot-vs-bot polyglot selection is `best_move`; human selection remains `uniform_random`.
-- Bot black bullet/blitz now uses a one-entry custom polyglot book to avoid the repeated Ruy Lopez Open `5...Nxe4` line; the custom book has no starting-position entry.
+- Bot black bullet/blitz now uses the tracked one-entry custom polyglot book to avoid the repeated Ruy Lopez Open `5...Nxe4` line; the custom book has no starting-position entry.
 - Matchmaking default pool is locally changed to `90+1` only; `120+1` entries were removed after the `PxsslsQe` loss and `60+1` entries were removed after the later exposure-reduction pass.
 - `blitz_probe` override is now locally narrowed to `300` base with `+2/+3` increments.
 - `coda_bot` and `codabot` are now present in local ignored challenge and matchmaking blocklists.
@@ -157,7 +157,7 @@
 - First post-narrowing `blitz_probe` challenge selected rated `300+2` against `Void_Bot`; game `DqAWzcKN` ended as a normal draw, rating `+1`.
 - `IfUsKs6H` later ended as a normal rated `300+2` blitz black loss by mate against `friendlybot_1700`, rating `-4`.
 - Refreshed aggregate now includes `IfUsKs6H`: `75` rated fast games, overall `-75` over `57` scored games, blitz `-9` over `25` scored games.
-- Added `engines/books/avoid-open-ruy-black.bin`, a one-entry book choosing `5...Be7` after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O`.
+- Added `engines/books/avoid-open-ruy-black.bin`, a tracked one-entry book choosing `5...Be7` after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O`.
 - Updated ignored runtime config mirrors so bot-vs-bot black bullet/blitz uses only that custom book through depth `5`.
 - Pre-restart `/api/account/playing` returned `active_count=0`.
 - Safely restarted LaunchAgent from PID `33763` to PID `33621`; post-restart log confirmed engine configuration OK, login, Lichess connection, and next challenge scheduling.
@@ -165,8 +165,8 @@
 
 ## Closeout State
 
-- Current tracked branch head before this documentation update: `e3cd3b2 Document non-waiting goal closeout`.
-- `e3cd3b2` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
+- Current tracked branch head before this git-management follow-up: `aa01307 Document IfUsKs6H Ruy mitigation`.
+- `aa01307` was already aligned with `origin/lc0+stockfish`; the previous credential-store warnings did not leave the branch behind.
 - Worktree had no tracked modifications before this closeout update.
 - Only unrelated untracked local paths were present: `.DS_Store`, `.agents/`, `docs/api/`, `fastchess/`, `lc0/`, and `refs/`.
 - The latest documented live process is PID `33621`, started after the coda/codabot blocklist, `120+1` exposure reduction, `60+1` exposure reduction, `blitz_probe` narrowing, and black Ruy custom-book mitigation.
@@ -199,5 +199,6 @@
 - The first post-narrowing `blitz_probe` verification passed: `DqAWzcKN` used `300+2` and ended as a normal draw with rating `+1`.
 - The first post-narrowing black-side `300+2` sample failed: `IfUsKs6H` repeated the Open Ruy loss pattern.
 - An opening-specific mitigation is now loaded in PID `33621`; next black Ruy verification should confirm book-selected `5...Be7`.
+- Post-mitigation evidence has no accepted/completed game yet; `RecklessEngine` `120+2` was rejected by time-control rules and the next outgoing `300+3` blitz probe to `Void_Bot` was declined.
 - If black Open Ruy still recurs via a different move order, inspect the custom book coverage before changing time controls or blocklists.
 - If a low-risk config change is needed next, prefer reducing exposure to leaking bullet controls/opponents over changing blitz, because blitz probe evidence is currently much less negative than bullet.

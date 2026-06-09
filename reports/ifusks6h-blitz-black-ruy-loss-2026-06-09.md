@@ -35,7 +35,7 @@
 
 ## Change
 
-- Added a one-entry local polyglot book:
+- Added a one-entry polyglot book that is small enough to track directly:
   - `engines/books/avoid-open-ruy-black.bin`
 - The only entry maps the Ruy Lopez position after `5. O-O` to:
   - `5...Be7`
@@ -50,6 +50,7 @@
 - Confirmed both mirrors resolve black bot polyglot to `engines/books/avoid-open-ruy-black.bin`.
 - Confirmed both mirrors set black bot `bullet` and `blitz` book depth to `5`.
 - Confirmed the custom book is exactly one polyglot entry and returns `f8e7`.
+- Confirmed the custom book checksum is `354b70780e0bea67bb12e127d72aa7da7601bab4b546889cf156e57942239db9`.
 - Confirmed `get_book_move()` returns `f8e7` from the actual config at the target Ruy position.
 - Confirmed `get_book_move()` returns no move from the starting position, so the custom book does not broadly drive black openings.
 - Pre-restart `/api/account/playing` returned `active_count=0`.
@@ -59,6 +60,7 @@
 
 ## Follow-Up
 
+- Post-mitigation local evidence has no accepted/completed game after `IfUsKs6H` yet; the next outgoing `300+3` blitz probe was declined by `Void_Bot`.
 - Watch the next black-side Ruy Lopez bot game.
 - Success signal: after `e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O`, logs should show an opening-book move `f8e7` instead of an engine move `f6e4`.
 - If the bot still reaches `...Nxe4 d4 b5`, verify whether the custom book was bypassed by a different move order before changing anything else.
