@@ -8,9 +8,10 @@ This is the handoff state for the ThinkPad Stockfish `lichess-bot` tuning goal a
 - Main repo latest pushed handoff before this EGTB update: `0acc100 Preserve the stopped Stockfish tuning handoff`.
 - Private config mirror latest committed handoff before this EGTB update: `.config-history` `116aec9 Mirror the Evans book sidestep privately`.
 - `.config-history` has no remote configured; private mirror commits are local only.
-- Last checked service state after applying the EGTB update: `lichess-bot.service` active under PID `2307937`, started at `2026-06-09 08:22:16 UTC`.
-- Last checked startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, and connected to Lichess.
-- Restart safety check before that restart showed no active `Stockfish/src/stockfish` game child. The previous game `h1EjQzfE` had ended in a draw, then matchmaking was idle and waiting for the next target-band retry.
+- Last checked service state after this handoff close-out: `lichess-bot.service` active under PID `2531217`, started at `2026-06-09 08:49:03 UTC`.
+- Restart safety check waited for `DxMNDvHm` to finish. It ended in a threefold-repetition draw at `2026-06-09 08:46:21 UTC`, the process count returned to `0`, and no `Stockfish/src/stockfish` child remained.
+- The service was restarted safely at `2026-06-09 08:49:03 UTC`; startup logs showed `Engine configuration OK`, `Welcome NeuroSoCute!`, connected to Lichess, and awaiting challenges.
+- The running process has loaded `offer_draw_clock_advantage_accept_min_score_cp: 1` from `config.yml`.
 - After committing this handoff, the main worktree should be clean except expected untracked local assets such as `Stockfish/`.
 
 Do not restart while a game is active or while a Stockfish child process exists. Check first:
@@ -52,6 +53,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 - Added clock-edge draw-offer guards for bullet/blitz:
   - Current live `offer_draw_clock_advantage_opponent_ms: 45000`
   - Current live `offer_draw_clock_advantage_min_ms: 30000`
+  - Current live `offer_draw_clock_advantage_accept_min_score_cp: 1`
 - Extended the same clock-edge guard to zero-WDL Lichess EGTB draw offers. This closes the path where tablebase equality could still offer a draw while the opponent was under practical bullet clock pressure.
 - Added repetition guard clock-edge override so the bot can avoid repetition even against higher-rated opponents when the opponent is low on clock:
   - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
@@ -62,7 +64,7 @@ systemctl --user status lichess-bot.service --no-pager -l
 
 ### Opening And Book Control
 
-- Stopped relying on deep online opening explorer guidance for bot games. The live private config keeps online opening guidance disabled and uses the local Polyglot book.
+- Stopped relying on deep online opening explorer guidance for bot games. The live private config keeps Lichess opening explorer as a shallow `max_depth: 2` fallback, then uses local Polyglot or Stockfish search.
 - Fixed weighted-random book selection so `min_weight` filtering happens before sampling.
 - Bot-vs-bot Polyglot profile currently uses `weighted_random`, `min_weight: 50`, `normalization: max`, `max_depth: 12`.
 - Added bot-specific `avoid_moves` for repeated or losing book branches:
@@ -80,6 +82,8 @@ systemctl --user status lichess-bot.service --no-pager -l
 - `J7nJYTTZ` and `xzMGfX4n`: draw agreements/offers despite large clock edge; led to clock-aware draw-offer guards.
 - `iCfhUIsj`: target-band bullet draw against `Cheszter` after Lichess EGTB returned `wdl: 0`; the bot offered a draw with about 52s vs 16s, showing EGTB-zero draw offers bypassed the normal draw clock guard. This led to the EGTB guard and the live 30s minimum clock-edge threshold.
 - `UJlBX5Z5`: target-band bullet loss against `TakticproChess`. The book left the bot around `-0.51` / 43.6% after a Breyer line and later stayed around `-0.3` to `-0.5`; no narrow config fix has been applied because the signal is not yet specific enough.
+- `8K19ZtZc`: target-band bullet loss against `Cheszter`. The bot declined a draw offer around 65s vs 33s with repeated exact `0.0` evaluations, then drifted into a losing endgame and resigned at EGTB `wdl: -2`. This led to `offer_draw_clock_advantage_accept_min_score_cp: 1`, so exact `0.0` opponent draw offers are no longer rejected solely on clock edge.
+- `i6JbiFiR`: another target-band bullet loss against `Cheszter` from the English Opening: Agincourt Defense after the same unpatched clock-policy window. Treat it as evidence that Cheszter/English black games need continued watch, but do not stack a second speculative opening change on top of the draw-policy fix yet.
 - `nSLk3U9v` and `xUcwqJsv`: repetition with large clock edge; led to repetition clock override and opponent immediate-claim filtering.
 - `o1u2AXZc`: showed hard repetition avoidance can choose losing alternatives; keep the score-loss cap.
 - `KvLfR0la`: showed root-move filtering had to be enforced after search.
@@ -97,7 +101,32 @@ config.yml offer_draw_clock_advantage_min_ms=30000
 .config-history/config.yml offer_draw_clock_advantage_min_ms=30000
 ```
 
-Targeted test command:
+Fresh verification from the 8K19ZtZc draw-refusal fix and report tool:
+
+```text
+6 passed in 0.44s
+ruff touched files: All checks passed!
+git diff --check: exit 0
+config.yml offer_draw_clock_advantage_accept_min_score_cp=1
+.config-history/config.yml offer_draw_clock_advantage_accept_min_score_cp=1
+recent_bot_game_report.py flags i6JbiFiR, 8K19ZtZc, and UJlBX5Z5 as priority losses
+service restarted at 2026-06-09 08:49:03 UTC, PID 2531217
+startup logs showed Engine configuration OK, Welcome NeuroSoCute!, and awaiting challenges
+```
+
+Targeted draw-refusal/report test command:
+
+```bash
+.venv/bin/python -m pytest \
+  test_bot/test_engine_time_management.py::test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging \
+  test_bot/test_engine_time_management.py::test_search__accepts_zero_score_draw_offer_despite_clock_edge_when_configured \
+  test_bot/test_engine_time_management.py::test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging \
+  test_bot/test_external_moves.py::test_get_online_move__egtb_zero_respects_clock_edge \
+  test_bot/test_config.py::test_insert_default_values__draw_clock_guard_defaults \
+  test_bot/test_recent_bot_game_report.py -q
+```
+
+Targeted EGTB test command:
 
 ```bash
 .venv/bin/python -m pytest \
@@ -130,13 +159,16 @@ Known verification debt is unchanged:
 - Full `ruff` and `mypy` are still blocked by pre-existing complexity and typing failures documented in `docs/BOT_OPTIMIZATION_HISTORY.md`.
 - No completed live game has yet validated the latest `b4 -> c3` replacement after the service restart.
 - No completed live game has yet validated the EGTB-zero draw-offer guard or the new 30s draw-clock edge threshold.
+- No completed live game has yet validated the 8K19ZtZc draw-refusal fix after restart.
 - Avoid heavy local Stockfish experiments while the live bot is running.
 
 ## Next Best Work
 
 - Watch the next `e4 e5 Nf3 Nc6 Bc4 Bc5 c3` bot game. If the first engine search is still materially negative, prefer a narrower branch change such as moving toward `O-O` or lowering bot book depth in that branch before changing global book randomness.
 - Watch the next target-band equal EGTB ending. The bot should not offer a draw if the opponent is below 45s and the bot has at least a 30s clock edge.
+- Watch the next target-band opponent draw offer in a repeated exact `0.0` ending. If the latest bot score is below 1 cp, the bot should accept instead of rejecting solely on clock edge.
 - Keep `UJlBX5Z5` as evidence for possible Breyer/opening-depth tuning, but do not overfit it without another loss or repeated early negative first-search positions from the same family.
+- Watch Cheszter English Opening: Agincourt Defense games (`8K19ZtZc`, `i6JbiFiR`). If another early negative or losing endgame appears, prefer a narrow black-side `1.c4 e6 2.g3 d5` book/explorer adjustment over broad book randomization.
 - Track whether the 3080 floor makes volume too sparse. If it does, prefer a temporary, explicitly logged `3060-3079` fallback window over permanently reopening 3000-3079.
 - Keep using the target-band blocker logs to separate real pool scarcity from stale cooldowns, rate limits, and mode declines.
 - Keep prioritizing losses and low-signal draws against bots over broad engine tuning.

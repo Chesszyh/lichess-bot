@@ -100,6 +100,7 @@ engine:                            # Engine settings.
     offer_draw_clock_advantage_speeds: [bullet, blitz] # Speeds where the clock-advantage draw-offer guard applies.
     offer_draw_clock_advantage_opponent_ms: 15000 # Opponent clock threshold for declining normal draw offers.
     offer_draw_clock_advantage_min_ms: 60000 # Minimum bot clock advantage for declining normal draw offers.
+    offer_draw_clock_advantage_accept_min_score_cp: 0 # If > 0, only decline opponent draw offers on clock edge when the bot's latest cp score is at least this value.
     high_rated_accept_draw_enabled: false # If true, accept draw offers from elite opponents in stable equal simplified positions.
     high_rated_accept_draw_min_rating: 3000 # Minimum opponent rating for the elite draw-offer rule.
     high_rated_accept_draw_moves: 2 # How many recent scores must be near equal for the elite draw-offer rule.

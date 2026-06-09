@@ -518,6 +518,15 @@ config.yml offer_draw_clock_advantage_min_ms=30000
 .config-history/config.yml offer_draw_clock_advantage_min_ms=30000
 ```
 
+Latest passing result for the 8K19ZtZc draw-refusal fix and lightweight recent-game report:
+
+```text
+6 passed in 0.42s
+config.yml offer_draw_clock_advantage_accept_min_score_cp=1
+.config-history/config.yml offer_draw_clock_advantage_accept_min_score_cp=1
+recent_bot_game_report.py flags i6JbiFiR, 8K19ZtZc, and UJlBX5Z5 as priority losses
+```
+
 Configuration loading was also checked for the live private file, confirming:
 
 ```text
@@ -532,6 +541,7 @@ draw_or_resign.offer_draw_min_rating=3080
 draw_or_resign.offer_draw_clock_advantage_enabled=True
 draw_or_resign.offer_draw_clock_advantage_opponent_ms=45000
 draw_or_resign.offer_draw_clock_advantage_min_ms=30000
+draw_or_resign.offer_draw_clock_advantage_accept_min_score_cp=1
 challenge.min_rating=3080
 matchmaking.opponent_min_rating=3080
 matchmaking.preferred_opponent_min_rating=3080
@@ -584,6 +594,9 @@ Optimization attempts and outcomes from this ThinkPad Stockfish pass:
 | Target-band clock-edge draw offers | `J7nJYTTZ` accepted draw with about 97s vs 11s; `xzMGfX4n` proactively offered draw with about 92s vs 10s | Decline or skip normal draw offers in bullet/blitz when opponent is near flagging and bot has a large clock edge | `test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging`; `test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging` | Active |
 | Target-band mid-clock draw offers | `ol8VgVif` vs `Cheszter` (3102) was drawn by agreement after the bot declined Black's draw offer around 105s vs 46.7s, then proactively offered draw around 108.7s vs 42.5s | Raise live `offer_draw_clock_advantage_opponent_ms` from `15000` to `45000`; later lower live `offer_draw_clock_advantage_min_ms` from `60000` to `30000` after another practical bullet clock-edge draw | Live config load check; normal draw-offer clock regressions cover the engine-search path | Active, watch whether target-band equal endings convert more often |
 | EGTB-zero draw offers | `iCfhUIsj` vs `Cheszter` drew by agreement after Lichess EGTB returned `wdl: 0`; the bot offered the draw around 52s vs 16s, bypassing the normal draw clock guard | Require `normal_draw_clock_allows_offer()` before offering a draw from both online EGTB and local lichess-bot tablebase zero-WDL moves; live minimum clock-edge threshold is now 30s | `test_get_online_move__egtb_zero_respects_clock_edge`; config load check confirms `offer_draw_clock_advantage_min_ms=30000` | Active, needs live validation in the next target-band equal EGTB ending |
+| Clock-edge draw refusal too aggressive | `8K19ZtZc` vs `Cheszter` declined a draw offer around 65s vs 33s with exact `0.0` evaluations, then drifted into a losing endgame and resigned after EGTB `wdl: -2` | Keep clock-edge suppression for proactive draw offers, but accept opponent draw offers when the latest bot cp score is below `offer_draw_clock_advantage_accept_min_score_cp`; live value `1` accepts exact `0.0` after the safe restart at `2026-06-09 08:49:03 UTC` | `test_search__accepts_zero_score_draw_offer_despite_clock_edge_when_configured`; config load check; service restart log | Active, needs live game validation |
+| Lightweight recent-game triage | Repeated manual curls made it easy to miss the next priority loss while a live game was active | Add `scripts/recent_bot_game_report.py` to flag losses, below-floor draws, and repeated draw/loss opening families without running local engine experiments | `test_recent_bot_game_report.py`; live `--max 16` report flagged `8K19ZtZc` and `UJlBX5Z5` | Active |
+| Cheszter English losses | `8K19ZtZc` and `i6JbiFiR` were consecutive black-side losses against `Cheszter` from English Opening: Agincourt Defense after `1.c4 e6 2.g3 d5` | No opening change yet; the immediate code fix targets the clear draw-refusal failure, while Cheszter/English remains a watch item | PGN/log review only | Watch for one more repeated early-negative or losing endgame before filtering this branch |
 | Breyer-family target-band loss | `UJlBX5Z5` vs `TakticproChess` (3099) lost as Black after book through a Breyer line; first engine eval was about `-0.51` / 43.6%, later mostly `-0.3` to `-0.5`, with one control-stream reconnect in the log | No config change yet; keep as watch evidence rather than overfitting one loss | Log/PGN review only | Watch for repeated early negative first-search positions before changing this branch |
 | Target-band clock-edge repetition | `nSLk3U9v` repeated with about 101s vs 31s because rating gate blocked repetition guard; `xUcwqJsv` repeated with about 64s vs 24s because the bot allowed the opponent an immediate threefold claim | Add clock-edge override for repetition guard rating gate; lower live clock-edge threshold to 30s; add opt-in one-ply opponent-claim filtering while preserving score-loss cap | `test_search__filters_repetition_against_higher_rated_opponent_with_large_clock_edge`; `test_search__avoids_move_allowing_opponent_immediate_threefold_with_clock_edge` | Active |
 | Opponent-pool sparsity | Latest searches found no suitable 3080+ opponent after filters | Add rejection-reason logs, cooldown source metadata, and target-band cooldown blocker details | Runtime logs now split configured blocklist, legacy unknown cooldowns, game-speed gaps, rating floors, self-filtering, and the first few cooldown-blocked target-band bots | Active, watch volume |
@@ -607,6 +620,7 @@ Current private live thresholds worth preserving unless new games disprove them:
 - `draw_or_resign.offer_draw_min_rating: 3080`
 - `draw_or_resign.offer_draw_clock_advantage_opponent_ms: 45000`
 - `draw_or_resign.offer_draw_clock_advantage_min_ms: 30000`
+- `draw_or_resign.offer_draw_clock_advantage_accept_min_score_cp: 1`
 - `repetition_guard.max_score_loss_cp: 150`
 - `repetition_guard.avoid_opponent_immediate_claim: true`
 - `repetition_guard.clock_advantage_override_opponent_ms: 40000`
@@ -628,6 +642,8 @@ Prioritize these directions before adding heavier local experiments:
 - Continue validating the new one-ply repetition trap filter in target-band games. If it avoids too many sound repetitions, keep the live 30 second clock-edge gate but raise `max_score_loss_cp` only after concrete PGN evidence.
 - Validate the new draw-offer floor in live games like `dzsQr4Rh`; if too many target-band games become dead flag races, tune the floor or add a clock-aware exception.
 - Validate the EGTB-zero draw guard in live games like `iCfhUIsj`; equal tablebase positions should not be offered as draws when the opponent is below 45s and the bot has a 30s or larger clock edge.
+- Validate the 8K19ZtZc draw-refusal fix in live play. In exact `0.0` repeated endings, opponent draw offers should be accepted unless the latest bot score is at least the live `1` cp threshold.
+- Watch Cheszter English Opening: Agincourt Defense losses (`8K19ZtZc`, `i6JbiFiR`) before changing the `1.c4 e6 2.g3 d5` branch.
 - Keep `UJlBX5Z5` as a Breyer/opening-depth watch item, but wait for repeated evidence before filtering another book branch.
 - Validate the 3080 opponent-pool floor. If game volume becomes too sparse, prefer a temporary short fallback window over permanently re-opening 3000-3079 draw sinks.
 - Consider a "complexity preference" only after engine score is near equal, using cheap signals such as material count, pawn asymmetry, legal move count, and queens present. Do not add heavy local engine experiments while the live bot is playing.

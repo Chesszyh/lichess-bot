@@ -208,6 +208,14 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_rating_gap_limit", default=0)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_min_rating", default=0)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_clock_advantage_enabled", default=False)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_clock_advantage_speeds",
+                       default=["bullet", "blitz"])
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_clock_advantage_opponent_ms", default=15000)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_clock_advantage_min_ms", default=60000)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_clock_advantage_accept_min_score_cp",
+                       default=0)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_enabled", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_min_rating", default=3000)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="high_rated_accept_draw_moves", default=2)

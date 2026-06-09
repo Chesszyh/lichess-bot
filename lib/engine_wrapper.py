@@ -290,7 +290,11 @@ class EngineWrapper:
         rating_gap = (game.me.rating or 0) - (game.opponent.rating or 0) if game else 0
         rating_gap_allows_normal_draw = draw_rating_gap_limit <= 0 or rating_gap < draw_rating_gap_limit
         min_rating_allows_normal_offer = draw_offered or draw_min_rating <= 0 or opponent_rating >= draw_min_rating
-        clock_allows_normal_draw = normal_draw_clock_allows_offer(self.draw_or_resign, game, draw_offered)
+        current_score_cp = actual(self.scores[-1]) if self.scores else None
+        clock_allows_normal_draw = normal_draw_clock_allows_offer(self.draw_or_resign,
+                                                                 game,
+                                                                 draw_offered,
+                                                                 current_score_cp)
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if (can_offer_draw
@@ -1158,7 +1162,8 @@ def check_for_draw_offer(game: model.Game) -> bool:
 
 def normal_draw_clock_allows_offer(draw_or_resign_cfg: Configuration,
                                    game: model.Game | None,
-                                   draw_offered: bool) -> bool:
+                                   draw_offered: bool,
+                                   current_score_cp: int | None = None) -> bool:
     """Whether the normal draw rule should accept/offer given the live clock edge."""
     if not game or not draw_or_resign_cfg.lookup("offer_draw_clock_advantage_enabled"):
         return True
@@ -1177,6 +1182,12 @@ def normal_draw_clock_allows_offer(draw_or_resign_cfg: Configuration,
     opponent_threshold = int(draw_or_resign_cfg.lookup("offer_draw_clock_advantage_opponent_ms") or 0)
     min_advantage = int(draw_or_resign_cfg.lookup("offer_draw_clock_advantage_min_ms") or 0)
     if opponent_time <= opponent_threshold and my_time - opponent_time >= min_advantage:
+        accept_min_score = int(draw_or_resign_cfg.lookup("offer_draw_clock_advantage_accept_min_score_cp") or 0)
+        if draw_offered and accept_min_score > 0 and (current_score_cp is None or current_score_cp < accept_min_score):
+            logger.info("Accepting normal draw offer despite clock edge because bot score "
+                        f"{current_score_cp} cp is below {accept_min_score} cp.")
+            return True
+
         action = "Declining" if draw_offered else "Skipping"
         logger.info(f"{action} normal draw offer because opponent has "
                     f"{msec_str(msec(opponent_time))} and bot has {msec_str(msec(my_time))}.")

@@ -563,6 +563,29 @@ def test_search__does_not_accept_normal_draw_when_opponent_is_near_flagging() ->
     assert not result.draw_offered
 
 
+def test_search__accepts_zero_score_draw_offer_despite_clock_edge_when_configured() -> None:
+    """Exact 0.00 positions should not be forced past a high-rated draw offer solely on clock."""
+    cfg = clock_guard_draw_cfg()
+    cfg.config["offer_draw_clock_advantage_accept_min_score_cp"] = 1
+    wrapper = EngineWrapper({}, cfg)
+    wrapper.engine = cast(FillerEngine, NamedFakeEngine("main", "e2e3"))
+    wrapper.scores = [chess.engine.PovScore(chess.engine.Cp(0), chess.WHITE)]
+    game = high_rated_blitz_game(opponent_rating=3096)
+    game.speed = "bullet"
+    game.state["wtime"] = 65300
+    game.state["btime"] = 33320
+
+    result = wrapper.search(chess.Board("8/8/8/8/8/8/4K3/4k3 w - - 0 1"),
+                            chess.engine.Limit(time=1.0),
+                            ponder=False,
+                            draw_offered=True,
+                            root_moves=chess.engine.PlayResult(None, None),
+                            game=game,
+                            engine_cfg=Configuration({}))
+
+    assert result.draw_offered
+
+
 def test_search__does_not_offer_normal_draw_when_opponent_is_near_flagging() -> None:
     """A large bullet clock edge should keep the bot from offering a normal draw."""
     wrapper = EngineWrapper({}, clock_guard_draw_cfg())

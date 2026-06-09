@@ -141,6 +141,25 @@ def test_insert_default_values__matchmaking_legacy_unknown_cooldown_cap_defaults
     assert raw_config["matchmaking"]["legacy_unknown_cooldown_max_minutes"] == 0
 
 
+def test_insert_default_values__draw_clock_guard_defaults() -> None:
+    """Draw clock-advantage guard options should be present after default insertion."""
+    raw_config: CONFIG_DICT_TYPE = {
+        "token": "token",
+        "url": "https://lichess.org",
+        "engine": {"dir": ".", "name": "engine", "protocol": "uci"},
+        "challenge": {},
+        "matchmaking": {},
+    }
+
+    config.insert_default_values(raw_config)
+
+    draw_cfg = raw_config["engine"]["draw_or_resign"]
+    assert draw_cfg["offer_draw_min_rating"] == 0
+    assert draw_cfg["offer_draw_clock_advantage_enabled"] is False
+    assert draw_cfg["offer_draw_clock_advantage_speeds"] == ["bullet", "blitz"]
+    assert draw_cfg["offer_draw_clock_advantage_accept_min_score_cp"] == 0
+
+
 def test_insert_default_values__polyglot_avoid_moves_defaults_to_empty() -> None:
     """Opening-book move filters should be opt-in."""
     raw_config: CONFIG_DICT_TYPE = {
